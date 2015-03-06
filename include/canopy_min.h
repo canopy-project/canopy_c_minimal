@@ -15,6 +15,10 @@
 #ifndef CANOPY_MIN_INCLUDED
 #define CANOPY_MIN_INCLUDED
 
+#include <stdbool.h>
+#include <stdint.h>
+#include <stdio.h>
+
 // This is used to verify that programs compiled using this version of the
 // header also link with the same version number of the library.
 #define CANOPY_MIN_HEADER_VERSION "15.02.030"
@@ -32,6 +36,12 @@ typedef enum {
 
     // A bad parameter value was provided.
     CANOPY_ERROR_BAD_PARAM,
+
+    // An operation was requested on the wrong data type.
+    CANOPY_ERROR_WRONG_TYPE,
+
+    // The requested data is not available yet.  Try again.
+    CANOPY_ERROR_AGAIN,
 } canopy_error;
 
 
@@ -55,7 +65,8 @@ typedef struct canopy_remote_params {
     bool use_http;
     canopy_auth_type auth_type;
     char *server; // hostname or IP address of server
-    bool use_ws; // use websockets if available
+    bool use_ws;     // use websockets if available
+    bool persistent; // keep communication channel open
 } canopy_remote_params_t;
 
 // No user-servicable parts.
@@ -69,6 +80,10 @@ typedef struct canopy_context {
     // Linked-list of connections
     canopy_connection_t *connections;
 } canopy_context_t;
+
+typedef struct canopy_promise {
+    // TBD
+} canopy_promise_t;
 
 typedef struct canopy_user {
     bool is_activated;
@@ -91,9 +106,18 @@ typedef struct canopy_device_query {
     // TDB
 } canopy_device_query_t;
 
+typedef struct canopy_remote {
+    // TDB
+} canopy_remote_t;
+
 /*****************************************************************************/
 // Initialize a new context
-void canopy_ctx_init(canopy_context_t *ctx);
+canopy_error canopy_ctx_init(canopy_context_t *ctx);
+
+// Shutdown context
+// Closes any connections that might still be open.
+// Frees any allocated memory
+canopy_error canopy_ctx_shutdown(canopy_context_t *ctx);
 
 // Set logging options for a context.
 //
@@ -172,11 +196,70 @@ canopy_error canopy_remote_init(canopy_context_t *ctx,
 //        canopy_connection_params_t *params,
 //        canopy_connection_t *conn);
 
-canopy_error canopy_get_authenticated_device(canopy_connection_t *conn, 
-        canopy_device_t *device);
+// CB
+// blocking
+// async (fence/promises)
 
-canopy_error canopy_get_authenticated_user(canopy_connection_t *conn, 
-        canopy_user_t *user);
+// 
+canopy_error canopy_get_my_device(canopy_remote_t *conn, canopy_promise_t *promise);
+
+canopy_error canopy_get_my_user(canopy_remote_t *conn, canopy_promise_t *promise);
+
+/*****************************************************************************/
+// PROMISES
+typedef canopy_error (*canopy_promise_cb)(canopy_promise_t *promise, void *userdata);
+
+// Block the current thread until the operation has completed, or timeout
+// occurs.  Returns immediately if the requested operation has already
+// finished.
+//
+// <promise> is a promise object representing the asynchronous operation.
+//
+// <timeout_ms> is number of milliseconds to wait before CANOPY_ERROR_TIMEOUT
+// is returned.
+//
+canopy_error canopy_promise_wait_for_complete(canopy_promise_t *promise, int timeout_ms);
+
+// Establish a callback that will be triggered when the operation has
+// completed.  Triggers the callback immediately if the requested operation has
+// already finished.
+//
+// <promise> is a promise object representing the asynchronous operation.
+//
+// <cb> is the callback to trigger.
+//
+// <userdata> is user data that gets passed along to the callback.
+canopy_error canopy_promise_setup_callback(canopy_promise_t *promise, canopy_promise_cb cb, void *userdata);
+
+// Check if an asyncrhonous operation has completed.
+//
+// <promise> is a promise object representing the asynchronous operation.
+//
+// Returns CANOPY_SUCCESS if the operation is complete.
+// Returns CANOPY_ERROR_AGAIN if the operation has not yet finished.
+canopy_error canopy_promise_is_complete(canopy_promise_t *promise);
+
+// Get the result of an asynchronous request for a device object.
+//
+// <promise> is a promise object representing the asynchronous operation.
+//
+// <device> will store the obtained device object, on success.
+//
+// If the request is not yet complete, returns CANOPY_ERROR_AGAIN.
+// If the request was not for a device object, returns CANOPY_ERROR_WRONG_TYPE.
+canopy_error canopy_promise_get_device(canopy_promise_t *promise, canopy_device_t *device);
+
+// Get the result of an asynchronous request for a user object.
+//
+// <promise> is a promise object representing the asynchronous operation.
+//
+// <user> will store the obtained user object, on success.
+//
+// If the request is not yet complete, returns CANOPY_ERROR_AGAIN.
+// If the request was not for a device object, returns CANOPY_ERROR_WRONG_TYPE.
+canopy_error canopy_promise_get_user(canopy_promise_t *promise, canopy_user_t *user);
+
+
 
 
 
@@ -188,15 +271,6 @@ canopy_error canopy_get_authenticated_user(canopy_connection_t *conn,
 #if 0
 CanopyResultEnum canopy_init_client(CanopyClient_t *client);
 CanopyResultEnum canopy_shutdown_client(CanopyClient_t *client);
-
-CanopyResultEnum canopy_client_set_auth_username(CanopyClient_t *client, const char *username);
-CanopyResultEnum canopy_client_set_auth_password(CanopyClient_t *client, const char *password);
-CanopyResultEnum canopy_client_set_auth_device_id(CanopyClient_t *client, const char *device_id);
-CanopyResultEnum canopy_client_set_auth_device_secret(CanopyClient_t *client, const char *device_secret);
-CanopyResultEnum canopy_client_set_auth_type(CanopyClient_t *client, CanopyAuthTypeEnum auth_type);
-CanopyResultEnum canopy_client_set_http_port(CanopyClient_t *client, uint16_t port);
-CanopyResultEnum canopy_client_set_https_port(CanopyClient_t *client, uint32_t port);
-CanopyResultEnum canopy_client_set_use_https(CanopyClient_t *client, bool use_https);
 
 CanopyResultEnum canopy_client_set_use_https(CanopyClient_t *client, bool use_https);
 
@@ -236,12 +310,12 @@ CanopyResultEnum canopy_client_set_use_https(CanopyClient_t *client, bool use_ht
 //
 // The Account resource is used for authentication and authorization.
 //
-| devices(filters)                           | -> DeviceQuery
-| emailAddress()                             | -> string
-| isActivated()                              | -> bool
-| quotas()                                   | -> object
-| username()                                 | -> string
-| update(params, function(Error)
+//| devices(filters)                           | -> DeviceQuery
+//| emailAddress()                             | -> string
+//| isActivated()                              | -> bool
+//| quotas()                                   | -> object
+//| username()                                 | -> string
+//| update(params, function(Error)
 
 
 
