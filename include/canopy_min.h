@@ -1,4 +1,4 @@
-// Copyright 2015 SimpleThings, Inc.
+// Copyright 2015 Canopy Services, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -42,6 +42,9 @@ typedef enum {
 
     // The requested data is not available yet.  Try again.
     CANOPY_ERROR_AGAIN,
+
+    // The requested operation was cancelled.
+    CANOPY_ERROR_CANCELLED,
 } canopy_error;
 
 
@@ -81,9 +84,9 @@ typedef struct canopy_context {
     canopy_connection_t *connections;
 } canopy_context_t;
 
-typedef struct canopy_promise {
-    // TBD
-} canopy_promise_t;
+typedef struct canopy_remote {
+    // TDB
+} canopy_remote_t;
 
 typedef struct canopy_user {
     bool is_activated;
@@ -102,13 +105,50 @@ typedef struct canopy_device {
     // TDB
 } canopy_device_t;
 
-typedef struct canopy_device_query {
+typedef struct or_filter {
     // TDB
+} or_filter_t;
+
+typedef struct and_filter {
+    // TDB
+} and_filter_t;
+
+typedef struct not_filter {
+    // TDB
+} not_filter_t;
+
+/*
+{
+    "filter" : [{
+            "active" : true, // implicit AND
+            "creation-date" : "yesterday",
+        }, // implicit OR
+        {
+            "connected" : true, // implicit AND
+            "creation-date" : "last-year",
+        }]
+    }
+}
+*/
+
+typedef struct canopy_device_query {
+    // TBD
 } canopy_device_query_t;
 
-typedef struct canopy_remote {
-    // TDB
-} canopy_remote_t;
+typedef canopy_error (*canopy_barrier_cb)(struct canopy_barrier *barrier, 
+        void *userdata);
+
+typedef struct canopy_barrier {
+    canopy_remote_t *remote;
+    canopy_barrier_cb cb;
+    //canopy_error (*canopy_barrier_cb)(struct canopy_barrier *barrier, void *userdata);
+    void *userdata;
+    canopy_credential_type type;
+    union {
+        canopy_device_t *device;
+        canopy_user_t *user;
+    } result;
+} canopy_barrier_t;
 
 /*****************************************************************************/
 // Initialize a new context
@@ -191,76 +231,159 @@ canopy_error canopy_remote_init(canopy_context_t *ctx,
         canopy_remote_params_t *params,
         canopy_remote_t *remote);
 
+// Shutdown a remote object.
+// Closes persistent connection to server, if any.
+// Frees any allocated memory.
+canopy_error canopy_remote_shutdown(canopy_remote_t *remote);
 
-//canopy_error canopy_connection_shutdown(canopy_context_t *ctx, 
-//        canopy_connection_params_t *params,
-//        canopy_connection_t *conn);
-
-// CB
-// blocking
-// async (fence/promises)
-
+// Get a list of devices from the server based on the filters in a device query
+// object.
+//
+// <remote> is the remote object used for connecting to the server.
 // 
-canopy_error canopy_get_my_device(canopy_remote_t *conn, canopy_promise_t *promise);
+// <query> contains the constraints that devices must satisfy to be included in
+// the resulting list.
+//
+// <max_count> is the maximum number of devices to fetch.
+//
+// <devices> is an array of at least <max_count> device objects that will store
+// the results of this operation.
+//
+// <barrier> will store a new barrier object that can be used to obtain the
+// result when it is ready.  If NULL, this operation will block the current
+// thread.
+canopy_error canopy_remote_get_devices(canopy_remote_t *remote, 
+        canopy_device_query_t *query, 
+        size_t max_count, 
+        canopy_device_t **devices, 
+        canopy_barrier_t *barrier);
 
-canopy_error canopy_get_my_user(canopy_remote_t *conn, canopy_promise_t *promise);
+// Get the device based on the authentication information provided to
+// canopy_remote_init.
+//
+// <remote> is the remote object used for connecting to the server.
+//
+// <device> will store the device object returned from the server.  If
+// <barrier> is NULL, this will contain the result upon a successful return.
+// If <barrier> is provided, this will be updated when the result is ready, and
+// will also be passed along to the barrier object.
+//
+// <barrier> will store a new barrier object that can be used to obtain the
+// result when it is ready.  If NULL, this operation will block the current
+// thread.
+canopy_error canopy_get_my_device(canopy_remote_t *remote, 
+        canopy_device_t *device, 
+        canopy_barrier_t *barrier);
+
+// Get the device based on the authentication information provided to
+// canopy_remote_init.
+//
+// <remote> is the remote object used for connecting to the server.
+//
+// <user> will store the user object returned from the server.  If
+// <barrier> is NULL, this will contain the result upon a successful return.
+// If <barrier> is provided, this will be updated when the result is ready, and
+// will also be passed along to the barrier object.
+//
+// <barrier> will store a new barrier object that can be used to obtain the
+// result when it is ready.
+canopy_error canopy_get_my_user(canopy_remote_t *remote, 
+        canopy_user_t *user, 
+        canopy_barrier_t *barrier);
 
 /*****************************************************************************/
-// PROMISES
-typedef canopy_error (*canopy_promise_cb)(canopy_promise_t *promise, void *userdata);
+// BARRIERS
+//
+// WARNING! WARNING!
+// Stack-scoped barriers can be used, but you must call either
+// canopy_barrier_wait_for_complete() or canopy_barrier_cancel() before
+// returning from the scope with the barrier.
 
 // Block the current thread until the operation has completed, or timeout
 // occurs.  Returns immediately if the requested operation has already
 // finished.
 //
-// <promise> is a promise object representing the asynchronous operation.
+// <barrier> is a barrier object representing the asynchronous operation.
 //
 // <timeout_ms> is number of milliseconds to wait before CANOPY_ERROR_TIMEOUT
 // is returned.
 //
-canopy_error canopy_promise_wait_for_complete(canopy_promise_t *promise, int timeout_ms);
+canopy_error canopy_barrier_wait_for_complete(canopy_barrier_t *barrier, int timeout_ms);
+
+// Cancels the barrier.
+// Any threads blocked in canopy_barrier_wait_for_complete will return with
+// CANOPY_ERROR_CANCELLED.
+// No further callbacks will be triggered for this barrier.
+// After calling this it is safe to deallocate the barrier.
+canopy_error canopy_barrier_cancel(canopy_barrier_t *barrier);
 
 // Establish a callback that will be triggered when the operation has
 // completed.  Triggers the callback immediately if the requested operation has
 // already finished.
 //
-// <promise> is a promise object representing the asynchronous operation.
+// <barrier> is a barrier object representing the asynchronous operation.
 //
 // <cb> is the callback to trigger.
 //
 // <userdata> is user data that gets passed along to the callback.
-canopy_error canopy_promise_setup_callback(canopy_promise_t *promise, canopy_promise_cb cb, void *userdata);
+canopy_error canopy_barrier_setup_callback(canopy_barrier_t *barrier, canopy_barrier_cb cb, void *userdata);
 
 // Check if an asyncrhonous operation has completed.
 //
-// <promise> is a promise object representing the asynchronous operation.
+// <barrier> is a barrier object representing the asynchronous operation.
 //
 // Returns CANOPY_SUCCESS if the operation is complete.
 // Returns CANOPY_ERROR_AGAIN if the operation has not yet finished.
-canopy_error canopy_promise_is_complete(canopy_promise_t *promise);
+canopy_error canopy_barrier_is_complete(canopy_barrier_t *barrier);
 
 // Get the result of an asynchronous request for a device object.
 //
-// <promise> is a promise object representing the asynchronous operation.
+// <barrier> is a barrier object representing the asynchronous operation.
 //
 // <device> will store the obtained device object, on success.
 //
 // If the request is not yet complete, returns CANOPY_ERROR_AGAIN.
 // If the request was not for a device object, returns CANOPY_ERROR_WRONG_TYPE.
-canopy_error canopy_promise_get_device(canopy_promise_t *promise, canopy_device_t *device);
+canopy_error canopy_barrier_get_device(canopy_barrier_t *barrier, canopy_device_t *device);
 
 // Get the result of an asynchronous request for a user object.
 //
-// <promise> is a promise object representing the asynchronous operation.
+// <barrier> is a barrier object representing the asynchronous operation.
 //
 // <user> will store the obtained user object, on success.
 //
 // If the request is not yet complete, returns CANOPY_ERROR_AGAIN.
 // If the request was not for a device object, returns CANOPY_ERROR_WRONG_TYPE.
-canopy_error canopy_promise_get_user(canopy_promise_t *promise, canopy_user_t *user);
+canopy_error canopy_barrier_get_user(canopy_barrier_t *barrier, canopy_user_t *user);
 
 
+/*****************************************************************************/
+// USERS
 
+canopy_error canopy_user_get_email(canopy_user_t *user, char **email);
+canopy_error canopy_user_get_username(canopy_user_t *user, char **username);
+canopy_error canopy_user_is_validated(canopy_user_t *user, bool validated);
+canopy_error canopy_user_devices(canopy_user_t *user, canopy_device_query_t *query);
+
+/*****************************************************************************/
+// DEVICE QUERY
+
+devices = user.devices().filter({"has_var" : "temperature"}).
+
+canopy_device_query_t dq;
+canopy_device_t devices[10];
+canopy_user_devices(user, &dq);
+canopy_device_query_filter(&dq, CANOPY_FILTER_CONNECTED, true);
+canopy_device_query_list(&dq, 10, devices);
+#endif
+
+
+//| devices(filters)                           | -> DeviceQuery
+//| emailAddress()                             | -> string
+//| isActivated()                              | -> bool
+//| quotas()                                   | -> object
+//| username()                                 | -> string
+//| update(params, function(Error)
 
 
 
