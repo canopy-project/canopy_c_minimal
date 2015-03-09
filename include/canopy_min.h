@@ -72,20 +72,15 @@ typedef struct canopy_remote_params {
     bool persistent; // keep communication channel open
 } canopy_remote_params_t;
 
-// No user-servicable parts.
-typedef struct canopy_connection {
-    struct canopy_connection *next;
-    struct canopy_client *client;
-    struct canopy_remote_params *params;
-} canopy_connection_t;
-
 typedef struct canopy_context {
     // Linked-list of connections
     canopy_connection_t *connections;
 } canopy_context_t;
 
 typedef struct canopy_remote {
-    // TDB
+    struct canopy_remote *next;
+    struct canopy_context *ctx;
+    struct canopy_remote_params *params;
 } canopy_remote_t;
 
 typedef struct canopy_user {
@@ -102,7 +97,8 @@ typedef struct canopy_permissions {
 } canopy_permissions_t;
 
 typedef struct canopy_device {
-    // TDB
+    bool connected;
+    canopy_remote_t *remote;
 } canopy_device_t;
 
 
@@ -191,6 +187,43 @@ typedef struct canopy_barrier {
 } canopy_barrier_t;
 
 /*****************************************************************************/
+// DEVICE
+
+// Updates a device object's status and properties from the remote server.  Any
+// status or properties with a more recent clock ms value will be updated
+// locally.
+canopy_error canopy_device_update_from_remote(
+        canopy_device_t *device, 
+        canopy_remote_t *remote,
+        canopy_barrier_t *barrier);
+
+// Updates a device object's status and properties to the remote server.  Any
+// status or properties with a more recent clock ms value will be updated
+// remotely.
+canopy_error canopy_device_update_to_remote(
+        canopy_device_t *device, 
+        canopy_remote_t *remote,
+        canopy_barrier_t *barrier);
+
+// Synchronizes a device object with the remote server.
+// (Potential revisit).  Server should do merge.  Does it need to be atomic?
+// 
+// Roughly equivalent to:
+//  canopy_device_update_from_remote(device, remote, NULL);
+//  canopy_device_update_to_remote(device, remote, barrier);
+//
+canopy_error canopy_device_sync_to_remote(
+        canopy_device_t *device, 
+        canopy_remote_t *remote,
+        canopy_barrier_t *barrier);
+
+// Get the active status for a device.
+canopy_error canopy_device_get_active_status(
+        canopy_device_t *device, 
+        canopy_active_status *out_status);
+
+
+/*****************************************************************************/
 // Initialize a new context
 canopy_error canopy_ctx_init(canopy_context_t *ctx);
 
@@ -238,24 +271,7 @@ canopy_error canopy_ctx_get_logging(canopy_context_t *ctx,
         int *level);
 
 /*****************************************************************************/
-
-// Options:  -> "connection_opts"
-//      username
-//      password
-//      auth-type
-//      hostname
-//
-// State/status for the connection -> "connection"
-//
-/*
-
-{
-    canopy_connection_t conn;
-    conn.http_port = 80;
-    conn.username = "fry";
-    canopy_connect_to_server(ctx, conn, status);
-}
-*/
+// REMOTE
 
 // Initializes a new remote object.  Does not necessarily open a TCP or
 // websocket connection to the server, but initializes an object with the
@@ -275,6 +291,22 @@ canopy_error canopy_remote_init(canopy_context_t *ctx,
 // Closes persistent connection to server, if any.
 // Frees any allocated memory.
 canopy_error canopy_remote_shutdown(canopy_remote_t *remote);
+
+// Get the remote's clock in milliseconds.  The returned value has no relation
+// to wall clock time, but is monotonically increasing and is reported
+// consistently by the remote to anyone who asks.
+canopy_error canopy_remote_get_clock_ms(canopy_remote_t *remote, 
+        unsigned long *out_timestamp,
+        canopy_barrier_t *barrier);
+
+// Get our version of the remote's clock in milliseconds.  This is based on the
+// time obtained the last time canopy_remote_get_clock_ms was called, plus
+// however much time has elapsed since then.
+//
+// Returns CANOPY_ERROR_AGAIN if canopy_remote_get_clock_ms() has never been
+// called for <remote>.
+canopy_error canopy_get_local_ms(canopy_remote_t *remote, 
+        unsigned long *out_timestamp);
 
 // Get a list of devices from the server based on the filters in a device query
 // object.
@@ -408,6 +440,7 @@ canopy_error canopy_user_devices(canopy_user_t *user, canopy_device_query_t *que
 /*****************************************************************************/
 // DEVICE QUERY
 
+#if 0
 devices = user.devices().filter({"has_var" : "temperature"}).
 
 canopy_device_query_t dq;
