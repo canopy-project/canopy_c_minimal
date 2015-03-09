@@ -105,17 +105,57 @@ typedef struct canopy_device {
     // TDB
 } canopy_device_t;
 
-typedef struct or_filter {
-    // TDB
+
+// canopy_active_status enum identifies whether or not a device has
+// communicated with the server recently.  By "recently" we mean in the last 60
+// seconds or so.
+typedef enum {
+    // Invalid value, or "we don't care" value when filtering.
+    CANOPY_ACTIVE_STATUS_INVALID = 0,
+    CANOPY_ACTIVE_STATUS_DONT_CARE = CANOPY_ACTIVE_STATUS_INVALID,
+
+    // Device has never communicated with the server.
+    CANOPY_NEWLY_CREATED,
+
+    // Device has communicated with the server in past, but not recently.
+    CANOPY_INACTIVE,
+
+    // Device communicated with the server recently.
+    CANOPY_ACTIVE,
+} canopy_active_status;
+
+
+// canopy_ws_connection_status enum identifies whether or not a device is
+// currently connected to the server over websockets.
+typedef enum {
+    // Invalid value, or "we don't care" value when filtering.
+    CANOPY_WS_CONNECTION_STATUS_INVALID = 0,
+    CANOPY_WS_CONNECTION_STATUS_DONT_CARE = CANOPY_WS_CONNECTION_STATUS_INVALID,
+
+    // Device has never communicated with the server.
+    CANOPY_WS_NEVER_CONNECTED,
+
+    // Device has communicated with the server in past, but not recently.
+    CANOPY_WS_DISCONNECTED,
+
+    // Device communicated with the server recently.
+    CANOPY_WS_CONNECTED,
+} canopy_ws_connection_status;
+
+typedef enum {
+    CANOPY_FILTER_ACTIVE_STATUS,
+    CANOPY_FILTER_WS_CONNECTION_STATUS,
+} filter_term_type;
+
+typedef struct filter_term {
+    filter_term_type type;
+
+    union {
+    } constraint;
+}
+
+typedef struct filter_op {
 } or_filter_t;
-
-typedef struct and_filter {
-    // TDB
-} and_filter_t;
-
-typedef struct not_filter {
-    // TDB
-} not_filter_t;
 
 /*
 {
