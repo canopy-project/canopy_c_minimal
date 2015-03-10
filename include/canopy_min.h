@@ -67,9 +67,9 @@ typedef struct canopy_remote_params {
     uint16_t https_port;
     bool use_http;
     canopy_auth_type auth_type;
-    char *server; // hostname or IP address of server
-    bool use_ws;     // use websockets if available
-    bool persistent; // keep communication channel open
+    char *remote; // hostname or IP address of remote server
+    bool use_ws;     // hint: use websockets if available
+    bool persistent; // hint: keep communication channel open
 } canopy_remote_params_t;
 
 typedef struct canopy_context {
@@ -446,10 +446,59 @@ canopy_error canopy_barrier_get_user(canopy_barrier_t *barrier, canopy_user_t *u
 /*****************************************************************************/
 // USERS
 
+// Goes to remote
+canopy_error canopy_create_user(canopy_remote_t *remote,
+        const char *username,
+        const char *password,
+        const char *email,
+        canopy_user_t *out_user,
+        canopy_barrier_t *barrier);
+
+// Goes to remote
+canopy_error canopy_user_create_devices(canopy_user_t *user,
+        uint32_t quantity,
+        char *names[],
+        canopy_barrier_t *barrier,
+        canopy_device_t **out_devices,
+        canopy_barrier_t *barrier);
+
 canopy_error canopy_user_get_email(canopy_user_t *user, char **email);
 canopy_error canopy_user_get_username(canopy_user_t *user, char **username);
-canopy_error canopy_user_is_validated(canopy_user_t *user, bool validated);
+canopy_error canopy_user_is_validated(canopy_user_t *user, bool *validated);
 canopy_error canopy_user_devices(canopy_user_t *user, canopy_device_query_t *query);
+
+canopy_error canopy_user_set_email(canopy_user_t *user, const char *email);
+canopy_error canopy_user_set_password(canopy_user_t *user, 
+        const char *old_password,
+        const char *new_password);
+
+// Updates a user object's properties (excluding devices) from the remote
+// server.  Any properties with a more recent clock ms value will be updated
+// locally.
+canopy_error canopy_user_update_from_remote(
+        canopy_user_t *user, 
+        canopy_remote_t *remote,
+        canopy_barrier_t *barrier);
+
+// Updates a user object's properties (excluding devices) to the remote
+// server.  Any properties with a more recent clock ms value will be updated
+// remotely.
+canopy_error canopy_user_update_to_remote(
+        canopy_user_t *user, 
+        canopy_remote_t *remote,
+        canopy_barrier_t *barrier);
+
+// Synchronizes a user object with the remote server.
+// (Potential revisit).  Server should do merge.  Does it need to be atomic?
+// 
+// Roughly equivalent to:
+//  canopy_user_update_from_remote(user, remote, NULL);
+//  canopy_user_update_to_remote(user, remote, barrier);
+canopy_error canopy_user_sync_to_remote(
+        canopy_user_t *user, 
+        canopy_remote_t *remote,
+        canopy_barrier_t *barrier);
+
 
 /*****************************************************************************/
 // DEVICE QUERY
