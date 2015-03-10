@@ -30,6 +30,10 @@ typedef enum {
     // An unknown error occured.
     CANOPY_ERROR_UNKNOWN,
 
+    // You are using a version of the library binary and header file that are
+    // incompatible.
+    CANOPY_ERROR_INCOMPATIBLE_LIBRARY_VERSION,
+
     // The requested operation has not been implemented on the current
     // platform.
     CANOPY_ERROR_NOT_IMPLEMENTED,
@@ -46,7 +50,6 @@ typedef enum {
     // The requested operation was cancelled.
     CANOPY_ERROR_CANCELLED,
 } canopy_error;
-
 
 typedef enum {
     CANOPY_INVALID_CREDENTIAL_TYPE,
@@ -145,11 +148,6 @@ typedef enum {
     CANOPY_FILTER_WS_CONNECTION_STATUS,
 } filter_term_type;
 
-// Wire format for filters:
-//      
-//    connection_status=connected active_status=active AND temperature>=60 AND
-//
-
 typedef enum {
     CANOPY_RELATION_OP_INVALID=0,
     CANOPY_EQ,
@@ -201,44 +199,13 @@ typedef struct canopy_barrier {
 } canopy_barrier_t;
 
 /*****************************************************************************/
-// DEVICE
+// CONTEXT
 
-// Updates a device object's status and properties from the remote server.  Any
-// status or properties with a more recent clock ms value will be updated
-// locally.
-canopy_error canopy_device_update_from_remote(
-        canopy_device_t *device, 
-        canopy_remote_t *remote,
-        canopy_barrier_t *barrier);
-
-// Updates a device object's status and properties to the remote server.  Any
-// status or properties with a more recent clock ms value will be updated
-// remotely.
-canopy_error canopy_device_update_to_remote(
-        canopy_device_t *device, 
-        canopy_remote_t *remote,
-        canopy_barrier_t *barrier);
-
-// Synchronizes a device object with the remote server.
-// (Potential revisit).  Server should do merge.  Does it need to be atomic?
+// Initialize a new context.
 // 
-// Roughly equivalent to:
-//  canopy_device_update_from_remote(device, remote, NULL);
-//  canopy_device_update_to_remote(device, remote, barrier);
-//
-canopy_error canopy_device_sync_to_remote(
-        canopy_device_t *device, 
-        canopy_remote_t *remote,
-        canopy_barrier_t *barrier);
-
-// Get the active status for a device.
-canopy_error canopy_device_get_active_status(
-        canopy_device_t *device, 
-        canopy_active_status *out_status);
-
-
-/*****************************************************************************/
-// Initialize a new context
+// Returns CANOPY_ERROR_INCOMPATIBLE_LIBRARY_VERSION if the version of the
+// library you have linked with is incompatible with the header file you are
+// using.
 canopy_error canopy_ctx_init(canopy_context_t *ctx);
 
 // Shutdown context
@@ -283,6 +250,7 @@ canopy_error canopy_ctx_get_logging(canopy_context_t *ctx,
         char **logfile,
         size_t logfile_len,
         int *level);
+
 
 /*****************************************************************************/
 // REMOTE
@@ -441,6 +409,44 @@ canopy_error canopy_barrier_get_device(canopy_barrier_t *barrier, canopy_device_
 // If the request is not yet complete, returns CANOPY_ERROR_AGAIN.
 // If the request was not for a device object, returns CANOPY_ERROR_WRONG_TYPE.
 canopy_error canopy_barrier_get_user(canopy_barrier_t *barrier, canopy_user_t *user);
+
+
+/*****************************************************************************/
+// DEVICE
+
+// Updates a device object's status and properties from the remote server.  Any
+// status or properties with a more recent clock ms value will be updated
+// locally.
+canopy_error canopy_device_update_from_remote(
+        canopy_device_t *device, 
+        canopy_remote_t *remote,
+        canopy_barrier_t *barrier);
+
+// Updates a device object's status and properties to the remote server.  Any
+// status or properties with a more recent clock ms value will be updated
+// remotely.
+canopy_error canopy_device_update_to_remote(
+        canopy_device_t *device, 
+        canopy_remote_t *remote,
+        canopy_barrier_t *barrier);
+
+// Synchronizes a device object with the remote server.
+// (Potential revisit).  Server should do merge.  Does it need to be atomic?
+// 
+// Roughly equivalent to:
+//  canopy_device_update_from_remote(device, remote, NULL);
+//  canopy_device_update_to_remote(device, remote, barrier);
+//
+canopy_error canopy_device_sync_to_remote(
+        canopy_device_t *device, 
+        canopy_remote_t *remote,
+        canopy_barrier_t *barrier);
+
+// Get the active status for a device.
+canopy_error canopy_device_get_active_status(
+        canopy_device_t *device, 
+        canopy_active_status *out_status);
+
 
 
 /*****************************************************************************/
