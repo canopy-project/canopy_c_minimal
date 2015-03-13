@@ -65,7 +65,33 @@ typedef enum {
 
     // Requested variable was not found
     CANOPY_ERROR_VAR_NOT_FOUND,
+
+    // Requested variable has never been set
+    CANOPY_ERROR_VAR_NOT_SET,
 } canopy_error;
+
+struct error_strings {
+    canopy_error err;
+    const char *str;
+};
+struct error_strings canopy_error_strings_table[] = {
+        {CANOPY_SUCCESS, "success"},
+        {CANOPY_ERROR_UNKOWN, "unknown error"},
+        {CANOPY_BAD_CREDENTIALS, "bad credentials"},
+        {CANOPY_ERROR_FATAL, "fatal error"},
+        {CANOPY_INCOMPATIBLE_LIBRARY_VERSION, "incompatible library version"},
+        {CANOPY_NOT_IMPLEMENTED, "not implemented yet"},
+        {CANOPY_BAD_PARAM, "bad parameter"},
+        {CANOPY_WRONG_TYPE, "wrong datatype"},
+        {CANOPY_ERROR_AGAIN, "try again"},
+        {CANOPY_ERROR_CANCELLED, "operation was cancelled"},
+        {CANOPY_VAR_NOT_FOUND, "cloud variable not found"},
+        {CANOPY_VAR_NOT_SET, "cloud variable has never been set"}
+};
+
+inline const char *canopy_error_string(canopy_error err) {
+    return canopy_error_strings_table[err].str;
+}
 
 /*****************************************************************************/
 // CONTEXT
@@ -277,7 +303,7 @@ typedef struct canopy_permissions {
  * Authentication type, right now only basic is supported
  */
 typedef enum {
-    CANOPY_INVALID_AUTH_TYPE = 0,
+    CANOPY_DEFUALT_AUTH_TYPE = 0,
     CANOPY_BASIC_AUTH,
 } canopy_auth_type;
 
@@ -288,13 +314,13 @@ typedef struct canopy_remote_params {
     canopy_credential_type   credential_type;
     char                     *name;           // user's username or device id
     char                     *password;       // user's password or device secret
-    uint16_t                 http_port;
-    uint16_t                 https_port;
-    canopy_auth_type         auth_type;
+    uint16_t                 http_port;       // 0 for default
+    uint16_t                 https_port;      // 0 for default
+    bool                     use_http;        // false=use HTTPS, otherwise use HTTP
+    canopy_auth_type         auth_type;       // Defaults to BASIC
     char                     *remote;         // hostname or IP address of remote server
     bool                     use_ws;          // hint: use websockets if available
     bool                     persistent;      // hint: keep communication channel open
-    bool                     use_http;        // not sure what this does yet....
 } canopy_remote_params_t;
 
 /*
