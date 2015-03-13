@@ -19,6 +19,8 @@
 #include <stdint.h>
 #include <stdio.h>
 
+#include <canopy_os.h>
+
 // This is used to verify that programs compiled using this version of the
 // header also link with the same version number of the library.
 #define CANOPY_MIN_HEADER_VERSION "15.02.030"
@@ -38,7 +40,7 @@ typedef enum {
     CANOPY_ERROR_UNKNOWN,
 
     // Bad credentials
-    CANOPY_BAD_CREDENTIALS,
+    CANOPY_ERROR_BAD_CREDENTIALS,
 
     /* something internal is bad */
     CANOPY_ERROR_FATAL,
@@ -76,17 +78,17 @@ struct error_strings {
 };
 struct error_strings canopy_error_strings_table[] = {
         {CANOPY_SUCCESS, "success"},
-        {CANOPY_ERROR_UNKOWN, "unknown error"},
-        {CANOPY_BAD_CREDENTIALS, "bad credentials"},
+        {CANOPY_ERROR_UNKNOWN, "unknown error"},
+        {CANOPY_ERROR_BAD_CREDENTIALS, "bad credentials"},
         {CANOPY_ERROR_FATAL, "fatal error"},
-        {CANOPY_INCOMPATIBLE_LIBRARY_VERSION, "incompatible library version"},
-        {CANOPY_NOT_IMPLEMENTED, "not implemented yet"},
-        {CANOPY_BAD_PARAM, "bad parameter"},
-        {CANOPY_WRONG_TYPE, "wrong datatype"},
+        {CANOPY_ERROR_INCOMPATIBLE_LIBRARY_VERSION, "incompatible library version"},
+        {CANOPY_ERROR_NOT_IMPLEMENTED, "not implemented yet"},
+        {CANOPY_ERROR_BAD_PARAM, "bad parameter"},
+        {CANOPY_ERROR_WRONG_TYPE, "wrong datatype"},
         {CANOPY_ERROR_AGAIN, "try again"},
         {CANOPY_ERROR_CANCELLED, "operation was cancelled"},
-        {CANOPY_VAR_NOT_FOUND, "cloud variable not found"},
-        {CANOPY_VAR_NOT_SET, "cloud variable has never been set"}
+        {CANOPY_ERROR_VAR_NOT_FOUND, "cloud variable not found"},
+        {CANOPY_ERROR_VAR_NOT_SET, "cloud variable has never been set"}
 };
 
 inline const char *canopy_error_string(canopy_error err) {
@@ -131,16 +133,7 @@ extern canopy_error canopy_ctx_shutdown(canopy_context_t *ctx);
 // use stderr or the system's default logging destination.  Defaults to
 // NULL.
 //
-// <level> defines the logging level
-#define LOG_LEVEL_FATAL  0x0001
-#define LOG_LEVEL_ERROR  0x0002
-#define LOG_LEVEL_WARN   0x0004
-#define LOG_LEVEL_INFO   0x0008
-#define LOG_LEVEL_DEBUG  0x0010
-#define LOG_LEVEL_ERROR_OR_HIGHER  (LOG_LEVEL_ERROR | LOG_LEVEL_FATAL)
-#define LOG_LEVEL_WARN_OR_HIGHER  (LOG_LEVEL_WARN | LOG_LEVEL_ERROR_OR_HIGHER)
-#define LOG_LEVEL_INFO_OR_HIGHER  (LOG_LEVEL_INFO | LOG_LEVEL_WARN_OR_HIGHER)
-#define LOG_LEVEL_DEBUG_OR_HIGHER  (LOG_LEVEL_DEBUG | LOG_LEVEL_INFO_OR_HIGHER)
+// <level> defines the logging level.  See canopy_os.h for level definitions.
 extern canopy_error canopy_ctx_set_logging(canopy_context_t *ctx,
         bool enabled,
         const char *logfile,
@@ -966,13 +959,13 @@ canopy_error canopy_var_get_datetime(canopy_var_t *var,
         canopy_time_t *value,
         canopy_time_t *last_time);
 canopy_error canopy_var_get_float32(canopy_var_t *var, 
-        float value,
+        float *value,
         canopy_time_t *last_time);
 canopy_error canopy_var_get_float64(canopy_var_t *var, 
-        double value,
+        double *value,
         canopy_time_t *last_time);
 canopy_error canopy_var_get_string(canopy_var_t *var, 
-        char *dest, 
+        char *buf, 
         size_t len,
         size_t *out_len,
         canopy_time_t *last_time);

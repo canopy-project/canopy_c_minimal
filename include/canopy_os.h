@@ -45,10 +45,19 @@ void * canopy_os_alloc(size_t size);
 void * canopy_os_calloc(int count, size_t size);
 void canopy_os_free(void *ptr);
 
-#define CANOPY_OS_MSG_MAX_LENGTH 127
+#define LOG_LEVEL_FATAL  0x0001
+#define LOG_LEVEL_ERROR  0x0002
+#define LOG_LEVEL_WARN   0x0004
+#define LOG_LEVEL_INFO   0x0008
+#define LOG_LEVEL_DEBUG  0x0010
+#define LOG_LEVEL_ERROR_OR_HIGHER  (LOG_LEVEL_ERROR | LOG_LEVEL_FATAL)
+#define LOG_LEVEL_WARN_OR_HIGHER  (LOG_LEVEL_WARN | LOG_LEVEL_ERROR_OR_HIGHER)
+#define LOG_LEVEL_INFO_OR_HIGHER  (LOG_LEVEL_INFO | LOG_LEVEL_WARN_OR_HIGHER)
+#define LOG_LEVEL_DEBUG_OR_HIGHER  (LOG_LEVEL_DEBUG | LOG_LEVEL_INFO_OR_HIGHER)
 
+#define CANOPY_OS_MSG_MAX_LENGTH 127
 int canopy_os_vsnprintf(char *buf, size_t len, const char *msg, va_list ap);
-void canopy_os_log(const char *msg, ...);
+void canopy_os_log(int level, const char *msg, ...);
 
 char * canopy_os_strdup(const char *src);
 

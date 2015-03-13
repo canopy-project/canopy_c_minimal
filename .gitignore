@@ -1,4 +1,5 @@
 # ignore the 'gch' things
 *.gch
+*.swp
 *.o
 *.d

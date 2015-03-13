@@ -12,12 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <canopy_min.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
 #include <string.h>
+
+#include <canopy_min.h>
+#include <canopy_os.h>
 
 #define TOASTER_UUID "e43eb410-48da-421a-b07d-1cd751412fd5"
 #define TOASTER_SECRET_KEY "wYI0G+HQN9fj76fpyxwiHKJDQags0dpM"
@@ -37,7 +39,7 @@ int main(void) {
     // Initialize canopy ctx
     err = canopy_ctx_init(&ctx, 0);
     if (err != CANOPY_SUCCESS) {
-        fprintf(stderr, "Error initializing ctx: %s\n", canopy_error_string(err));
+        canopy_os_log(LOG_LEVEL_ERROR, "Error initializing ctx: %s\n", canopy_error_string(err));
         exit(-1);
     }
 
@@ -52,14 +54,14 @@ int main(void) {
     params.persistent = false;
     err = canopy_remote_init(&ctx, &params, &remote);
     if (err != CANOPY_SUCCESS) {
-        fprintf(stderr, "Error initializing remote: %s\n", canopy_error_string(err));
+        canopy_os_log(LOG_LEVEL_ERROR, "Error initializing remote: %s\n", canopy_error_string(err));
         goto cleanup;
     }
 
     // Get self device (blocking)
     err = canopy_get_self_device(&remote, &device, NULL);
     if (err != CANOPY_SUCCESS) {
-        fprintf(stderr, "Error fetching self device: %s\n", canopy_error_string(err));
+        canopy_os_log(LOG_LEVEL_ERROR, "Error fetching self device: %s\n", canopy_error_string(err));
         goto cleanup;
     }
 
@@ -70,12 +72,12 @@ int main(void) {
             "temp_sensor",
             &temp_sensor);
     if (err != CANOPY_SUCCESS) {
-        fprintf(stderr, "Error initializing var temp_sensor: %s\n", canopy_error_string(err));
+        canopy_os_log(LOG_LEVEL_ERROR, "Error initializing var temp_sensor: %s\n", canopy_error_string(err));
         goto cleanup;
     }
     err = canopy_var_set_float32(&temp_sensor, 42.0f);
     if (err != CANOPY_SUCCESS) {
-        fprintf(stderr, "Error setting temp_sensor value: %s\n", canopy_error_string(err));
+        canopy_os_log(LOG_LEVEL_ERROR, "Error setting temp_sensor value: %s\n", canopy_error_string(err));
         goto cleanup;
     }
 
@@ -85,27 +87,27 @@ int main(void) {
             "darkness",
             &darkness);
     if (err != CANOPY_SUCCESS) {
-        fprintf(stderr, "Error initializing var darkness: %s\n", canopy_error_string(err));
+        canopy_os_log(LOG_LEVEL_ERROR, "Error initializing var darkness: %s\n", canopy_error_string(err));
         goto cleanup;
     }
 
     // sync with remote (blocking)
     err = canopy_device_sync_with_remote(&remote, &device, NULL);
     if (err != CANOPY_SUCCESS) {
-        fprintf(stderr, "Error syncing with remote: %s\n", canopy_error_string(err));
+        canopy_os_log(LOG_LEVEL_ERROR, "Error syncing with remote: %s\n", canopy_error_string(err));
         goto cleanup;
     }
 
     // read darkness level
     err = canopy_var_get_float32(&darkness, &darkness_val, &time);
     if (err == CANOPY_ERROR_VAR_NOT_SET) {
-        fprintf(stdout, "darkness not set\n");
+        canopy_os_log(LOG_LEVEL_INFO, "darkness not set\n");
     } else if (err != CANOPY_SUCCESS) {
-        fprintf(stderr, "Error reading darkness level\n", canopy_error_string(err));
+        canopy_os_log(LOG_LEVEL_ERROR, "Error reading darkness level\n", canopy_error_string(err));
         goto cleanup;
     } else {
-        fprintf(stdout, "darkness is %f\n", darkness_val);
-        fprintf(stdout, "last updated %d\n", time);
+        canopy_os_log(LOG_LEVEL_INFO, "darkness is %f\n", darkness_val);
+        canopy_os_log(LOG_LEVEL_INFO, "last updated %d\n", time);
     }
 
 
