@@ -15,21 +15,16 @@
 
 CFLAGS_INCLUDES	 += -I. -I../../include
 
-CFLAGS += $(CFLAGS_INCLUDES) -g
+CFLAGS += $(CFLAGS_INCLUDES) -g -c
 
-PROGRAM_FILES	=	toaster
+OBJ_FILES	=	linux_os.o
 
-NEEDED_H_FILES	= \
-        ../../include/canopy_min.h \
-        ../../include/canopy_os.h
+NEEDED_H_FILES	=	../../include/canopy_os.h
 
-default: $(PROGRAM_FILES)
-
-toaster: toaster.c $(NEEDED_H_FILES)
-	$(CC) $(CFLAGS) toaster.c -g -o toaster
+default: $(OBJ_FILES) $(NEEDED_H_FILES)
 
 clean:
-	rm -rf $(PROGRAM_FILES) *.o *.d
+	rm -rf *.o *.d
 
 install:
 	@echo "No install target"
