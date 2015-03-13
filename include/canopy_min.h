@@ -23,6 +23,7 @@
 // header also link with the same version number of the library.
 #define CANOPY_MIN_HEADER_VERSION "15.02.030"
 
+typedef unsigned long canopy_time_t;
 
 /*****************************************************************************/
 // ERRORS
@@ -35,6 +36,9 @@ typedef enum {
     
     // An unknown error occured.
     CANOPY_ERROR_UNKNOWN,
+
+    // Bad credentials
+    CANOPY_BAD_CREDENTIALS,
 
     /* something internal is bad */
     CANOPY_ERROR_FATAL,
@@ -58,6 +62,9 @@ typedef enum {
 
     // The requested operation was cancelled.
     CANOPY_ERROR_CANCELLED,
+
+    // Requested variable was not found
+    CANOPY_ERROR_VAR_NOT_FOUND,
 } canopy_error;
 
 /*****************************************************************************/
@@ -228,6 +235,43 @@ extern canopy_error canopy_barrier_get_user(canopy_barrier_t *barrier,
 
 
 /*****************************************************************************/
+// PERMISSIONS
+//
+//  Results returned from the server are the "intersection" of objects that
+//  meet three criteria:
+//      1) Authenticated entity (user->remote credentials or device->remote
+//         credentials) has access.
+//      2) The device/user specified in the URL has access.
+//      3) It meets any filtering criteria.
+//
+//  In the case of:
+//
+//      GET /api/device/self/devices
+//
+//  The criteria (1) and (2) are the same, because the authenticated device is
+//  also the device specified in the URL (as "self").
+//
+//  When criteria (1) and (2) differ, it can be interpreted as "Show me a list
+//  of entities, from the perspective of the device/user in the URL".  This is
+//  particularly useful for superusers who may have access to everything, but
+//  would like to see permission relationships (such as the "toaster" has
+//  access to the "fire alarm").
+//
+//  WWW-Authenticate: Basic "UUID:SECRET"
+//
+//  
+//
+//  curl -u "greg:password" https://dev02.canopy.link/api/user/self/devices
+//
+//  curl -u "TOASTER:SECRET" https://dev02.canopy.link/api/device/self/devices
+//
+
+
+typedef struct canopy_permissions {
+    // TBD
+} canopy_permissions_t;
+
+/*****************************************************************************/
 
 /*
  * Authentication type, right now only basic is supported
@@ -386,7 +430,6 @@ typedef enum {
  * Specifies the variable and value to filter by.
  */
 typedef struct filter_term {
-    bool is_builtin;
     const char *variable_name;
     const char *value; // TBD should we use canopy_var_value_t here?
     canopy_relation_op relation;
@@ -529,11 +572,11 @@ typedef struct canopy_limits {
 } canopy_limits_t;
 
 
-typedef struct canopy_device_query {
+typedef struct canopy_query {
     canopy_filter_root_t *filter_root;      /* the list used for filtering which devices to report. */
     canopy_sort_t *sort;        /* defines the sort order.  If null the result list is unordered. */
     canopy_limits_t *limits;    /* How many to return */
-} canopy_device_query_t;
+} canopy_query_t;
 
 
 /*****************************************************************************/
@@ -561,18 +604,18 @@ extern canopy_error canopy_remote_shutdown(canopy_remote_t *remote);
 // Get the remote's clock in milliseconds.  The returned value has no relation
 // to wall clock time, but is monotonically increasing and is reported
 // consistently by the remote to anyone who asks.
-extern canopy_error canopy_remote_get_clock_ms(canopy_remote_t *remote,
-        unsigned long *out_timestamp,
+extern canopy_error canopy_remote_get_time(canopy_remote_t *remote,
+        canopy_time_t *time,
         canopy_barrier_t *barrier);
 
 // Get our version of the remote's clock in milliseconds.  This is based on the
-// time obtained the last time canopy_remote_get_clock_ms was called, plus
+// time obtained the last time canopy_remote_get_clock_time was called, plus
 // however much time has elapsed since then.
 //
-// Returns CANOPY_ERROR_AGAIN if canopy_remote_get_clock_ms() has never been
+// Returns CANOPY_ERROR_AGAIN if canopy_remote_get_time() has never been
 // called for <remote>.
-extern canopy_error canopy_get_local_ms(canopy_remote_t *remote,
-        unsigned long *out_timestamp);
+extern canopy_error canopy_get_local_time(canopy_remote_t *remote,
+        canopy_time_t *time);
 
 // Get a list of devices from the server based on the filters in a device query
 // object.
@@ -591,7 +634,7 @@ extern canopy_error canopy_get_local_ms(canopy_remote_t *remote,
 // result when it is ready.  If NULL, this operation will block the current
 // thread.
 extern canopy_error canopy_remote_get_devices(canopy_remote_t *remote,
-        struct canopy_device_query *query,
+        struct canopy_query *query,
         size_t max_count, 
         struct canopy_device **devices,
         struct canopy_barrier *barrier);
@@ -609,7 +652,7 @@ extern canopy_error canopy_remote_get_devices(canopy_remote_t *remote,
 // <barrier> will store a new barrier object that can be used to obtain the
 // result when it is ready.  If NULL, this operation will block the current
 // thread.
-extern canopy_error canopy_get_my_device(canopy_remote_t *remote,
+extern canopy_error canopy_get_self_device(canopy_remote_t *remote,
         struct canopy_device *device,
         canopy_barrier_t *barrier);
 
@@ -625,7 +668,7 @@ extern canopy_error canopy_get_my_device(canopy_remote_t *remote,
 //
 // <barrier> will store a new barrier object that can be used to obtain the
 // result when it is ready.
-extern canopy_error canopy_get_my_user(canopy_remote_t *remote,
+extern canopy_error canopy_get_self_user(canopy_remote_t *remote,
         struct canopy_user *user,
         canopy_barrier_t *barrier);
 
@@ -650,16 +693,16 @@ typedef struct canopy_device {
 // status or properties with a more recent clock ms value will be updated
 // locally.
 extern canopy_error canopy_device_update_from_remote(
-        canopy_device_t *device, 
         canopy_remote_t *remote,
+        canopy_device_t *device, 
         canopy_barrier_t *barrier);
 
 // Updates a device object's status and properties to the remote server.  Any
 // status or properties with a more recent clock ms value will be updated
 // remotely.
 extern canopy_error canopy_device_update_to_remote(
-        canopy_device_t *device, 
         canopy_remote_t *remote,
+        canopy_device_t *device, 
         canopy_barrier_t *barrier);
 
 // Synchronizes a device object with the remote server.
@@ -669,9 +712,9 @@ extern canopy_error canopy_device_update_to_remote(
 //  canopy_device_update_from_remote(device, remote, NULL);
 //  canopy_device_update_to_remote(device, remote, barrier);
 //
-extern canopy_error canopy_device_sync_to_remote(
-        canopy_device_t *device, 
+extern canopy_error canopy_device_sync_with_remote(
         canopy_remote_t *remote,
+        canopy_device_t *device, 
         canopy_barrier_t *barrier);
 
 // Get the active status for a device.
@@ -680,29 +723,22 @@ extern canopy_error canopy_device_get_active_status(
         canopy_active_status *active_status,
         canopy_ws_connection_status *ws_status);
 
-
 /*****************************************************************************/
 // USERS
 
 typedef struct canopy_user {
     struct canopy_user *next;
+    canopy_remote_t *remote;
     bool is_activated;
     char *name;
 } canopy_user_t;
-
-typedef struct canopy_user_query {
-    // TBD
-} canopy_user_query_t;
-
-typedef struct canopy_permissions {
-    // TBD
-} canopy_permissions_t;
 
 // Goes to remote
 extern canopy_error canopy_create_user(canopy_remote_t *remote,
         const char *username,
         const char *password,
         const char *email,
+        bool skip_email,
         canopy_user_t *out_user,
         canopy_barrier_t *barrier);
 
@@ -713,11 +749,20 @@ extern canopy_error canopy_user_create_devices(canopy_user_t *user,
         canopy_device_t **out_devices,
         canopy_barrier_t *barrier);
 
+/*
+ * Obtained from local copy of the user.  To fetch latest data from the remote
+ * be sure to call canopy_user_update_from_remote() or
+ * canopy_user_sync_with_remote().
+ */
 extern canopy_error canopy_user_get_email(canopy_user_t *user, char **email);
 extern canopy_error canopy_user_get_username(canopy_user_t *user, char **username);
 extern canopy_error canopy_user_is_validated(canopy_user_t *user, bool *validated);
-extern canopy_error canopy_user_devices(canopy_user_t *user, canopy_device_query_t *query);
 
+
+/*
+ * Changes local copy of the user's email.  To update the remote be sure to
+ * call canopy_user_update_to_remote() or canopy_user_sync_with_remote().
+ */
 extern canopy_error canopy_user_set_email(canopy_user_t *user, const char *email);
 extern canopy_error canopy_user_set_password(canopy_user_t *user,
         const char *old_password,
@@ -727,16 +772,16 @@ extern canopy_error canopy_user_set_password(canopy_user_t *user,
 // server.  Any properties with a more recent clock ms value will be updated
 // locally.
 extern canopy_error canopy_user_update_from_remote(
-        canopy_user_t *user, 
         canopy_remote_t *remote,
+        canopy_user_t *user, 
         canopy_barrier_t *barrier);
 
 // Updates a user object's properties (excluding devices) to the remote
 // server.  Any properties with a more recent clock ms value will be updated
 // remotely.
 extern canopy_error canopy_user_update_to_remote(
-        canopy_user_t *user, 
         canopy_remote_t *remote,
+        canopy_user_t *user, 
         canopy_barrier_t *barrier);
 
 // Synchronizes a user object with the remote server.
@@ -745,12 +790,49 @@ extern canopy_error canopy_user_update_to_remote(
 // Roughly equivalent to:
 //  canopy_user_update_from_remote(user, remote, NULL);
 //  canopy_user_update_to_remote(user, remote, barrier);
-extern canopy_error canopy_user_sync_to_remote(
+extern canopy_error canopy_user_sync_with_remote(
         canopy_user_t *user, 
         canopy_remote_t *remote,
         canopy_barrier_t *barrier);
 
+/*****************************************************************************/
+// QUERIES
 
+// Get list of devices based on a query.
+//
+//  The list of devices obtained will only include devices that satisfy these criteria:
+//      1) The credentials provided to the remote can access it.
+//      2) The <device> can access it.
+//      3) It satifsies the query.
+//      
+//      WWW-Authentication: BASIC <remote.name>:<remote.password>
+//      GET /api/device/<device.uuid>/devices?sort=<query.sort>&filter=<query.filter>&limit=<query.limit>
+extern canopy_error canopy_device_devices(
+        canopy_remote_t *remote, 
+        canopy_device_t *device, 
+        canopy_query_t *query,
+        canopy_barrier_t *barrier);
+
+// Get list of users a device has access to based on a query.
+extern canopy_error canopy_device_users(
+        canopy_remote_t *remote, 
+        canopy_device_t *device, 
+        canopy_query_t *query,
+        canopy_barrier_t *barrier);
+
+// Get list of devices a user has access to based on a query.
+extern canopy_error canopy_user_devices(
+        canopy_remote_t *remote, 
+        canopy_user_t *user, 
+        canopy_query_t *query,
+        canopy_barrier_t *barrier);
+
+// Get list of users a user has access to based on a query.
+extern canopy_error canopy_user_users(
+        canopy_remote_t *remote, 
+        canopy_user_t *user, 
+        canopy_query_t *query,
+        canopy_barrier_t *barrier);
 
 /*****************************************************************************/
 
@@ -779,8 +861,6 @@ typedef enum {
     CANOPY_VAR_DATATYPE_STRUCT,
     CANOPY_VAR_DATATYPE_ARRAY,
 } canopy_var_datatype;
-
-typedef unsigned long canopy_time_t;
 
 #define CANOPY_VAR_VALUE_MAX_LENGTH 128
 typedef struct canopy_var_value {
@@ -819,6 +899,10 @@ canopy_error canopy_device_var_init(canopy_device_t *device,
         const char *name,
         canopy_var_t *out_var);
 
+canopy_error canopy_device_get_var_by_name(canopy_device_t *device, 
+        const char *var_name, 
+        canopy_var_t *var);
+
 canopy_error canopy_var_set_bool(canopy_var_t *var, bool value);
 canopy_error canopy_var_set_int8(canopy_var_t *var, int8_t value);
 canopy_error canopy_var_set_int16(canopy_var_t *var, int16_t value);
@@ -833,39 +917,39 @@ canopy_error canopy_var_set_string(canopy_var_t *var, const char *value, size_t 
 
 canopy_error canopy_var_get_bool(canopy_var_t *var, 
         bool *value,
-        unsigned long *last_ms);
+        canopy_time_t *last_time);
 canopy_error canopy_var_get_int8(canopy_var_t *var, 
         int8_t *value,
-        unsigned long *last_ms);
+        canopy_time_t *last_time);
 canopy_error canopy_var_get_int16(canopy_var_t *var, 
         int16_t *value,
-        unsigned long *last_ms);
+        canopy_time_t *last_time);
 canopy_error canopy_var_get_int32(canopy_var_t *var, 
         uint32_t *value,
-        unsigned long *last_ms);
+        canopy_time_t *last_time);
 canopy_error canopy_var_get_uint8(canopy_var_t *var, 
         uint8_t *value,
-        unsigned long *last_ms);
+        canopy_time_t *last_time);
 canopy_error canopy_var_get_uint16(canopy_var_t *var, 
         uint16_t *value,
-        unsigned long *last_ms);
+        canopy_time_t *last_time);
 canopy_error canopy_var_get_uint32(canopy_var_t *var, 
         uint32_t *value,
-        unsigned long *last_ms);
+        canopy_time_t *last_time);
 canopy_error canopy_var_get_datetime(canopy_var_t *var, 
         canopy_time_t *value,
-        unsigned long *last_ms);
+        canopy_time_t *last_time);
 canopy_error canopy_var_get_float32(canopy_var_t *var, 
         float value,
-        unsigned long *last_ms);
+        canopy_time_t *last_time);
 canopy_error canopy_var_get_float64(canopy_var_t *var, 
         double value,
-        unsigned long *last_ms);
+        canopy_time_t *last_time);
 canopy_error canopy_var_get_string(canopy_var_t *var, 
         char *dest, 
         size_t len,
         size_t *out_len,
-        unsigned long *last_ms);
+        canopy_time_t *last_time);
 
 /*
  *  myVar = device.varInit("out", "float32", "temperature");

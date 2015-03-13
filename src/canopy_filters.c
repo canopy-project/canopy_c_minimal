@@ -44,7 +44,6 @@ canopy_error append_term_filter(canopy_filter_root_t *root,
 
 	filter_term_t *term = &ft->onion.term;
 	ft->type = TERM;
-	term->is_builtin = false;
 	term->variable_name = variable_name;
 	term->value = value;
 	term->relation = relation;
