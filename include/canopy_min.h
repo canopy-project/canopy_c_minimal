@@ -293,7 +293,7 @@ typedef enum {
  * the filters.  The idea is that you would use this lookup table when referring to
  * canopy_active_status.
  */
-#define  CANOPY_ACTIVE_STATUS "active_status"
+#define  CANOPY_ACTIVE_STATUS "system.active_status"
 struct activity_status {
     canopy_active_status status;
     const char *str;
@@ -333,7 +333,7 @@ typedef enum {
  * as used in the filters.  The idea is that you would use this lookup table
  * when referring to canopy_ws_connection_status.
  */
-#define  CANOPY_ACTIVE_STATUS "active_status"
+#define  CANOPY_WS_CONNECTION_STATUS "system.ws_connection_status"
 struct ws_connection_status {
     canopy_ws_connection_status status;
     const char *str;
@@ -356,27 +356,14 @@ struct ws_connection_status ws_connection_status_table[] = {
  * A query consists of a list of filters, a sort order, and a limit specifying how many devices or users
  * to return.
  *
- * Filters consist of a list of filter_terms and term relations.  The first filter in the chain on the
- * query is the first entry on the stack, followed by the second....  They are processed like an HP calculator, reverse
- * polish notation.
+ * Filters consist of a list of filter_terms and term relations.  The first
+ * filter in the chain on the query is the first entry on the stack, followed
+ * by the second....
  *
- * Filter terms
- *         variable    relation    value
- *         "TERM temperature < 50"
- *
- * Unary boolean operators
- *         'UNARY variable HAS'        -- Evaluates TRUE if the variable exists on this device
- *         'UNARY term NOT'            -- The term is not true
- *
- * Boolean operators
- *         term term 'BOOL AND'        -- Evaluates TRUE if both terms are true
- *         term term 'BOOL OR'        -- Evaluates TRUE if one of them terms is true
- *
- * Example:
- *     The device has a variable called temperature, and it's < 50 or > 80
- *         '"UNARY temperature HAS" "TERM temperature < 50" "TERM temperature > 80" "BOOL OR" "BOOL AND"'
- *
- *
+ * The filter is sent to the server in the URL query string.
+ * 
+ * Pre-encoded Example:
+ *      (temperature > 40 && temperature < 80.5) || system.ws_connected == false
  */
 
 /******************************************************
@@ -436,6 +423,12 @@ typedef struct boolean_filter {
     enum boolean_type type;
 } boolean_filter_t;
 
+/******************************************************
+ *  PARENTHESIS FILTER ELEMENT
+ */
+typedef struct paren_filter {
+    bool open; /* 1=open paren, 0=close paren */
+} paren_filter_t;
 
 /*******************************************************
  * FILTER CONSTRUCTION
@@ -447,6 +440,7 @@ enum ftype {
     TERM,
     UNARY,
     BOOLEAN,
+    PAREN,
 };
 
 /*
@@ -457,9 +451,10 @@ typedef struct canopy_filter {
     struct canopy_filter    *next;
     enum ftype type;
     union {
-        filter_term_t        term;
-        unary_filter_t        unary;
-        boolean_filter_t    boolean;
+        filter_term_t term;
+        unary_filter_t unary;
+        boolean_filter_t boolean;
+        paren_filter_t paren;
     } onion;
 } canopy_filter_t;
 
@@ -485,28 +480,59 @@ extern canopy_error append_unary_filter(canopy_filter_root_t *root, canopy_filte
 extern canopy_error append_boolean_filter(canopy_filter_root_t *root, canopy_filter_t *ft,
         enum boolean_type type);
 
+extern canopy_error append_open_paren_filter(canopy_filter_root_t *root, canopy_filter_t *ft);
+extern canopy_error append_close_paren_filter(canopy_filter_root_t *root, canopy_filter_t *ft);
+
+
 
 
 /************************************************************
  * Canopy sort definitions
  */
-typedef struct canopy_sort {
+/*
+ *  Sort order is sent in the URL query string.  It is a comma-separated list
+ *  of variable names.  By default the order is ascending.  Bang (!) in front
+ *  of a variable name is used to specify descending order.
+ *
+ *  ex:
+ *      "temperature,!humidity"
+ */
+enum sort_direction {
+    NONE=0,
+    ASCENDING=1,
+    DESCENDING=2,
+    RANDOM=3
+};
+typedef struct canopy_sort_term {
+    char *varname;
+    enum sort_direction direction;
+} canopy_sort_term_t;
 
+typedef struct canopy_sort {
+    int cnt;
+    canopy_sort_term_t *terms;
 } canopy_sort_t;
 
 /************************************************************
  * Canopy limit definitions
  */
+/*
+ *  Limit is sent in the URL query string, with start followed by a comma ","
+ *  followed by count.
+ *
+ *  ex:
+ *      5,30
+ */
 typedef struct canopy_limits {
     uint32_t             start;    /* which entry to start with, 0 starts at the head of the list */
-    uint32_t            count;    /* how many to return */
+    uint32_t             count;    /* how many to return */
 } canopy_limits_t;
 
 
 typedef struct canopy_device_query {
-    canopy_filter_root_t     *filter_root;      /* the list used for filtering which devices to report. */
-    canopy_sort_t         *sort;        /* defines the sort order.  If null the result list is unordered. */
-    canopy_limits_t        *limits;    /* How many to return */
+    canopy_filter_root_t *filter_root;      /* the list used for filtering which devices to report. */
+    canopy_sort_t *sort;        /* defines the sort order.  If null the result list is unordered. */
+    canopy_limits_t *limits;    /* How many to return */
 } canopy_device_query_t;
 
 
