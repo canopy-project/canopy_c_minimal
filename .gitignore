@@ -1,2 +1,4 @@
 # ignore the 'gch' things
 *.gch
+*.o
+*.d

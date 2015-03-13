@@ -13,14 +13,22 @@
 # limitations under the License.
 
 
+CFLAGS_INCLUDES	 += -I. -I../include
 
-all:
-	$(MAKE) -C src
+CFLAGS += $(CFLAGS_INCLUDES) -g -c
+
+OBJ_FILES	=	canopy_filters.o
+
+NEEDED_H_FILES	=	../include/canopy_min.h
+
+default: $(OBJ_FILES) $(NEEDED_H_FILES)
 
 clean:
-	$(MAKE) -C src clean
+	rm -rf *.o *.d
 
 install:
-	$(MAKE) -C src install
+	@echo "No install target"
+	
+
 
 

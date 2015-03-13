@@ -17,58 +17,141 @@
 
 #include	<canopy_min.h>
 
-canopy_error append_term_filter(canopy_filter_root_t *root, filter_term_t *ft,
+/*****************************************************************************/
+
+static void append(canopy_filter_root_t *root, canopy_filter_t *ft);
+
+
+/*****************************************************************************/
+
+/**************************************
+ * append_term_filter()
+ *
+ * 	Appends this term filter to the end of the chain in the root.
+ */
+canopy_error append_term_filter(canopy_filter_root_t *root,
+		canopy_filter_t *ft,
 		const char *variable_name,
 		const char *value, /*  TBD should we use canopy_var_value_t here? */
 		canopy_relation_op relation
 		) {
 	if (root == NULL) {
-		return CANOPY_ERROR_FATAL;
+		return CANOPY_ERROR_BAD_PARAM;
 	}
 	if (ft == NULL) {
-		return CANOPY_ERROR_FATAL;
+		return CANOPY_ERROR_BAD_PARAM;
 	}
 
-	ft->is_builtin = false;
-	ft->variable_name = variable_name;
-	ft->value = value;
-	ft->relation = relation;
+	filter_term_t *term = &ft->onion.term;
+	ft->type = TERM;
+	term->is_builtin = false;
+	term->variable_name = variable_name;
+	term->value = value;
+	term->relation = relation;
 
-	if (root->head == NULL) {
-		root->head = ft;
-		root->tail = ft;
-	} else {
-		root->tail->next = ft;
-		ft->next = NULL;
-	}
+	append(root, ft);
 	return CANOPY_SUCCESS;
 }
 
-canopy_error append_unary_filter(canopy_filter_root_t *root, unary_filter_t *ut,
+canopy_error append_unary_filter(canopy_filter_root_t *root,
+		canopy_filter_t *ft,
 		enum unary_type type,
 		const char *variable_name	/* only used for HAS */
 		) {
 	if (root == NULL) {
-		return CANOPY_ERROR_FATAL;
+		return CANOPY_ERROR_BAD_PARAM;
 	}
-	if (ut == NULL) {
-		return CANOPY_ERROR_FATAL;
+	if (ft == NULL) {
+		return CANOPY_ERROR_BAD_PARAM;
 	}
 
-	return CANOPY_ERROR_NOT_IMPLEMENTED;
+	unary_filter_t *unary = &ft->onion.unary;
+	unary->type = type;
+	unary->variable_name = variable_name;
+	ft->type = UNARY;
+
+	append(root, ft);
+	return CANOPY_SUCCESS;
 
 }
 
-canopy_error append_boolean_filter(canopy_filter_root_t *root, boolean_filter_t *bt,
+canopy_error append_boolean_filter(canopy_filter_root_t *root,
+		canopy_filter_t *ft,
 		enum boolean_type type) {
 	if (root == NULL) {
-		return CANOPY_ERROR_FATAL;
+		return CANOPY_ERROR_BAD_PARAM;
 	}
-	if (bt == NULL) {
-		return CANOPY_ERROR_FATAL;
+	if (ft == NULL) {
+		return CANOPY_ERROR_BAD_PARAM;
 	}
 
-	return CANOPY_ERROR_NOT_IMPLEMENTED;
+	boolean_filter_t *boolean = &ft->onion.boolean;
+	boolean->type = type;
+	ft->type = BOOLEAN;
+
+	append(root, ft);
+	return CANOPY_SUCCESS;
+}
+
+/****************************************************
+ * append()
+ */
+static void append(canopy_filter_root_t *root, canopy_filter_t *ft) {
+	ft->next = NULL;
+	if (root->head == NULL) {
+
+		/*
+		 * The root head is NULL so this is the first filter in the list.  It's
+		 * also the last one in the list so tail points to it as well.
+		 */
+		root->head = ft;
+		root->tail = ft;
+	} else {
+
+		/*
+		 * fixup the tail pointer.  tail points to the last filter in the list
+		 * That pointer should have NULL in ->next.  Set ->next to this filter
+		 * so that the link is setup.  Then set the tail to this filter.
+		 */
+		root->tail->next = ft;
+		root->tail = ft;
+		ft->next = NULL;
+
+		/*
+		 * This is here for me to remember how lists work.
+		 *
+		 * root->ft1
+		 * tail->ft1
+		 * 		(tail->ft1->next is null.)
+		 *
+		 * tail->ft1->next = ft2;
+		 * tail->ft1 = ft2;
+		 * ft2->next = NULL;
+		 *
+		 * tail->ft2->next = ft3;
+		 * tail->ft3;
+		 * ft3->next = NULL;
+		 *
+		 * Following the list
+		 *
+		 * fts = root;
+		 * while (fts != NULL) {
+		 * 		fts->filter....
+		 * 		fts = fts->next;
+		 * }
+		 * 	First loop:
+		 * 		fts points to ft1
+		 * 	next loop
+		 * 		fts points to ft2
+		 * 	next loop
+		 * 		fts points to ft3
+		 * 	next loop
+		 * 		exits because ft3->next is null.
+		 *
+		 *
+		 */
+	}
 
 }
+
 
