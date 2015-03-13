@@ -17,18 +17,21 @@ CFLAGS_INCLUDES	 += -I. -I../../include
 
 CFLAGS += $(CFLAGS_INCLUDES) -g -c
 
-OBJ_FILES	=	linux_os.o
+SOURCE_FILES	=	linux_os.c
+
+TARGET := libcanopy_os.so
 
 NEEDED_H_FILES	=	../../include/canopy_os.h
 
-default: $(OBJ_FILES) $(NEEDED_H_FILES)
+default: $(TARGET)
 
 clean:
-	rm -rf *.o *.d
+	rm -rf *.o *.d *.so
 
 install:
 	@echo "No install target"
-	
 
-
-
+libcanopy_os.so: $(SOURCE_FILES) $(NEEDED_H_FILES)
+	$(CC) -fPIC -rdynamic -shared \
+                   $(CFLAGS_INCLUDES) $(SOURCE_FILES) $(CFLAGS) \
+                   -o libcanopy_os.so

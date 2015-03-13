@@ -13,20 +13,22 @@
 # limitations under the License.
 
 
-CFLAGS_INCLUDES	 += -I. -I../../include
+CFLAGS_INCLUDES	 += -I. -I../include
 
 CFLAGS += $(CFLAGS_INCLUDES) -g
 
 PROGRAM_FILES	=	toaster
 
+LIBS	=	-L../src/ -lcanopy -L../src/linux -lcanopy_os
+
 NEEDED_H_FILES	= \
-        ../../include/canopy_min.h \
-        ../../include/canopy_os.h
+        ../include/canopy_min.h \
+        ../include/canopy_os.h
 
 default: $(PROGRAM_FILES)
 
 toaster: toaster.c $(NEEDED_H_FILES)
-	$(CC) $(CFLAGS) toaster.c -g -o toaster
+	$(CC) $(CFLAGS) toaster.c -g -o toaster $(LIBS)
 
 clean:
 	rm -rf $(PROGRAM_FILES) *.o *.d

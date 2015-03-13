@@ -72,11 +72,11 @@ typedef enum {
     CANOPY_ERROR_VAR_NOT_SET,
 } canopy_error;
 
-struct error_strings {
+struct canopy_error_strings {
     canopy_error err;
     const char *str;
 };
-struct error_strings canopy_error_strings_table[] = {
+const static struct canopy_error_strings canopy_error_strings_table[] = {
         {CANOPY_SUCCESS, "success"},
         {CANOPY_ERROR_UNKNOWN, "unknown error"},
         {CANOPY_ERROR_BAD_CREDENTIALS, "bad credentials"},
@@ -91,7 +91,7 @@ struct error_strings canopy_error_strings_table[] = {
         {CANOPY_ERROR_VAR_NOT_SET, "cloud variable has never been set"}
 };
 
-inline const char *canopy_error_string(canopy_error err) {
+inline static const char *canopy_error_string(canopy_error err) {
     return canopy_error_strings_table[err].str;
 }
 
@@ -361,7 +361,7 @@ struct activity_status {
     canopy_active_status status;
     const char *str;
 };
-struct activity_status activity_status_table[] = {
+const static struct activity_status activity_status_table[] = {
         {CANOPY_ACTIVE_STATUS_INVALID, "status_invalid"},
         {CANOPY_ACTIVE_STATUS_DONT_CARE, "status_dont_care"},
         {CANOPY_NEWLY_CREATED, "status_newly_created"},
@@ -401,7 +401,7 @@ struct ws_connection_status {
     canopy_ws_connection_status status;
     const char *str;
 };
-struct ws_connection_status ws_connection_status_table[] = {
+const static struct ws_connection_status ws_connection_status_table[] = {
         {CANOPY_WS_CONNECTION_STATUS_INVALID, "ws_connection_status_invalid"},
         {CANOPY_WS_CONNECTION_STATUS_DONT_CARE, "ws_connection_status_dont_care"},
         {CANOPY_WS_CONNECTION_STATUS_WS_NOT_USED, "ws_connection_status_ws_not_used"},

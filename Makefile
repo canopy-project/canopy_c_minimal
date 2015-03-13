@@ -16,11 +16,14 @@
 
 all:
 	$(MAKE) -C src
+	$(MAKE) -C src/linux
 
 clean:
 	$(MAKE) -C src clean
+	$(MAKE) -C src/linux clean
 
 install:
 	$(MAKE) -C src install
+	$(MAKE) -C src/linux install
 
 

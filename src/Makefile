@@ -17,18 +17,25 @@ CFLAGS_INCLUDES	 += -I. -I../include
 
 CFLAGS += $(CFLAGS_INCLUDES) -g -c
 
-OBJ_FILES	=	canopy_filters.o
+SOURCE_FILES := \
+                canopy_filters.c
+
+TARGET := libcanopy.so
 
 NEEDED_H_FILES	=	../include/canopy_min.h
 
-default: $(OBJ_FILES) $(NEEDED_H_FILES)
+default: $(TARGET)
 
 clean:
-	rm -rf *.o *.d
+	rm -rf *.o *.d *.so
 
 install:
 	@echo "No install target"
 	
 
+libcanopy.so: $(SOURCE_FILES) $(NEEDED_H_FILES)
+	$(CC) -fPIC -rdynamic -shared \
+                   $(CFLAGS_INCLUDES) $(SOURCE_FILES) $(CFLAGS) \
+                   -o libcanopy.so
 
 
