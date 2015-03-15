@@ -23,7 +23,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-
 void * canopy_os_alloc(size_t size) {
     return malloc(size);
 }
@@ -36,8 +35,7 @@ void canopy_os_free(void *ptr) {
     free(ptr);
 }
 
-int canopy_os_vsnprintf(char *buf, size_t len, const char *msg, va_list ap)
-{
+int canopy_os_vsnprintf(char *buf, size_t len, const char *msg, va_list ap) {
     return vsnprintf(buf, len, msg, ap);
 }
 

@@ -92,6 +92,40 @@ canopy_error append_boolean_filter(canopy_filter_root_t *root,
 	return CANOPY_SUCCESS;
 }
 
+canopy_error append_open_paren_filter(canopy_filter_root_t *root, canopy_filter_t *ft) {
+	if (root == NULL) {
+		return CANOPY_ERROR_BAD_PARAM;
+	}
+	if (ft == NULL) {
+		return CANOPY_ERROR_BAD_PARAM;
+	}
+
+	paren_filter_t *paren = &ft->onion.paren;
+	paren->open = true;
+	ft->type = PAREN;
+
+	append(root, ft);
+	return CANOPY_SUCCESS;
+
+}
+
+canopy_error append_close_paren_filter(canopy_filter_root_t *root, canopy_filter_t *ft) {
+	if (root == NULL) {
+		return CANOPY_ERROR_BAD_PARAM;
+	}
+	if (ft == NULL) {
+		return CANOPY_ERROR_BAD_PARAM;
+	}
+
+	paren_filter_t *paren = &ft->onion.paren;
+	paren->open = false;
+	ft->type = PAREN;
+
+	append(root, ft);
+	return CANOPY_SUCCESS;
+}
+
+
 /****************************************************
  * append()
  */

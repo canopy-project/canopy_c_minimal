@@ -101,13 +101,22 @@ inline static const char *canopy_error_string(canopy_error err) {
 /*
  * Represents all of the data known to the library.  The intent is that the
  * context gets initialized once at the beginning of time.
+ *
+ * NOTE: None of this stuff should be accessed directly by the client.  These
+ * details may change in the future.
  */
 typedef struct canopy_context {
+
     /* used with the status reporting stuff */
     int update_period;
 
     /* List of remotes known to the library.  This may not be needed. */
     struct canopy_remote *remotes;
+
+    /* stuff related to logging */
+    bool				enabled;
+    char*				log_file;
+    int					level;
 } canopy_context_t;
 
 

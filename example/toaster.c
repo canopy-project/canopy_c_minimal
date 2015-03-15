@@ -44,7 +44,7 @@ int main(void) {
     }
 
     // Initialize remote
-    memset(&params, sizeof(params), 0);
+    memset(&params, 0, sizeof(params));
     params.credential_type = CANOPY_DEVICE_CREDENTIALS;
     params.name = TOASTER_UUID;
     params.password = TOASTER_SECRET_KEY;

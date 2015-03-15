@@ -15,15 +15,22 @@
 #ifndef CANOPY_MIN_INCLUDED
 #define CANOPY_MIN_INCLUDED
 
+#include	<canopy_min.h>
+
+/*
+ * This is ifdefed out in case this file gets included somewhere before we
+ * populate it from canopy_min.h
+ */
+
 // This is used to verify that programs compiled using this version of the
 // header also link with the same version number of the library.
-#define CANOPY_MIN_HEADER_VERSION "15.02.030"
+#define CANOPY_MIN_HEADER_VERSION "15.02.30"
 
-typedef struct CanopyClient_t {
 
-} CanopyClient_t;
+/*
+ * Procedures related to canopy_remote's
+ */
+canopy_error canopy_cleanup_remote(canopy_remote_t *remote);
 
-typedef struct CanopyClientOpts_t {
-} CanopyClient_t;
 
 #endif
