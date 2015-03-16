@@ -20,13 +20,15 @@ CFLAGS 		= $(CFLAGS_INCLUDES) -g
 SOURCE_FILES 	:= \
  			canopy_filters.c    \
 			canopy_system.c		\
-			canopy_remotes.c
+			canopy_remotes.c	\
+			canopy_variables.c
 
 
 OBJ_FILES := \
  		canopy_filters.o    \
 		canopy_system.o		\
-		canopy_remotes.o
+		canopy_remotes.o	\
+		canopy_variables.o
 
 
 SO_TARGET := libcanopy.so
