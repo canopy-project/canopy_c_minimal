@@ -19,6 +19,7 @@
 
 #include	<canopy_min.h>
 #include	<canopy_min_internal.h>
+#include	<canopy_os.h>
 
 
 /*****************************************************************************/
@@ -35,6 +36,16 @@ canopy_error canopy_cleanup_remote(canopy_remote_t *remote) {
 	return CANOPY_ERROR_NOT_IMPLEMENTED;
 }
 
+/*
+ * memset(&params, 0, sizeof(params));
+ * params.credential_type = CANOPY_DEVICE_CREDENTIALS;
+ * params.name = TOASTER_UUID;
+ * params.password = TOASTER_SECRET_KEY;
+ * params.auth_type = CANOPY_BASIC_AUTH;
+ * params.remote = REMOTE_ADDR;
+ * params.use_ws = false;
+ * params.persistent = false;
+*/
 
 // Initializes a new remote object.  Does not necessarily open a TCP or
 // websocket connection to the server, but initializes an object with the
@@ -49,11 +60,55 @@ canopy_error canopy_cleanup_remote(canopy_remote_t *remote) {
 canopy_error canopy_remote_init(canopy_context_t *ctx,
         canopy_remote_params_t *params,
         canopy_remote_t *remote) {
+	if (ctx == NULL) {
+		cos_log(LOG_LEVEL_FATAL, "ctx is null in call to canopy_remote_init()");
+		return CANOPY_ERROR_BAD_PARAM;
+	}
 	if (remote == NULL) {
+		cos_log(LOG_LEVEL_FATAL, "remote is null in call to canopy_remote_init()");
+		return CANOPY_ERROR_BAD_PARAM;
+	}
+	if (params == NULL) {
+		cos_log(LOG_LEVEL_FATAL, "params is null in call to canopy_remote_init()");
+		return CANOPY_ERROR_BAD_PARAM;
+	}
+	if (params->name == NULL || params->password == NULL) {
+		cos_log(LOG_LEVEL_FATAL, "name/password is null in call to canopy_remote_init()");
+		return CANOPY_ERROR_BAD_PARAM;
+	}
+	if (params->remote == NULL) {
+		cos_log(LOG_LEVEL_FATAL, "remote is null in call to canopy_remote_init()");
 		return CANOPY_ERROR_BAD_PARAM;
 	}
 
-	return CANOPY_ERROR_NOT_IMPLEMENTED;
+	/*
+	 * Initialize the remote, and set the ports if not specified.  Append
+	 * remote to the ctx.
+	 */
+	memset(remote, 0, sizeof(canopy_remote_t));
+	remote->next = NULL;  /* Not really needed because of the memset() */
+	if (params->http_port == 0) {
+		params->http_port = 80;
+	}
+	if (params->https_port == 0) {
+		params->https_port = 433;
+	}
+	remote->params = params;
+
+	if (ctx->remotes == NULL) {
+		ctx->remotes = remote;
+	} else {
+		canopy_remote_t *tmp = ctx->remotes;
+		while (tmp != NULL) {
+			if (tmp->next == NULL) {
+				tmp->next = remote;
+				break;
+			}
+			tmp = tmp->next;
+		}
+	}
+
+	return CANOPY_SUCCESS;
 }
 
 // Shutdown a remote object.
@@ -61,6 +116,7 @@ canopy_error canopy_remote_init(canopy_context_t *ctx,
 // Frees any allocated memory.
 canopy_error canopy_remote_shutdown(canopy_remote_t *remote) {
 	if (remote == NULL) {
+		cos_log(LOG_LEVEL_FATAL, "remote is null in call to canopy_remote_shutdown()");
 		return CANOPY_ERROR_BAD_PARAM;
 	}
 
@@ -74,6 +130,7 @@ canopy_error canopy_remote_get_time(canopy_remote_t *remote,
         canopy_time_t *time,
         canopy_barrier_t *barrier) {
 	if (remote == NULL) {
+		cos_log(LOG_LEVEL_FATAL, "remote is null in call to canopy_remote_get_time()");
 		return CANOPY_ERROR_BAD_PARAM;
 	}
 
@@ -89,6 +146,7 @@ canopy_error canopy_remote_get_time(canopy_remote_t *remote,
 canopy_error canopy_get_local_time(canopy_remote_t *remote,
         canopy_time_t *time) {
 	if (remote == NULL) {
+		cos_log(LOG_LEVEL_FATAL, "remote is null in call to canopy_get_local_time()");
 		return CANOPY_ERROR_BAD_PARAM;
 	}
 

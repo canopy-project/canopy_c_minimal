@@ -709,11 +709,12 @@ extern canopy_error canopy_get_self_user(canopy_remote_t *remote,
  *
  */
 typedef struct canopy_device {
-    struct canopy_device         *next;        /* hung off of User or remote */
-    char                         *uuid;        /* the uuid of the device */
-    bool                         ws_connected;
-    canopy_remote_t              *remote;
-    struct canopy_var            *vars;        /* list of vars on this device */
+    struct canopy_device	*next;        /* hung off of User or remote */
+    char					*uuid;        /* the uuid of the device */
+    char					*friendly_name;/* a friendly name for the device */
+    bool					ws_connected;
+    canopy_remote_t			*remote;
+    struct canopy_var		*vars;        /* list of vars on this device */
 } canopy_device_t;
 
 

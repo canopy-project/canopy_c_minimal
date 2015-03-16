@@ -31,19 +31,19 @@ extern "C" {
 
 #ifdef __linux__
 #include <assert.h>
-#define CANOPY_OS_ASSERT assert
+#define COS_ASSERT assert
 #else
-#define CANOPY_OS_ASSERT(cond) canopy_os_assert(cond, #cond, __FILE__, __LINE__)
-void canopy_os_assert(
+#define COS_ASSERT(cond) cos_assert(cond, #cond, __FILE__, __LINE__)
+void cos_assert(
         int cond,
         const char *condString,
         const char *filename,
         int lineno);
 #endif
 
-void * canopy_os_alloc(size_t size);
-void * canopy_os_calloc(int count, size_t size);
-void canopy_os_free(void *ptr);
+void * cos_alloc(size_t size);
+void * cos_calloc(int count, size_t size);
+void cos_free(void *ptr);
 
 #define LOG_LEVEL_FATAL  0x0001
 #define LOG_LEVEL_ERROR  0x0002
@@ -55,11 +55,11 @@ void canopy_os_free(void *ptr);
 #define LOG_LEVEL_INFO_OR_HIGHER  (LOG_LEVEL_INFO | LOG_LEVEL_WARN_OR_HIGHER)
 #define LOG_LEVEL_DEBUG_OR_HIGHER  (LOG_LEVEL_DEBUG | LOG_LEVEL_INFO_OR_HIGHER)
 
-#define CANOPY_OS_MSG_MAX_LENGTH 127
-int canopy_os_vsnprintf(char *buf, size_t len, const char *msg, va_list ap);
-void canopy_os_log(int level, const char *msg, ...);
+#define COS_MSG_MAX_LENGTH 127
+int cos_vsnprintf(char *buf, size_t len, const char *msg, va_list ap);
+void cos_log(int level, const char *msg, ...);
 
-char * canopy_os_strdup(const char *src);
+char * cos_strdup(const char *src);
 
 #ifdef __cplusplus
 }

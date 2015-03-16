@@ -15,27 +15,22 @@
 
 CFLAGS_INCLUDES	 += -I. -I../include
 
-CFLAGS 		= $(CFLAGS_INCLUDES) -g 
-
-SOURCE_FILES 	:= \
- 			canopy_filters.c    \
-			canopy_system.c		\
-			canopy_remotes.c	\
-			canopy_variables.c
-
+CFLAGS 		= $(CFLAGS_INCLUDES) -g -fPIC
 
 OBJ_FILES := \
  		canopy_filters.o    \
 		canopy_system.o		\
 		canopy_remotes.o	\
-		canopy_variables.o
+		canopy_variables.o	\
+		canopy_device.o
 
 
 SO_TARGET := libcanopy.so
 A_TARGET := libcanopy.a
 
 NEEDED_H_FILES	=	../include/canopy_min.h    \
-                    ../include/canopy_min_internal.h
+                    ../include/canopy_min_internal.h \
+                    ../include/canopy_os.h
                     
 
 default: $(SO_TARGET) $(A_TARGET)
@@ -44,7 +39,8 @@ clean:
 	rm -rf *.o *.d *.so *.a
 
 install:
-	@echo "No install target"
+	@echo "Copying libraries"
+	cp libcanopy.so /usr/lib/
 	
 
 VPATH = src
@@ -53,10 +49,8 @@ VPATH = src
 	$(CC) -c -o $@ $(CFLAGS) $(EXTRACFLAGS) $<
 
 
-libcanopy.so: $(SOURCE_FILES) $(NEEDED_H_FILES)
-	$(CC) -fPIC -rdynamic -shared \
-                   $(CFLAGS_INCLUDES) $(SOURCE_FILES) $(CFLAGS) \
-                   -o libcanopy.so
+libcanopy.so: $(OBJ_FILES) $(NEEDED_H_FILES)
+	$(CC) -shared  -o libcanopy.so $(OBJ_FILES)
 
                    
 libcanopy.a:  $(OBJ_FILES) $(NEEDED_H_FILES)

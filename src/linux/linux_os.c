@@ -23,30 +23,30 @@
 #include <stdlib.h>
 #include <string.h>
 
-void * canopy_os_alloc(size_t size) {
+void * cos_alloc(size_t size) {
     return malloc(size);
 }
 
-void * canopy_os_calloc(int count, size_t size) {
+void * cos_calloc(int count, size_t size) {
     return calloc(count, size);
 }
 
-void canopy_os_free(void *ptr) {
+void cos_free(void *ptr) {
     free(ptr);
 }
 
-int canopy_os_vsnprintf(char *buf, size_t len, const char *msg, va_list ap) {
+int cos_vsnprintf(char *buf, size_t len, const char *msg, va_list ap) {
     return vsnprintf(buf, len, msg, ap);
 }
 
-void canopy_os_log(int level, const char *format, ...) {
+void cos_log(int level, const char *format, ...) {
     va_list ap;
     va_start(ap, format);
     vfprintf(stderr, format, ap);
     va_end(ap);
 }
 
-char * canopy_os_strdup(const char *src) {
+char * cos_strdup(const char *src) {
     return strdup(src);
 }
 

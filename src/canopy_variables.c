@@ -21,6 +21,66 @@
 #include	<canopy_min_internal.h>
 
 
+#ifdef DOCUMENT
+typedef enum {
+    CANOPY_VAR_DIRECTION_INVALID=0,
+    CANOPY_VAR_OUT,
+    CANOPY_VAR_IN,
+    CANOPY_VAR_INOUT,
+} canopy_var_direction;
+
+typedef enum {
+    CANOPY_VAR_DATATYPE_INVALID=0,
+    CANOPY_VAR_DATATYPE_VOID,
+    CANOPY_VAR_DATATYPE_STRING,
+    CANOPY_VAR_DATATYPE_BOOL,
+    CANOPY_VAR_DATATYPE_INT8,
+    CANOPY_VAR_DATATYPE_UINT8,
+    CANOPY_VAR_DATATYPE_INT16,
+    CANOPY_VAR_DATATYPE_UINT16,
+    CANOPY_VAR_DATATYPE_INT32,
+    CANOPY_VAR_DATATYPE_UINT32,
+    CANOPY_VAR_DATATYPE_FLOAT32,
+    CANOPY_VAR_DATATYPE_FLOAT64,
+    CANOPY_VAR_DATATYPE_DATETIME,
+    CANOPY_VAR_DATATYPE_STRUCT,
+    CANOPY_VAR_DATATYPE_ARRAY,
+} canopy_var_datatype;
+
+#define CANOPY_VAR_VALUE_MAX_LENGTH 128
+typedef struct canopy_var_value {
+    canopy_var_datatype type;
+    union {
+        struct {
+            char *buf;
+            size_t len;
+        } val_string;
+        bool val_bool;
+        int8_t val_int8;
+        int16_t val_int16;
+        int32_t val_int32;
+        uint8_t val_uint8;
+        uint16_t val_uint16;
+        uint32_t val_uint32;
+        float val_float;
+        double val_double;
+        canopy_time_t val_time;
+    } value;
+} canopy_var_value_t;
+
+#define CANOPY_VAR_NAME_MAX_LENGTH 128
+typedef struct canopy_var {
+    struct canpopy_var *next;    /* linked list of variables, hung off device */
+    canopy_device_t *device;
+    canopy_var_direction direction;
+    canopy_var_datatype type;
+    char name[CANOPY_VAR_NAME_MAX_LENGTH];
+    struct canopy_var_value val;  /* yes, not a pointer, real storage */
+} canopy_var_t;
+
+
+#endif
+
 canopy_error canopy_device_var_init(canopy_device_t *device,
         canopy_var_direction direction,
         canopy_var_datatype type,
