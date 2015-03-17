@@ -16,12 +16,12 @@
 
 #include <canopy_os.h>
 
-#include <assert.h>
 #include <stdarg.h>
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
 
 void * cos_alloc(size_t size) {
     return malloc(size);
@@ -50,3 +50,29 @@ char * cos_strdup(const char *src) {
     return strdup(src);
 }
 
+
+int cos_get_time(cos_time_t *time) {
+	int err = 0;
+	/*
+	 *  struct timeval {
+     *          time_t      tv_sec;     /* seconds
+     *          suseconds_t tv_usec;    /* microseconds
+     *      };
+	 *
+	 */
+	struct timeval tv;
+    err = gettimeofday(&tv, NULL);
+    if (err != 0) {
+    	return -1;
+    }
+    /*
+     * chop off the high order bits of the seconds, so we can add the minutes
+     * and msec.  minutes will probably overflow, but it's not an error
+     * the way we use cos_time_t.
+     */
+    unsigned long minutes = tv.tv_sec * 1000;
+    unsigned long msec = tv.tv_usec / 1000;
+    unsigned long ret = minutes + msec;
+    *time = ret;
+	return 0;
+}

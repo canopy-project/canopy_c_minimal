@@ -15,14 +15,15 @@
 
 CFLAGS_INCLUDES	 += -I. -I../include
 
-CFLAGS 		= $(CFLAGS_INCLUDES) -g -fPIC
+CFLAGS 		= $(CFLAGS_INCLUDES) -g -fPIC -Wno-incompatible-pointer-types
 
 OBJ_FILES := \
  		canopy_filters.o    \
 		canopy_system.o		\
 		canopy_remotes.o	\
 		canopy_variables.o	\
-		canopy_device.o
+		canopy_device.o		\
+		canopy_json.o
 
 
 SO_TARGET := libcanopy.so

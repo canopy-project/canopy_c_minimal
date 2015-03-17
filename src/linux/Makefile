@@ -15,7 +15,7 @@
 
 CFLAGS_INCLUDES	 += -I. -I../../include
 
-CFLAGS += $(CFLAGS_INCLUDES) -g -c  -fPIC
+CFLAGS += $(CFLAGS_INCLUDES) -g -c  -fPIC -Wno-incompatible-pointer-types
 
 OBJ_FILES    =   linux_os.o
 

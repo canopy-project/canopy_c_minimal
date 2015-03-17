@@ -19,7 +19,11 @@
 
 #include	<canopy_min.h>
 #include	<canopy_min_internal.h>
+#include	<canopy_os.h>
 
+/******************************************************************************/
+
+static struct canopy_var* find_name(canopy_device_t *device, const char* name);
 
 #ifdef DOCUMENT
 typedef enum {
@@ -64,146 +68,243 @@ typedef struct canopy_var_value {
         uint32_t val_uint32;
         float val_float;
         double val_double;
-        canopy_time_t val_time;
+        cos_time_t val_time;
     } value;
 } canopy_var_value_t;
 
 #define CANOPY_VAR_NAME_MAX_LENGTH 128
 typedef struct canopy_var {
-    struct canpopy_var *next;    /* linked list of variables, hung off device */
-    canopy_device_t *device;
-    canopy_var_direction direction;
-    canopy_var_datatype type;
+    struct canpopy_var 		*next;    /* linked list of variables, hung off device */
+    canopy_device_t 		*device;
+    canopy_var_direction 	direction;
+    canopy_var_datatype 	type;	/* duplicate of type in the value */
     char name[CANOPY_VAR_NAME_MAX_LENGTH];
-    struct canopy_var_value val;  /* yes, not a pointer, real storage */
-} canopy_var_t;
+	bool 					set;	/* This variable has been set */
+    struct canopy_var_value	val;  	/* yes, not a pointer, real storage */
+} struct canopy_var;
 
 
 #endif
 
+/*****************************************************
+ * canopy_device_var_init()
+ */
 canopy_error canopy_device_var_init(canopy_device_t *device,
         canopy_var_direction direction,
         canopy_var_datatype type,
         const char *name,
-        canopy_var_t *out_var) {
-	return CANOPY_ERROR_NOT_IMPLEMENTED;
+        struct canopy_var *out_var) {
+	if (device == NULL) {
+		cos_log(LOG_LEVEL_FATAL, "device is null in call to canopy_device_var_init()");
+		return CANOPY_ERROR_BAD_PARAM;
+	}
+	if (out_var == NULL) {
+		cos_log(LOG_LEVEL_FATAL, "out_var is null in call to canopy_device_var_init()");
+		return CANOPY_ERROR_BAD_PARAM;
+	}
+	if (name == NULL) {
+		cos_log(LOG_LEVEL_FATAL, "name is null in call to canopy_device_var_init()");
+		return CANOPY_ERROR_BAD_PARAM;
+	}
+
+	struct canopy_var *tmp = find_name(device, name);
+	if (tmp != NULL) {
+		cos_log(LOG_LEVEL_DEBUG, "variable already in use in call to canopy_device_var_init()");
+		return CANOPY_ERROR_VAR_IN_USE;
+	}
+
+	/*
+	 * Setup the out_var before we hang it on the device...
+	 */
+	memset(out_var, 0, sizeof(struct canopy_var));
+	out_var->next = NULL;  /* not needed, but... */
+	strncpy(out_var->name, name, CANOPY_VAR_NAME_MAX_LENGTH - 2);
+	out_var->name[CANOPY_VAR_NAME_MAX_LENGTH - 1] = '\0';
+	out_var->direction = direction;
+	out_var->type = type;
+	out_var->set = false;
+	out_var->val.type = type;
+
+	/*
+	 * TODO Figure out why the cast is needed.  I've turned the warning off
+	 * but I'd shough would like to know why...
+	 */
+	if (device->vars == NULL) {
+		device->vars = out_var;
+	} else {
+		tmp = device->vars;
+		while (tmp != NULL) {
+			if (tmp->next == NULL) {
+				tmp->next = out_var;
+				break;
+			}
+			tmp = tmp->next;
+		}
+	}
+	return CANOPY_SUCCESS;
 }
 
+/*****************************************************
+ * find_name()
+ */
+static struct canopy_var* find_name(canopy_device_t *device, const char* name) {
+	struct canopy_var *var = device->vars;
+	while (var != NULL) {
+		if (strncmp(var->name, name, CANOPY_VAR_NAME_MAX_LENGTH - 1) == 0) {
+			return var;
+		}
+		var = (struct canopy_var *)var->next; /* I have no idea why this is needed */
+	}
+	return NULL;
+}
+
+/*****************************************************
+ * canopy_device_get_var_by_name()
+ */
 canopy_error canopy_device_get_var_by_name(canopy_device_t *device,
         const char *var_name,
-        canopy_var_t *var) {
+        struct canopy_var *var) {
+	if (device == NULL) {
+		cos_log(LOG_LEVEL_FATAL, "device is null in call to canopy_device_get_var_by_name()");
+		return CANOPY_ERROR_BAD_PARAM;
+	}
+	if (var_name == NULL) {
+		cos_log(LOG_LEVEL_FATAL, "var_name is null in call to canopy_device_get_var_by_name()");
+		return CANOPY_ERROR_BAD_PARAM;
+	}
+	if (var == NULL) {
+		cos_log(LOG_LEVEL_FATAL, "var is null in call to canopy_device_get_var_by_name()");
+		return CANOPY_ERROR_BAD_PARAM;
+	}
+
+	struct canopy_var *dev_var;
+	dev_var = find_name(device, var_name);
+	if (dev_var != NULL) {
+		/*
+		 * Find and fill in variable data.
+		 * TODO think about who owns the memory once it's in the library
+		 */
+		memcpy(var, dev_var, sizeof(struct canopy_var));
+		dev_var->next = NULL;
+		cos_log(LOG_LEVEL_DEBUG,
+				"variable %s 0x%p found in call to canopy_device_get_var_by_name()",
+				var_name, (void*)dev_var);
+	} else {
+		cos_log(LOG_LEVEL_DEBUG, "variable not found in call to canopy_device_get_var_by_name()");
+		return CANOPY_ERROR_VAR_NOT_FOUND;
+	}
+	return CANOPY_SUCCESS;
+}
+
+canopy_error canopy_var_set_bool(struct canopy_var *var, bool value) {
 	return CANOPY_ERROR_NOT_IMPLEMENTED;
 }
 
-canopy_error canopy_var_set_bool(canopy_var_t *var, bool value) {
+canopy_error canopy_var_set_int8(struct canopy_var *var, int8_t value) {
 	return CANOPY_ERROR_NOT_IMPLEMENTED;
 }
 
-canopy_error canopy_var_set_int8(canopy_var_t *var, int8_t value) {
+canopy_error canopy_var_set_int16(struct canopy_var *var, int16_t value) {
 	return CANOPY_ERROR_NOT_IMPLEMENTED;
 }
 
-canopy_error canopy_var_set_int16(canopy_var_t *var, int16_t value) {
+canopy_error canopy_var_set_int32(struct canopy_var *var, int32_t value) {
 	return CANOPY_ERROR_NOT_IMPLEMENTED;
 }
 
-canopy_error canopy_var_set_int32(canopy_var_t *var, int32_t value) {
+canopy_error canopy_var_set_uint8(struct canopy_var *var, uint8_t value) {
 	return CANOPY_ERROR_NOT_IMPLEMENTED;
 }
 
-canopy_error canopy_var_set_uint8(canopy_var_t *var, uint8_t value) {
+canopy_error canopy_var_set_uint16(struct canopy_var *var, uint16_t value) {
 	return CANOPY_ERROR_NOT_IMPLEMENTED;
 }
 
-canopy_error canopy_var_set_uint16(canopy_var_t *var, uint16_t value) {
+canopy_error canopy_var_set_uint32(struct canopy_var *var, uint32_t value) {
 	return CANOPY_ERROR_NOT_IMPLEMENTED;
 }
 
-canopy_error canopy_var_set_uint32(canopy_var_t *var, uint32_t value) {
+canopy_error canopy_var_set_datetime(struct canopy_var *var, cos_time_t value) {
 	return CANOPY_ERROR_NOT_IMPLEMENTED;
 }
 
-canopy_error canopy_var_set_datetime(canopy_var_t *var, canopy_time_t value) {
+canopy_error canopy_var_set_float32(struct canopy_var *var, float value) {
 	return CANOPY_ERROR_NOT_IMPLEMENTED;
 }
 
-canopy_error canopy_var_set_float32(canopy_var_t *var, float value) {
+canopy_error canopy_var_set_float64(struct canopy_var *var, double value) {
 	return CANOPY_ERROR_NOT_IMPLEMENTED;
 }
 
-canopy_error canopy_var_set_float64(canopy_var_t *var, double value) {
+canopy_error canopy_var_set_string(struct canopy_var *var, const char *value, size_t len) {
 	return CANOPY_ERROR_NOT_IMPLEMENTED;
 }
 
-canopy_error canopy_var_set_string(canopy_var_t *var, const char *value, size_t len) {
-	return CANOPY_ERROR_NOT_IMPLEMENTED;
-}
-
-canopy_error canopy_var_get_bool(canopy_var_t *var,
+canopy_error canopy_var_get_bool(struct canopy_var *var,
 		bool *value,
-		canopy_time_t *last_time) {
+		cos_time_t *last_time) {
 	return CANOPY_ERROR_NOT_IMPLEMENTED;
 }
 
-canopy_error canopy_var_get_int8(canopy_var_t *var,
+canopy_error canopy_var_get_int8(struct canopy_var *var,
         int8_t *value,
-        canopy_time_t *last_time) {
+        cos_time_t *last_time) {
 	return CANOPY_ERROR_NOT_IMPLEMENTED;
 }
 
-canopy_error canopy_var_get_int16(canopy_var_t *var,
+canopy_error canopy_var_get_int16(struct canopy_var *var,
         int16_t *value,
-        canopy_time_t *last_time) {
+        cos_time_t *last_time) {
 	return CANOPY_ERROR_NOT_IMPLEMENTED;
 }
 
-canopy_error canopy_var_get_int32(canopy_var_t *var,
+canopy_error canopy_var_get_int32(struct canopy_var *var,
         uint32_t *value,
-        canopy_time_t *last_time) {
+        cos_time_t *last_time) {
 	return CANOPY_ERROR_NOT_IMPLEMENTED;
 }
 
-canopy_error canopy_var_get_uint8(canopy_var_t *var,
+canopy_error canopy_var_get_uint8(struct canopy_var *var,
         uint8_t *value,
-        canopy_time_t *last_time) {
+        cos_time_t *last_time) {
 	return CANOPY_ERROR_NOT_IMPLEMENTED;
 }
 
-canopy_error canopy_var_get_uint16(canopy_var_t *var,
+canopy_error canopy_var_get_uint16(struct canopy_var *var,
         uint16_t *value,
-        canopy_time_t *last_time) {
+        cos_time_t *last_time) {
 	return CANOPY_ERROR_NOT_IMPLEMENTED;
 }
 
-canopy_error canopy_var_get_uint32(canopy_var_t *var,
+canopy_error canopy_var_get_uint32(struct canopy_var *var,
         uint32_t *value,
-        canopy_time_t *last_time) {
+        cos_time_t *last_time) {
 	return CANOPY_ERROR_NOT_IMPLEMENTED;
 }
 
-canopy_error canopy_var_get_datetime(canopy_var_t *var,
-        canopy_time_t *value,
-        canopy_time_t *last_time) {
+canopy_error canopy_var_get_datetime(struct canopy_var *var,
+        cos_time_t *value,
+        cos_time_t *last_time) {
 	return CANOPY_ERROR_NOT_IMPLEMENTED;
 }
 
-canopy_error canopy_var_get_float32(canopy_var_t *var,
+canopy_error canopy_var_get_float32(struct canopy_var *var,
         float *value,
-        canopy_time_t *last_time) {
+        cos_time_t *last_time) {
 	return CANOPY_ERROR_NOT_IMPLEMENTED;
 }
 
-canopy_error canopy_var_get_float64(canopy_var_t *var,
+canopy_error canopy_var_get_float64(struct canopy_var *var,
         double *value,
-        canopy_time_t *last_time) {
+        cos_time_t *last_time) {
 	return CANOPY_ERROR_NOT_IMPLEMENTED;
 }
 
-canopy_error canopy_var_get_string(canopy_var_t *var,
+canopy_error canopy_var_get_string(struct canopy_var *var,
         char *buf,
         size_t len,
         size_t *out_len,
-        canopy_time_t *last_time) {
+        cos_time_t *last_time) {
 	return CANOPY_ERROR_NOT_IMPLEMENTED;
 }
 

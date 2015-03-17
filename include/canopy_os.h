@@ -41,6 +41,8 @@ void cos_assert(
         int lineno);
 #endif
 
+
+
 void * cos_alloc(size_t size);
 void * cos_calloc(int count, size_t size);
 void cos_free(void *ptr);
@@ -54,12 +56,23 @@ void cos_free(void *ptr);
 #define LOG_LEVEL_WARN_OR_HIGHER  (LOG_LEVEL_WARN | LOG_LEVEL_ERROR_OR_HIGHER)
 #define LOG_LEVEL_INFO_OR_HIGHER  (LOG_LEVEL_INFO | LOG_LEVEL_WARN_OR_HIGHER)
 #define LOG_LEVEL_DEBUG_OR_HIGHER  (LOG_LEVEL_DEBUG | LOG_LEVEL_INFO_OR_HIGHER)
+void cos_log(int level, const char *msg, ...);
+
 
 #define COS_MSG_MAX_LENGTH 127
 int cos_vsnprintf(char *buf, size_t len, const char *msg, va_list ap);
-void cos_log(int level, const char *msg, ...);
 
 char * cos_strdup(const char *src);
+
+/*
+ * Get the canopy time.  cos_time_t is a count of milli-seconds since
+ * some point in time.  There's no intention that this represents the wall
+ * clock time.  (While this starts outs as seconds since epoch, we turn
+ * seconds into milli-seconts by multiplying it with 1000.
+ */
+typedef unsigned long cos_time_t;
+int cos_get_time(cos_time_t *time);
+
 
 #ifdef __cplusplus
 }

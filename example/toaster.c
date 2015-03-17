@@ -31,10 +31,10 @@ int main(void) {
     canopy_remote_t remote;
     canopy_remote_params_t params;
     canopy_device_t device;
-    canopy_var_t temp_sensor;
-    canopy_var_t darkness;
+    struct canopy_var temp_sensor;
+    struct canopy_var darkness;
     float darkness_val;
-    canopy_time_t time;
+    cos_time_t time;
 
     // Initialize canopy ctx
     err = canopy_ctx_init(&ctx, 0);

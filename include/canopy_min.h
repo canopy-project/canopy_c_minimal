@@ -25,7 +25,6 @@
 // header also link with the same version number of the library.
 #define CANOPY_MIN_HEADER_VERSION "15.02.030"
 
-typedef unsigned long canopy_time_t;
 
 /*****************************************************************************/
 // ERRORS
@@ -65,6 +64,9 @@ typedef enum {
     // The requested operation was cancelled.
     CANOPY_ERROR_CANCELLED,
 
+    // Requested variable is already used
+    CANOPY_ERROR_VAR_IN_USE,
+
     // Requested variable was not found
     CANOPY_ERROR_VAR_NOT_FOUND,
 
@@ -87,6 +89,7 @@ const static struct canopy_error_strings canopy_error_strings_table[] = {
         {CANOPY_ERROR_WRONG_TYPE, "wrong datatype"},
         {CANOPY_ERROR_AGAIN, "try again"},
         {CANOPY_ERROR_CANCELLED, "operation was cancelled"},
+        {CANOPY_ERROR_VAR_IN_USE, "cloud variable already in use"},
         {CANOPY_ERROR_VAR_NOT_FOUND, "cloud variable not found"},
         {CANOPY_ERROR_VAR_NOT_SET, "cloud variable has never been set"}
 };
@@ -633,7 +636,7 @@ extern canopy_error canopy_remote_shutdown(canopy_remote_t *remote);
 // to wall clock time, but is monotonically increasing and is reported
 // consistently by the remote to anyone who asks.
 extern canopy_error canopy_remote_get_time(canopy_remote_t *remote,
-        canopy_time_t *time,
+        cos_time_t *time,
         canopy_barrier_t *barrier);
 
 // Get our version of the remote's clock in milliseconds.  This is based on the
@@ -643,7 +646,7 @@ extern canopy_error canopy_remote_get_time(canopy_remote_t *remote,
 // Returns CANOPY_ERROR_AGAIN if canopy_remote_get_time() has never been
 // called for <remote>.
 extern canopy_error canopy_get_local_time(canopy_remote_t *remote,
-        canopy_time_t *time);
+        cos_time_t *time);
 
 // Get a list of devices from the server based on the filters in a device query
 // object.
@@ -892,7 +895,7 @@ typedef enum {
 } canopy_var_datatype;
 
 #define CANOPY_VAR_VALUE_MAX_LENGTH 128
-typedef struct canopy_var_value {
+struct canopy_var_value {
     canopy_var_datatype type;
     union {
         struct {
@@ -908,77 +911,80 @@ typedef struct canopy_var_value {
         uint32_t val_uint32;
         float val_float;
         double val_double;
-        canopy_time_t val_time;
+        cos_time_t val_time;
     } value;
-} canopy_var_value_t;
+};
+typedef struct canopy_var_value canopy_var_value_t;
 
 #define CANOPY_VAR_NAME_MAX_LENGTH 128
-typedef struct canopy_var {
-    struct canpopy_var *next;    /* linked list of variables, hung off device */
-    canopy_device_t *device;
-    canopy_var_direction direction;
-    canopy_var_datatype type;
+struct canopy_var {
+    struct canpopy_var 		*next;    /* linked list of variables, hung off device */
+    struct canopy_device 	*device;
+    canopy_var_direction 	direction;
+    canopy_var_datatype 	type;	/* duplicate of type in the value */
     char name[CANOPY_VAR_NAME_MAX_LENGTH];
-    struct canopy_var_value val;  /* yes, not a pointer, real storage */
-} canopy_var_t;
+	bool 					set;	/* This variable has been set */
+    struct canopy_var_value	val;  	/* yes, not a pointer, real storage */
+};
+// typedef struct canopy_var canopy_var_t;
 
 canopy_error canopy_device_var_init(canopy_device_t *device,
         canopy_var_direction direction,
         canopy_var_datatype type,
         const char *name,
-        canopy_var_t *out_var);
+		struct canopy_var *out_var);
 
 canopy_error canopy_device_get_var_by_name(canopy_device_t *device, 
         const char *var_name, 
-        canopy_var_t *var);
+		struct canopy_var *var);
 
-canopy_error canopy_var_set_bool(canopy_var_t *var, bool value);
-canopy_error canopy_var_set_int8(canopy_var_t *var, int8_t value);
-canopy_error canopy_var_set_int16(canopy_var_t *var, int16_t value);
-canopy_error canopy_var_set_int32(canopy_var_t *var, int32_t value);
-canopy_error canopy_var_set_uint8(canopy_var_t *var, uint8_t value);
-canopy_error canopy_var_set_uint16(canopy_var_t *var, uint16_t value);
-canopy_error canopy_var_set_uint32(canopy_var_t *var, uint32_t value);
-canopy_error canopy_var_set_datetime(canopy_var_t *var, canopy_time_t value);
-canopy_error canopy_var_set_float32(canopy_var_t *var, float value);
-canopy_error canopy_var_set_float64(canopy_var_t *var, double value);
-canopy_error canopy_var_set_string(canopy_var_t *var, const char *value, size_t len);
+canopy_error canopy_var_set_bool(struct canopy_var *var, bool value);
+canopy_error canopy_var_set_int8(struct canopy_var *var, int8_t value);
+canopy_error canopy_var_set_int16(struct canopy_var *var, int16_t value);
+canopy_error canopy_var_set_int32(struct canopy_var *var, int32_t value);
+canopy_error canopy_var_set_uint8(struct canopy_var *var, uint8_t value);
+canopy_error canopy_var_set_uint16(struct canopy_var *var, uint16_t value);
+canopy_error canopy_var_set_uint32(struct canopy_var *var, uint32_t value);
+canopy_error canopy_var_set_datetime(struct canopy_var *var, cos_time_t value);
+canopy_error canopy_var_set_float32(struct canopy_var *var, float value);
+canopy_error canopy_var_set_float64(struct canopy_var *var, double value);
+canopy_error canopy_var_set_string(struct canopy_var *var, const char *value, size_t len);
 
-canopy_error canopy_var_get_bool(canopy_var_t *var, 
+canopy_error canopy_var_get_bool(struct canopy_var *var,
         bool *value,
-        canopy_time_t *last_time);
-canopy_error canopy_var_get_int8(canopy_var_t *var, 
+        cos_time_t *last_time);
+canopy_error canopy_var_get_int8(struct canopy_var *var,
         int8_t *value,
-        canopy_time_t *last_time);
-canopy_error canopy_var_get_int16(canopy_var_t *var, 
+        cos_time_t *last_time);
+canopy_error canopy_var_get_int16(struct canopy_var *var,
         int16_t *value,
-        canopy_time_t *last_time);
-canopy_error canopy_var_get_int32(canopy_var_t *var, 
+        cos_time_t *last_time);
+canopy_error canopy_var_get_int32(struct canopy_var *var,
         uint32_t *value,
-        canopy_time_t *last_time);
-canopy_error canopy_var_get_uint8(canopy_var_t *var, 
+        cos_time_t *last_time);
+canopy_error canopy_var_get_uint8(struct canopy_var *var,
         uint8_t *value,
-        canopy_time_t *last_time);
-canopy_error canopy_var_get_uint16(canopy_var_t *var, 
+        cos_time_t *last_time);
+canopy_error canopy_var_get_uint16(struct canopy_var *var,
         uint16_t *value,
-        canopy_time_t *last_time);
-canopy_error canopy_var_get_uint32(canopy_var_t *var, 
+        cos_time_t *last_time);
+canopy_error canopy_var_get_uint32(struct canopy_var *var,
         uint32_t *value,
-        canopy_time_t *last_time);
-canopy_error canopy_var_get_datetime(canopy_var_t *var, 
-        canopy_time_t *value,
-        canopy_time_t *last_time);
-canopy_error canopy_var_get_float32(canopy_var_t *var, 
+        cos_time_t *last_time);
+canopy_error canopy_var_get_datetime(struct canopy_var *var,
+        cos_time_t *value,
+        cos_time_t *last_time);
+canopy_error canopy_var_get_float32(struct canopy_var *var,
         float *value,
-        canopy_time_t *last_time);
-canopy_error canopy_var_get_float64(canopy_var_t *var, 
+        cos_time_t *last_time);
+canopy_error canopy_var_get_float64(struct canopy_var *var,
         double *value,
-        canopy_time_t *last_time);
-canopy_error canopy_var_get_string(canopy_var_t *var, 
+        cos_time_t *last_time);
+canopy_error canopy_var_get_string(struct canopy_var *var,
         char *buf, 
         size_t len,
         size_t *out_len,
-        canopy_time_t *last_time);
+        cos_time_t *last_time);
 
 /*
  *  myVar = device.varInit("out", "float32", "temperature");

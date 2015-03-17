@@ -30,6 +30,7 @@
 
 canopy_error canopy_cleanup_remote(canopy_remote_t *remote) {
 	if (remote == NULL) {
+		cos_log(LOG_LEVEL_FATAL, "remote is null in call to canopy_cleanup_remote()");
 		return CANOPY_ERROR_BAD_PARAM;
 	}
 
@@ -127,7 +128,7 @@ canopy_error canopy_remote_shutdown(canopy_remote_t *remote) {
 // to wall clock time, but is monotonically increasing and is reported
 // consistently by the remote to anyone who asks.
 canopy_error canopy_remote_get_time(canopy_remote_t *remote,
-        canopy_time_t *time,
+        cos_time_t *time,
         canopy_barrier_t *barrier) {
 	if (remote == NULL) {
 		cos_log(LOG_LEVEL_FATAL, "remote is null in call to canopy_remote_get_time()");
@@ -144,7 +145,7 @@ canopy_error canopy_remote_get_time(canopy_remote_t *remote,
 // Returns CANOPY_ERROR_AGAIN if canopy_remote_get_time() has never been
 // called for <remote>.
 canopy_error canopy_get_local_time(canopy_remote_t *remote,
-        canopy_time_t *time) {
+        cos_time_t *time) {
 	if (remote == NULL) {
 		cos_log(LOG_LEVEL_FATAL, "remote is null in call to canopy_get_local_time()");
 		return CANOPY_ERROR_BAD_PARAM;
