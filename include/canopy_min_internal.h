@@ -31,10 +31,11 @@ canopy_error canopy_cleanup_remote(struct canopy_remote *remote);
 struct c_json_state {
 	char	*buffer;	/* the buffr being built in */
 	int		buffer_len;	/* how big is the raw buffer */
-	int		end;		/* where the \0 is */
+	int		offset;		/* where the \0 is */
 	int		indent;
 };
 
+#if 0
 #define C_JSON_MAX_STRING_LEN  64	/* Maximum object or member name length */
 #define C_JSON_MAX_VALUE_LEN  128	/* Maximum value name length */
 typedef enum {
@@ -43,6 +44,8 @@ typedef enum {
 	C_JOSN_VAL_UINT,
 	C_JOSN_VAL_FLOAT,
 } c_json_data_types;
+#endif
+
 
 #define	C_JSON_OK				0x0000
 #define	C_JSON_BUFFER_OVERFLOW	0x0001
@@ -50,7 +53,7 @@ typedef enum {
 /*
  * Initialize the buffer to use to build json string
  */
-int c_json_buffer_init(struct c_json_state *state, char *buffer, int len);
+extern int c_json_buffer_init(struct c_json_state *state, char *buffer, int len);
 
 /*
  * These procedures emit tokens into the buffer supplied above.
@@ -96,6 +99,12 @@ int c_json_emit_name_and_object(struct c_json_state *state, char *name);
  * 		"name" : [
  */
 int c_json_emit_name_and_array(struct c_json_state *state, char *name);
+
+/*
+ * emits:
+ * 		"name" : [
+ */
+int c_json_emit_name_and_boolean(struct c_json_state *state, char *name, bool out);
 
 
 
