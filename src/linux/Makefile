@@ -13,16 +13,19 @@
 # limitations under the License.
 
 
-CFLAGS_INCLUDES	 += -I. -I../../include
+CFLAGS_INCLUDES		+= -I. -I../../include
 
-CFLAGS += $(CFLAGS_INCLUDES) -g -c  -fPIC -Wno-incompatible-pointer-types
+CFLAGS				+= $(CFLAGS_INCLUDES) -g -c  -fPIC -Wno-incompatible-pointer-types
 
-OBJ_FILES    =   linux_os.o
+OBJ_FILES			=		linux_os.o	\
+							linux_http.o
 
-SO_TARGET   :=      libcanopy_os.so 
-A_TARGET    +=      libcanopy_os.a
+SO_TARGET   		:=      libcanopy_os.so 
+A_TARGET   			+=		libcanopy_os.a
 
-NEEDED_H_FILES	=	../../include/canopy_os.h
+NEEDED_H_FILES		=		../../include/canopy_os.h	\
+							../../include/canopy_http.h
+
 
 default: $(SO_TARGET) $(A_TARGET)
 
