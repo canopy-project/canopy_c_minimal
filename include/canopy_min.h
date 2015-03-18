@@ -72,6 +72,9 @@ typedef enum {
 
     // Requested variable has never been set
     CANOPY_ERROR_VAR_NOT_SET,
+
+	/* we've run out of memory */
+	CANOPY_ERROR_OUT_OF_MEMORY,
 } canopy_error;
 
 struct canopy_error_strings {
@@ -91,7 +94,8 @@ const static struct canopy_error_strings canopy_error_strings_table[] = {
         {CANOPY_ERROR_CANCELLED, "operation was cancelled"},
         {CANOPY_ERROR_VAR_IN_USE, "cloud variable already in use"},
         {CANOPY_ERROR_VAR_NOT_FOUND, "cloud variable not found"},
-        {CANOPY_ERROR_VAR_NOT_SET, "cloud variable has never been set"}
+        {CANOPY_ERROR_VAR_NOT_SET, "cloud variable has never been set"},
+        {CANOPY_ERROR_OUT_OF_MEMORY, "out of memory"}
 };
 
 inline static const char *canopy_error_string(canopy_error err) {
