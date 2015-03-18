@@ -42,11 +42,21 @@ void cos_assert(
 #endif
 
 
-
+/*
+ * Memory allocation is different between Linux and some RTOs. We do all the
+ * allocation and freeing by using these calls.  Don't us malloc(), except in
+ * a program in Linux.
+ */
 void * cos_alloc(size_t size);
 void * cos_calloc(int count, size_t size);
 void cos_free(void *ptr);
 
+/*
+ * Logging is an area where there are differences between embedded systems and
+ * Linux.  These #define define the various levels of logging.  Some
+ * Implementations will put output into 'stderr' while others might output
+ * on a serial port.
+ */
 #define LOG_LEVEL_FATAL  0x0001
 #define LOG_LEVEL_ERROR  0x0002
 #define LOG_LEVEL_WARN   0x0004
@@ -58,17 +68,18 @@ void cos_free(void *ptr);
 #define LOG_LEVEL_DEBUG_OR_HIGHER  (LOG_LEVEL_DEBUG | LOG_LEVEL_INFO_OR_HIGHER)
 void cos_log(int level, const char *msg, ...);
 
-
+/*
+ * Because memory allocation is different between Linux and embedded systems,
+ * we provide our own strdup()
+ */
 #define COS_MSG_MAX_LENGTH 127
-int cos_vsnprintf(char *buf, size_t len, const char *msg, va_list ap);
-
 char * cos_strdup(const char *src);
 
 /*
  * Get the canopy time.  cos_time_t is a count of milli-seconds since
  * some point in time.  There's no intention that this represents the wall
  * clock time.  (While this starts outs as seconds since epoch, we turn
- * seconds into milli-seconts by multiplying it with 1000.
+ * seconds into milli-seconts by multiplying it with 1000.)
  */
 typedef unsigned long cos_time_t;
 int cos_get_time(cos_time_t *time);
