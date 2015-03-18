@@ -924,6 +924,7 @@ struct canopy_var {
     canopy_var_datatype 	type;	/* duplicate of type in the value */
     char name[CANOPY_VAR_NAME_MAX_LENGTH];
 	bool 					set;	/* This variable has been set */
+	cos_time_t				last;	/* when was it changed with remote */
     struct canopy_var_value	val;  	/* yes, not a pointer, real storage */
 };
 // typedef struct canopy_var canopy_var_t;
