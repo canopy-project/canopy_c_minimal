@@ -117,7 +117,6 @@ canopy_error canopy_device_var_init(canopy_device_t *device,
 	 * Setup the out_var before we hang it on the device...
 	 */
 	memset(out_var, 0, sizeof(struct canopy_var));
-	out_var->next = NULL;  /* not needed, but... */
 	strncpy(out_var->name, name, CANOPY_VAR_NAME_MAX_LENGTH - 2);
 	out_var->name[CANOPY_VAR_NAME_MAX_LENGTH - 1] = '\0';
 	out_var->direction = direction;
@@ -128,19 +127,12 @@ canopy_error canopy_device_var_init(canopy_device_t *device,
 	/*
 	 * TODO Figure out why the cast is needed.  I've turned the warning off
 	 * but I'd shough would like to know why...
+	 *
+	 * We stick the new variable at the front of the list.  Device->vars can be
+	 * NULL, but it get's updated correctly when it is.
 	 */
-	if (device->vars == NULL) {
-		device->vars = out_var;
-	} else {
-		tmp = device->vars;
-		while (tmp != NULL) {
-			if (tmp->next == NULL) {
-				tmp->next = out_var;
-				break;
-			}
-			tmp = tmp->next;
-		}
-	}
+	out_var->next = device->vars;
+	device->vars = out_var;
 	return CANOPY_SUCCESS;
 }
 
@@ -196,108 +188,283 @@ canopy_error canopy_device_get_var_by_name(canopy_device_t *device,
 	return CANOPY_SUCCESS;
 }
 
+/*****************************************************************************/
+
 canopy_error canopy_var_set_bool(struct canopy_var *var, bool value) {
-	return CANOPY_ERROR_NOT_IMPLEMENTED;
+	struct canopy_var_value *var_val = &var->val;
+	if (var->type != CANOPY_VAR_DATATYPE_BOOL) {
+		return CANOPY_ERROR_BAD_PARAM;
+	}
+	var_val->type = CANOPY_VAR_DATATYPE_BOOL;
+	var_val->value.val_bool = value;
+	var->set = true;
+	cos_get_time(&var->last);
+	return CANOPY_SUCCESS;
 }
 
 canopy_error canopy_var_set_int8(struct canopy_var *var, int8_t value) {
-	return CANOPY_ERROR_NOT_IMPLEMENTED;
+	struct canopy_var_value *var_val = &var->val;
+	if (var->type != CANOPY_VAR_DATATYPE_INT8) {
+		return CANOPY_ERROR_BAD_PARAM;
+	}
+	var_val->type = CANOPY_VAR_DATATYPE_INT8;
+	var_val->value.val_int8 = value;
+	var->set = true;
+	cos_get_time(&var->last);
+	return CANOPY_SUCCESS;
 }
 
 canopy_error canopy_var_set_int16(struct canopy_var *var, int16_t value) {
-	return CANOPY_ERROR_NOT_IMPLEMENTED;
+	struct canopy_var_value *var_val = &var->val;
+	if (var->type != CANOPY_VAR_DATATYPE_INT16) {
+		return CANOPY_ERROR_BAD_PARAM;
+	}
+	var_val->type = CANOPY_VAR_DATATYPE_INT16;
+	var_val->value.val_int16 = value;
+	var->set = true;
+	cos_get_time(&var->last);
+	return CANOPY_SUCCESS;
 }
 
 canopy_error canopy_var_set_int32(struct canopy_var *var, int32_t value) {
-	return CANOPY_ERROR_NOT_IMPLEMENTED;
+	struct canopy_var_value *var_val = &var->val;
+	if (var->type != CANOPY_VAR_DATATYPE_INT32) {
+		return CANOPY_ERROR_BAD_PARAM;
+	}
+	var_val->type = CANOPY_VAR_DATATYPE_INT32;
+	var_val->value.val_int32 = value;
+	var->set = true;
+	cos_get_time(&var->last);
+	return CANOPY_SUCCESS;
 }
 
 canopy_error canopy_var_set_uint8(struct canopy_var *var, uint8_t value) {
-	return CANOPY_ERROR_NOT_IMPLEMENTED;
+	struct canopy_var_value *var_val = &var->val;
+	if (var->type != CANOPY_VAR_DATATYPE_UINT8) {
+		return CANOPY_ERROR_BAD_PARAM;
+	}
+	var_val->type = CANOPY_VAR_DATATYPE_BOOL;
+	var_val->value.val_uint8 = value;
+	var->set = true;
+	cos_get_time(&var->last);
+	return CANOPY_SUCCESS;
 }
 
 canopy_error canopy_var_set_uint16(struct canopy_var *var, uint16_t value) {
-	return CANOPY_ERROR_NOT_IMPLEMENTED;
+	struct canopy_var_value *var_val = &var->val;
+	if (var->type != CANOPY_VAR_DATATYPE_UINT16) {
+		return CANOPY_ERROR_BAD_PARAM;
+	}
+	var_val->type = CANOPY_VAR_DATATYPE_UINT16;
+	var_val->value.val_uint16 = value;
+	var->set = true;
+	cos_get_time(&var->last);
+	return CANOPY_SUCCESS;
 }
 
 canopy_error canopy_var_set_uint32(struct canopy_var *var, uint32_t value) {
-	return CANOPY_ERROR_NOT_IMPLEMENTED;
+	struct canopy_var_value *var_val = &var->val;
+	if (var->type != CANOPY_VAR_DATATYPE_UINT32) {
+		return CANOPY_ERROR_BAD_PARAM;
+	}
+	var_val->type = CANOPY_VAR_DATATYPE_UINT32;
+	var_val->value.val_bool = value;
+	var->set = true;
+	cos_get_time(&var->last);
+	return CANOPY_SUCCESS;
 }
 
 canopy_error canopy_var_set_datetime(struct canopy_var *var, cos_time_t value) {
-	return CANOPY_ERROR_NOT_IMPLEMENTED;
+	struct canopy_var_value *var_val = &var->val;
+	if (var->type != CANOPY_VAR_DATATYPE_DATETIME) {
+		return CANOPY_ERROR_BAD_PARAM;
+	}
+	var_val->type = CANOPY_VAR_DATATYPE_DATETIME;
+	var_val->value.val_time = value;
+	var->set = true;
+	cos_get_time(&var->last);
+	return CANOPY_SUCCESS;
 }
 
 canopy_error canopy_var_set_float32(struct canopy_var *var, float value) {
-	return CANOPY_ERROR_NOT_IMPLEMENTED;
+	struct canopy_var_value *var_val = &var->val;
+	if (var->type != CANOPY_VAR_DATATYPE_FLOAT32) {
+		return CANOPY_ERROR_BAD_PARAM;
+	}
+	var_val->type = CANOPY_VAR_DATATYPE_FLOAT32;
+	var_val->value.val_float = value;
+	var->set = true;
+	cos_get_time(&var->last);
+	return CANOPY_SUCCESS;
 }
 
 canopy_error canopy_var_set_float64(struct canopy_var *var, double value) {
-	return CANOPY_ERROR_NOT_IMPLEMENTED;
+	struct canopy_var_value *var_val = &var->val;
+	if (var->type != CANOPY_VAR_DATATYPE_FLOAT64) {
+		return CANOPY_ERROR_BAD_PARAM;
+	}
+	var_val->type = CANOPY_VAR_DATATYPE_FLOAT64;
+	var_val->value.val_double = value;
+	var->set = true;
+	cos_get_time(&var->last);
+	return CANOPY_SUCCESS;
 }
 
 canopy_error canopy_var_set_string(struct canopy_var *var, const char *value, size_t len) {
 	return CANOPY_ERROR_NOT_IMPLEMENTED;
 }
 
+/*****************************************************************************/
+
+
 canopy_error canopy_var_get_bool(struct canopy_var *var,
 		bool *value,
 		cos_time_t *last_time) {
-	return CANOPY_ERROR_NOT_IMPLEMENTED;
+
+	if (!var->set) {
+		return CANOPY_ERROR_VAR_NOT_SET;
+	}
+	if (var->type != CANOPY_VAR_DATATYPE_BOOL) {
+		return CANOPY_ERROR_BAD_PARAM;
+	}
+	*value = var->val.value.val_bool;
+	*last_time = var->last;
+	return CANOPY_SUCCESS;
 }
 
 canopy_error canopy_var_get_int8(struct canopy_var *var,
         int8_t *value,
         cos_time_t *last_time) {
-	return CANOPY_ERROR_NOT_IMPLEMENTED;
+
+	if (!var->set) {
+		return CANOPY_ERROR_VAR_NOT_SET;
+	}
+	if (var->type != CANOPY_VAR_DATATYPE_INT8) {
+		return CANOPY_ERROR_BAD_PARAM;
+	}
+	*value = var->val.value.val_int8;
+	*last_time = var->last;
+	return CANOPY_SUCCESS;
 }
 
 canopy_error canopy_var_get_int16(struct canopy_var *var,
         int16_t *value,
         cos_time_t *last_time) {
-	return CANOPY_ERROR_NOT_IMPLEMENTED;
+
+	if (!var->set) {
+		return CANOPY_ERROR_VAR_NOT_SET;
+	}
+	if (var->type != CANOPY_VAR_DATATYPE_INT16) {
+		return CANOPY_ERROR_BAD_PARAM;
+	}
+	*value = var->val.value.val_int16;
+	*last_time = var->last;
+	return CANOPY_SUCCESS;
 }
 
 canopy_error canopy_var_get_int32(struct canopy_var *var,
         uint32_t *value,
         cos_time_t *last_time) {
-	return CANOPY_ERROR_NOT_IMPLEMENTED;
+
+	if (!var->set) {
+		return CANOPY_ERROR_VAR_NOT_SET;
+	}
+	if (var->type != CANOPY_VAR_DATATYPE_INT32) {
+		return CANOPY_ERROR_BAD_PARAM;
+	}
+	*value = var->val.value.val_int32;
+	*last_time = var->last;
+	return CANOPY_SUCCESS;
 }
 
 canopy_error canopy_var_get_uint8(struct canopy_var *var,
         uint8_t *value,
         cos_time_t *last_time) {
-	return CANOPY_ERROR_NOT_IMPLEMENTED;
+
+	if (!var->set) {
+		return CANOPY_ERROR_VAR_NOT_SET;
+	}
+	if (var->type != CANOPY_VAR_DATATYPE_UINT8) {
+		return CANOPY_ERROR_BAD_PARAM;
+	}
+	*value = var->val.value.val_uint8;
+	*last_time = var->last;
+	return CANOPY_SUCCESS;
 }
 
 canopy_error canopy_var_get_uint16(struct canopy_var *var,
         uint16_t *value,
         cos_time_t *last_time) {
-	return CANOPY_ERROR_NOT_IMPLEMENTED;
+
+	if (!var->set) {
+		return CANOPY_ERROR_VAR_NOT_SET;
+	}
+	if (var->type != CANOPY_VAR_DATATYPE_UINT16) {
+		return CANOPY_ERROR_BAD_PARAM;
+	}
+	*value = var->val.value.val_uint16;
+	*last_time = var->last;
+	return CANOPY_SUCCESS;
 }
 
 canopy_error canopy_var_get_uint32(struct canopy_var *var,
         uint32_t *value,
         cos_time_t *last_time) {
-	return CANOPY_ERROR_NOT_IMPLEMENTED;
+
+	if (!var->set) {
+		return CANOPY_ERROR_VAR_NOT_SET;
+	}
+	if (var->type != CANOPY_VAR_DATATYPE_UINT32) {
+		return CANOPY_ERROR_BAD_PARAM;
+	}
+	*value = var->val.value.val_uint32;
+	*last_time = var->last;
+	return CANOPY_SUCCESS;
 }
 
 canopy_error canopy_var_get_datetime(struct canopy_var *var,
         cos_time_t *value,
         cos_time_t *last_time) {
-	return CANOPY_ERROR_NOT_IMPLEMENTED;
+
+	if (!var->set) {
+		return CANOPY_ERROR_VAR_NOT_SET;
+	}
+	if (var->type != CANOPY_VAR_DATATYPE_DATETIME) {
+		return CANOPY_ERROR_BAD_PARAM;
+	}
+	*value = var->val.value.val_time;
+	*last_time = var->last;
+	return CANOPY_SUCCESS;
 }
 
 canopy_error canopy_var_get_float32(struct canopy_var *var,
         float *value,
         cos_time_t *last_time) {
-	return CANOPY_ERROR_NOT_IMPLEMENTED;
+
+	if (!var->set) {
+		return CANOPY_ERROR_VAR_NOT_SET;
+	}
+	if (var->type != CANOPY_VAR_DATATYPE_FLOAT32) {
+		return CANOPY_ERROR_BAD_PARAM;
+	}
+	*value = var->val.value.val_float;
+	*last_time = var->last;
+	return CANOPY_SUCCESS;
 }
 
 canopy_error canopy_var_get_float64(struct canopy_var *var,
         double *value,
         cos_time_t *last_time) {
-	return CANOPY_ERROR_NOT_IMPLEMENTED;
+
+	if (!var->set) {
+		return CANOPY_ERROR_VAR_NOT_SET;
+	}
+	if (var->type != CANOPY_VAR_DATATYPE_FLOAT64) {
+		return CANOPY_ERROR_BAD_PARAM;
+	}
+	*value = var->val.value.val_double;
+	*last_time = var->last;
+	return CANOPY_SUCCESS;
 }
 
 canopy_error canopy_var_get_string(struct canopy_var *var,
