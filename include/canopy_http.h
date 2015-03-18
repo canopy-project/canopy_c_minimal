@@ -24,10 +24,13 @@
 // <barrier>, if non-NULL, gets set to the address of a newly-allocated
 // promise object that can be used to wait for completion of the request.
 canopy_error canopy_http_post(
-        struct canopy_remote *remote,
-        const char *url,
-        const char *payload,
-		struct canopy_barrier *barrier);
+        struct canopy_remote	*remote,
+        const char 				*url,
+        const char 				*payload,
+		char					*buffer,
+		int						buffer_length,
+		int						*used_buffer,
+		struct canopy_barrier	*barrier);
 
 
 
