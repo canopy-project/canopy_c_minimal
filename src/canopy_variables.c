@@ -23,6 +23,36 @@
 
 /******************************************************************************/
 
+/*
+ *  var_declare(OUT, FLOAT32, "temperature", &var);
+ *
+ *  =>
+ *
+ *      "var_decls" : {
+ *          "out float32 temperature" : {},
+ *          "out float32 humidity" : {}
+ *      }
+ */
+
+/*
+ * Decisions regarding timestamps.
+ *
+ * - Client never sends times to the server.
+ * - When the client makes a api/device/<ID> request, the response includes all
+ *   cloud variables and the time they last changed.  The response also
+ *   includes the server time that the response was generated.
+ * - The client stores this internally as "last_poll_time" (device object? remote?).
+ * 
+ *
+ * On update the client just sends the changed variables.  The server returns
+ * all of them with their timestamps (we may later optimize this).  The library
+ * looks at the last timestamp for the variable and decides if it needs to be
+ * updated locally or not.
+ *
+ * Timestamps are encoded over the wire as 64-bit integer representing
+ * microseconds since the Unix Epoch.
+ */
+
 static struct canopy_var* find_name(canopy_device_t *device, const char* name);
 
 #ifdef DOCUMENT
@@ -74,7 +104,7 @@ typedef struct canopy_var_value {
 
 #define CANOPY_VAR_NAME_MAX_LENGTH 128
 typedef struct canopy_var {
-    struct canpopy_var 		*next;    /* linked list of variables, hung off device */
+    struct canopy_var 		*next;    /* linked list of variables, hung off device */
     canopy_device_t 		*device;
     canopy_var_direction 	direction;
     canopy_var_datatype 	type;	/* duplicate of type in the value */
@@ -177,7 +207,7 @@ canopy_error canopy_device_get_var_by_name(canopy_device_t *device,
 		 * TODO think about who owns the memory once it's in the library
 		 */
 		memcpy(var, dev_var, sizeof(struct canopy_var));
-		dev_var->next = NULL;
+		var->next = NULL;
 		cos_log(LOG_LEVEL_DEBUG,
 				"variable %s 0x%p found in call to canopy_device_get_var_by_name()",
 				var_name, (void*)dev_var);

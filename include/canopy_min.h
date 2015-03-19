@@ -922,7 +922,7 @@ typedef struct canopy_var_value canopy_var_value_t;
 
 #define CANOPY_VAR_NAME_MAX_LENGTH 128
 struct canopy_var {
-    struct canpopy_var 		*next;    /* linked list of variables, hung off device */
+    struct canopy_var 		*next;    /* linked list of variables, hung off device */
     struct canopy_device 	*device;
     canopy_var_direction 	direction;
     canopy_var_datatype 	type;	/* duplicate of type in the value */
@@ -933,7 +933,7 @@ struct canopy_var {
 };
 // typedef struct canopy_var canopy_var_t;
 
-canopy_error canopy_device_var_init(canopy_device_t *device,
+canopy_error canopy_device_var_declare(canopy_device_t *device,
         canopy_var_direction direction,
         canopy_var_datatype type,
         const char *name,
