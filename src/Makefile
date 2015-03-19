@@ -32,7 +32,7 @@ A_TARGET := libcanopy.a
 NEEDED_H_FILES	=	../include/canopy_min.h    \
                     ../include/canopy_min_internal.h \
                     ../include/canopy_os.h		\
-                    ../include/canopy_http.h
+                    ../include/canopy_communication.h
                     
 
 default: $(SO_TARGET) $(A_TARGET)

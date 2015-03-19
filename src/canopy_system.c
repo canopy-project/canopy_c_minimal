@@ -57,6 +57,7 @@ canopy_error canopy_ctx_shutdown(canopy_context_t *ctx) {
 		if (error != CANOPY_SUCCESS) {
 			return error;
 		}
+		remotes = remotes->next;
 	}
 	return error;
 }

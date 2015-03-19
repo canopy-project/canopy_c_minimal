@@ -24,7 +24,7 @@ SO_TARGET   		:=      libcanopy_os.so
 A_TARGET   			+=		libcanopy_os.a
 
 NEEDED_H_FILES		=		../../include/canopy_os.h	\
-							../../include/canopy_http.h
+							../../include/canopy_communication.h
 
 
 default: $(SO_TARGET) $(A_TARGET)

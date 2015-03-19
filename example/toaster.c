@@ -66,7 +66,7 @@ int main(void) {
     }
 
     // Create cloud variables "temp_sensor" and "darkness"
-    err = canopy_device_var_init(&device,
+    err = canopy_device_var_declare(&device,
             CANOPY_VAR_OUT,
             CANOPY_VAR_DATATYPE_FLOAT32,
             "temp_sensor",
@@ -81,7 +81,7 @@ int main(void) {
         goto cleanup;
     }
 
-    err = canopy_device_var_init(&device,
+    err = canopy_device_var_declare(&device,
             CANOPY_VAR_IN,
             CANOPY_VAR_DATATYPE_FLOAT32,
             "darkness",
@@ -113,5 +113,5 @@ int main(void) {
 
 cleanup:
     canopy_ctx_shutdown(&ctx);
-    return;
+    return 0;
 }

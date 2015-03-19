@@ -119,27 +119,27 @@ typedef struct canopy_var {
 /*****************************************************
  * canopy_device_var_init()
  */
-canopy_error canopy_device_var_init(canopy_device_t *device,
+canopy_error canopy_device_var_declare(canopy_device_t *device,
         canopy_var_direction direction,
         canopy_var_datatype type,
         const char *name,
         struct canopy_var *out_var) {
 	if (device == NULL) {
-		cos_log(LOG_LEVEL_FATAL, "device is null in call to canopy_device_var_init()");
+		cos_log(LOG_LEVEL_FATAL, "device is null in call to canopy_device_var_declare()");
 		return CANOPY_ERROR_BAD_PARAM;
 	}
 	if (out_var == NULL) {
-		cos_log(LOG_LEVEL_FATAL, "out_var is null in call to canopy_device_var_init()");
+		cos_log(LOG_LEVEL_FATAL, "out_var is null in call to canopy_device_var_declare()");
 		return CANOPY_ERROR_BAD_PARAM;
 	}
 	if (name == NULL) {
-		cos_log(LOG_LEVEL_FATAL, "name is null in call to canopy_device_var_init()");
+		cos_log(LOG_LEVEL_FATAL, "name is null in call to canopy_device_var_declare()");
 		return CANOPY_ERROR_BAD_PARAM;
 	}
 
 	struct canopy_var *tmp = find_name(device, name);
 	if (tmp != NULL) {
-		cos_log(LOG_LEVEL_DEBUG, "variable already in use in call to canopy_device_var_init()");
+		cos_log(LOG_LEVEL_DEBUG, "variable already in use in call to canopy_device_var_declare()");
 		return CANOPY_ERROR_VAR_IN_USE;
 	}
 

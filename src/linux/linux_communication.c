@@ -16,6 +16,7 @@
 #include 	<curl/curl.h>
 
 #include	<canopy_min.h>
+#include	<canopy_os.h>
 
 
 struct private {
@@ -29,8 +30,16 @@ struct private {
 // response has been received.
 static size_t _curl_write_handler(void *ptr, size_t size, size_t nmemb, void *userdata) {
 	struct private* http = (struct private*) userdata;
-	//RedStringList_AppendChars(response, ptr);
-	return size * nmemb;
+	size_t len = size * nmemb;
+	/*
+	 * Note..  There's no NULL character at the end of the transfered data.
+	 * TODO Check to make sure there's enough buffer space before the copy, so
+	 * we can return the actual length we used.
+	 */
+	memcpy(http->buffer[http->offset], ptr, (http->buffer_len - http->offset));
+	http->offset += len;
+	http->buffer[http->offset + 1] = '\0';
+	return len;
 }
 
 
@@ -45,26 +54,15 @@ canopy_error canopy_http_post(
 
 	CURL *curl = NULL;
 	struct private private;
-	char *response_sl;
-	char *response_body;
-	//RedJsonObject response_json;
+	private.buffer = buffer;
+	private.buffer_len = buffer_length;
+	private.offset = 0;
 
-	printf("Sending payload to %s:\n%s\n\n", url, payload);
-
-	response_sl = malloc(10000);
-	if (response_sl == NULL) {
-		return CANOPY_ERROR_OUT_OF_MEMORY;
-	}
-
-	/*
-	 results = calloc(1, sizeof(_CanopyHTTPResults));
-	 if (!results)
-	 {
-	 return CANOPY_ERROR_OUT_OF_MEMORY;
-	 }*/
+	cos_log(LOG_LEVEL_DEBUG, "Sending payload to %s:\n%s\n\n", url, payload);
 
 	curl = curl_easy_init();
 	if (!curl) {
+		cos_log(LOG_LEVEL_WARN, "Initialzation of curl failed");
 		goto cleanup;
 	}
 
@@ -75,26 +73,10 @@ canopy_error canopy_http_post(
 
 	curl_easy_perform(curl);
 
-	// TODO: check server response
-	response_body = response_sl;
-	if (!response_body) {
-		return CANOPY_ERROR_OUT_OF_MEMORY;
-	}
-	printf("Response: %s\n", response_body);
-
-	// Parse response body
-	/*response_json = RedJson_Parse(response_body);
-	 if (!response_json)
-	 {
-	 return CANOPY_ERROR_UNKNOWN;
-	 }
-	 */
-	curl_easy_cleanup(curl);
-
+	used_buffer = private.offset;
 	return CANOPY_SUCCESS;
 
 cleanup:
-	free(response_sl);
 	return CANOPY_ERROR_UNKNOWN;
 }
 
