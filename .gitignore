@@ -24,3 +24,7 @@ src/mrvl
 *~
 *.tws
 
+# these belong in their own .gitignore files, but I'm lazy.......
+
+src/jsmn/jsmn_test
+tests/test_json
