@@ -13,21 +13,30 @@
 # limitations under the License.
 
 
+CFLAGS_INCLUDES	 += -I. -I../include -I../src/
 
-all:
-	$(MAKE) -C src
-	$(MAKE) -C src/linux
-	$(MAKE) -C src/jsmn
+CFLAGS += $(CFLAGS_INCLUDES) -g
+
+PROGRAM_FILES	=	test_json
+
+LIBS	=	-L../src/ -lcanopy -L../src/linux -lcanopy_os -L../src/jsmn -ljsmn -lcurl
+
+NEEDED_H_FILES	= \
+		../src/jsmn/jsmn.h		\
+		../include/canopy_min.h \
+		../include/canopy_os.h
+
+default: $(PROGRAM_FILES)
+
+test_json: test_json.c $(NEEDED_H_FILES)
+	$(CC) $(CFLAGS) test_json.c -g -o test_json $(LIBS)
 
 clean:
-	$(MAKE) -C src clean
-	$(MAKE) -C src/linux clean
-	$(MAKE) -C src/jsmn clean
+	rm -rf $(PROGRAM_FILES) *.o *.d
 
 install:
-	$(MAKE) -C src install
-	$(MAKE) -C src/linux install
-	$(MAKE) -C src/jsmn install
-    
+	@echo "No install target"
+	
+
 
 

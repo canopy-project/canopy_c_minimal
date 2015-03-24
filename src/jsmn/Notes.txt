@@ -1,0 +1,81 @@
+Starting program: /mnt/hgfs/Canopy/other_src/zserge-jsmn-6979f2e6ffa5/jsmn_test 
+	result   	ok   
+	device_id   	d5c827d2-1ba7-4da6-b87b-0864f0969fa8   
+	friendly_name   	My Toaster 17   
+	status   	{3 elems}
+	ws_connected   	true   
+	active_status   	active   
+	last_activity_time   	1426803897000000   
+	var_decls   	{4 elems}
+	out float32 temperature   	{0 elems}
+	out float32 humidity   	{0 elems}
+	in int8 dimmer_brightness   	{0 elems}
+	in bool reboot_now   	{0 elems}
+	vars   	{4 elems}
+	temperature   	{2 elems}
+	t   	1426803897000000   
+	v   	37.4   
+	humidity   	{2 elems}
+	t   	1426803897000000   
+	v   	92.3   
+	dimmer_brightness   	{2 elems}
+	t   	1426803897000000   
+	v   	0   
+	reboot_now   	{2 elems}
+	t   	1426803897000000   
+	v   	false   
+	   
+
+Breakpoint 1, test_canopy () at jsmn_test.c:445
+445		return 0;
+(gdb) print r
+$1 = 51
+(gdb) print tokens
+$2 = {{type = JSMN_OBJECT, start = 0, end = 853, size = 6},
+	result													OK
+	{type = JSMN_STRING, start = 6, end = 12, size = 1}, {type = JSMN_STRING, start = 17, end = 19, size = 0}, 
+	device id											UUID
+	{type = JSMN_STRING, start = 27, end = 36, size = 1}, {type = JSMN_STRING, start = 41, end = 77, size = 0}, 
+	frindly nam												toaster
+	{type = JSMN_STRING, start = 85, end = 98, size = 1}, {type = JSMN_STRING, start = 103, end = 116, size = 0}, 
+	status
+	{type = JSMN_STRING, start = 124, end = 130, size = 1}, {type = JSMN_OBJECT, start = 134, end = 257, size = 3}, 
+			{type = JSMN_STRING, start = 145, end = 157, size = 1}, {type = JSMN_PRIMITIVE, start = 161, end = 165, size = 0}, 
+			{type = JSMN_STRING, start = 176, end = 189, size = 1}, {type = JSMN_STRING, start = 194, end = 200, size = 0}, 
+			{type = JSMN_STRING, start = 212, end = 230, size = 1}, {type = JSMN_PRIMITIVE, start = 234, end = 250, size = 0}, 
+		Decls
+	{type = JSMN_STRING, start = 264, end = 273, size = 1}, 
+		{type = JSMN_OBJECT, start = 277, end = 442, size = 4}, 
+			{type = JSMN_STRING, start = 288, end = 311, size = 1}, {type = JSMN_OBJECT, start = 315, end = 318, size = 0}, 
+			{type = JSMN_STRING, start = 329, end = 349, size = 1}, {type = JSMN_OBJECT, start = 353, end = 356, size = 0}, 
+			{type = JSMN_STRING, start = 367, end = 392, size = 1}, {type = JSMN_OBJECT, start = 396, end = 399, size = 0}, 
+			{type = JSMN_STRING, start = 410, end = 428, size = 1}, {type = JSMN_OBJECT, start = 432, end = 435, size = 0}, 
+    {type = JSMN_STRING, start = 449, end = 453, size = 1}, 
+    	{type = JSMN_OBJECT, start = 457, end = 851, size = 4}, 
+    		{type = JSMN_STRING, start = 468, end = 479, size = 1}, 
+    				{type = JSMN_OBJECT, start = 483, end = 554, size = 2}, 
+   			{type = JSMN_STRING, start = 498, end = 499, size = 1}, 
+    				{type = JSMN_PRIMITIVE, start = 503, end = 519, size = 0}, 
+   		
+   		{type = JSMN_STRING, start = 534, end = 535, size = 1}, {type = JSMN_PRIMITIVE, start = 539, end = 543, size = 0},
+    {type = JSMN_STRING, start = 565, end = 573, size = 1}, 
+    {type = JSMN_OBJECT, start = 577, end = 648, size = 2}, 
+    {type = JSMN_STRING, start = 592, end = 593, size = 1}, 
+    {type = JSMN_PRIMITIVE, start = 597, end = 613, size = 0},
+    {type = JSMN_STRING, start = 628, end = 629, size = 1}, 
+    {type = JSMN_PRIMITIVE, start = 633, end = 637, size = 0}, 
+    {type = JSMN_STRING, start = 659, end = 676, size = 1}, 
+    {type = JSMN_OBJECT, start = 680, end = 748, size = 2}, 
+    {type = JSMN_STRING, start = 695, end = 696, size = 1}, 
+    {type = JSMN_PRIMITIVE, start = 700, end = 716, size = 0}, 
+    {type = JSMN_STRING, start = 731, end = 732, size = 1}, 
+    {type = JSMN_PRIMITIVE, start = 736, end = 737, size = 0}, 
+    {type = JSMN_STRING, start = 759, end = 769, size = 1},
+    {type = JSMN_OBJECT, start = 773, end = 845, size = 2}, 
+    {type = JSMN_STRING, start = 788, end = 789, size = 1},
+    {type = JSMN_PRIMITIVE, start = 793, end = 809, size = 0},
+    {type = JSMN_STRING, start = 824, end = 825, size = 1}, 
+    {type = JSMN_PRIMITIVE, start = 829, end = 834, size = 0},
+    
+    {type = JSMN_PRIMITIVE, start = 0, end = 0, size = 0} <repeats 77 times>}
+(gdb) 

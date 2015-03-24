@@ -15,10 +15,10 @@
 
 CFLAGS_INCLUDES		+= -I. -I../../include
 
-CFLAGS				+= $(CFLAGS_INCLUDES) -g -c  -fPIC -Wno-incompatible-pointer-types
+CFLAGS				+= $(CFLAGS_INCLUDES) -g -c  -fPIC 
 
 OBJ_FILES			=		linux_os.o	\
-							linux_http.o
+							linux_communication.o
 
 SO_TARGET   		:=      libcanopy_os.so 
 A_TARGET   			+=		libcanopy_os.a

@@ -13,9 +13,9 @@
 # limitations under the License.
 
 
-CFLAGS_INCLUDES	 += -I. -I../include
+CFLAGS_INCLUDES	 += -I. -I../include -Ijsmn
 
-CFLAGS 		= $(CFLAGS_INCLUDES) -g -fPIC -Wno-incompatible-pointer-types
+CFLAGS 		= $(CFLAGS_INCLUDES) -g -fPIC
 
 OBJ_FILES := \
  		canopy_filters.o    \
@@ -32,7 +32,8 @@ A_TARGET := libcanopy.a
 NEEDED_H_FILES	=	../include/canopy_min.h    \
                     ../include/canopy_min_internal.h \
                     ../include/canopy_os.h		\
-                    ../include/canopy_communication.h
+                    ../include/canopy_communication.h \
+                    ./jsmn/jsmn.h
                     
 
 default: $(SO_TARGET) $(A_TARGET)
