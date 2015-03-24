@@ -349,7 +349,7 @@ int c_json_get_result_key(char* js, int js_len, jsmntok_t *token, int tok_len, i
 	 * OK, there's a big hack here to avoid allocating any additional memory
 	 * for the string.
 	 */
-	int equal = strncmp((const char *)token[1].start, "result", (token[1].end - token[1].start));
+	int equal = strncmp((const char*)&js[token[1].start], "result", (token[1].end - token[1].start));
 	if (equal != 0) {
 		err = "first token isn't 'result'";
 		goto error;
@@ -360,8 +360,8 @@ int c_json_get_result_key(char* js, int js_len, jsmntok_t *token, int tok_len, i
 		goto error;
 	}
 
-	int ok = strncmp((const char *)token[2].start, "ok", (token[2].end - token[2].start));
-	int error = strncmp((const char *)token[2].start, "error", (token[2].end - token[2].start));
+	int ok = strncmp(&js[token[2].start], "ok", (token[2].end - token[2].start));
+	int error = strncmp(&js[token[2].start], "error", (token[2].end - token[2].start));
 	if (ok == 0 || error == 0) {
 		*result = ok == 0;
 	} else {
