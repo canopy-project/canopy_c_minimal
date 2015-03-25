@@ -30,6 +30,13 @@
 canopy_error canopy_cleanup_remote(struct canopy_remote *remote);
 
 
+/******************************************************************************/
+/*	device stuff
+ *
+ */
+canopy_error initialize_device(struct canopy_device *device, struct canopy_remote *remote);
+
+/******************************************************************************/
 /******************************************************************************
  * 	JSON stuff.
  */
@@ -57,15 +64,6 @@ typedef enum {
 #define	C_JSON_INVALID_SIZE		0x0002
 #define	C_JSON_PARSE_ERROR		0x0004
 
-/***************************************************************************
- * errors from jsmn
- */
-/* Not enough tokens were provided */
-#define	JSMN_ERROR_NOMEM 	 -1,
-/* Invalid character inside JSON string */
-#define JSMN_ERROR_INVAL 	 -2,
-/* The string is not a full JSON packet, more bytes expected */
-#define JSMN_ERROR_PART 	 -3
 
 /***************************************************************************
  * Initialize the buffer to use to build json string
@@ -155,12 +153,41 @@ int c_json_emit_name_and_float64(struct c_json_state *state, char *name, double 
 
 
 /***************************************************************************
+ * 	c_json_emit_vardcl(struct canopy_device *device, struct c_json_state *state)
+ *
+ * 		creates the JSON  request to register the variables that are registered
+ * 	with the remote. (in canopy_variables.c)
+ */
+canopy_error c_json_emit_vardcl(struct canopy_device *device, struct c_json_state *state);
+
+/***************************************************************************/
+/***************************************************************************/
+/*
+ * errors from jsmn
+ */
+/* Not enough tokens were provided */
+#define	JSMN_ERROR_NOMEM 	 -1,
+/* Invalid character inside JSON string */
+#define JSMN_ERROR_INVAL 	 -2,
+/* The string is not a full JSON packet, more bytes expected */
+#define JSMN_ERROR_PART 	 -3
+
+#define CHECK_TOKEN_STRING(js, t, constant) \
+	(strncmp(&js[(t).start], constant, (t).end - (t).start) == 0)
+
+// int equal = strncmp((const char*)&js[token[1].start], "result", (token[1].end - token[1].start));
+
+/***************************************************************************
  * Parse the json string into tokens.
  */
 int c_json_parse_string(char* js, int js_len, jsmntok_t *token, int tok_len, int *active);
 
 /***************************************************************************
  * Returns the value of the result string.
+ * 	Each JSON returned has the tag "result" : STR as the second token.  (The
+ * 	first token is the open object '{'  The expected response is either 'ok' or
+ * 	'error', which is updated in result.  If the resonse isn't expected the
+ * 	call returns C_JSON_PARSE_ERROR.
  */
 int c_json_get_result_key(char* js, int js_len, jsmntok_t *token, int tok_len, int active, bool *result);
 

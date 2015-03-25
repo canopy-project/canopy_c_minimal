@@ -53,6 +53,9 @@
  * microseconds since the Unix Epoch.
  */
 
+
+static char buffer[1024];
+
 static struct canopy_var* find_name(canopy_device_t *device, const char* name);
 
 #ifdef DOCUMENT
@@ -218,6 +221,63 @@ canopy_error canopy_device_get_var_by_name(canopy_device_t *device,
 	return CANOPY_SUCCESS;
 }
 
+/***************************************************************************
+ * 	c_json_emit_vardcl(struct canopy_device *device, struct c_json_state *state)
+ *
+ * 		creates the JSON  request to register the variables that are registered
+ * 	with the remote. (in canopy_variables.c)
+ */
+canopy_error c_json_emit_vardcl(struct canopy_device *device, struct c_json_state *state) {
+	int err = CANOPY_SUCCESS;
+	struct canopy_var *var;
+	err = c_json_emit_open_object(state);
+	if (err != C_JSON_OK) {
+		cos_log(LOG_LEVEL_DEBUG, "unable to emit opening object err: %d\n", err);
+		return CANOPY_ERROR_JSON;
+	}
+
+	err = c_json_emit_name_and_object(state, "var_decls");
+	if (err != C_JSON_OK) {
+		cos_log(LOG_LEVEL_DEBUG, "unable to emit var_decls err: %d\n", err);
+		return CANOPY_ERROR_JSON;
+	}
+
+	var = device->vars;
+	while (var != NULL) {
+		char * name = var->name;
+	    snprintf(buffer, sizeof(buffer), "%s %s %s",
+	    		canopy_var_direction_string(var->direction),
+	    		canopy_var_datatype_string(var->type), name);
+		err = c_json_emit_name_and_object(state, buffer);
+		if (err != C_JSON_OK) {
+			cos_log(LOG_LEVEL_DEBUG, "unable to emit variable: %s err: %d\n", name, err);
+			return CANOPY_ERROR_JSON;
+		}
+		err = c_json_emit_close_object(state);
+		if (err != C_JSON_OK) {
+			cos_log(LOG_LEVEL_DEBUG, "unable to emit variable %s closing object err: %d\n", name, err);
+			return CANOPY_ERROR_JSON;
+		}
+		var = var->next;
+	}
+
+
+	err = c_json_emit_close_object(state);
+	if (err != C_JSON_OK) {
+		cos_log(LOG_LEVEL_DEBUG, "unable to emit var_decls closing object err: %d\n", err);
+		return CANOPY_ERROR_JSON;
+	}
+
+	err = c_json_emit_close_object(state);
+	if (err != C_JSON_OK) {
+		cos_log(LOG_LEVEL_DEBUG, "unable to emit opening object err: %d\n", err);
+		return CANOPY_ERROR_JSON;
+	}
+	return err;
+}
+
+
+/*****************************************************************************/
 /*****************************************************************************/
 
 canopy_error canopy_var_set_bool(struct canopy_var *var, bool value) {

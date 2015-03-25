@@ -93,8 +93,49 @@ int test_result() {
 	return 0;
 }
 
+int test_vardcl_output() {
+	int out;
+	struct c_json_state state;
+	char *buffer = (char*)malloc(1024);
+	memset(buffer, 0, 1024);
+	out = c_json_buffer_init(&state, buffer, 1024);
+	if (out != 0) {
+		printf("c_json_buffer_init() returned: %d", out);
+		return -1;
+	}
+
+	struct canopy_device device;
+	canopy_error err = initialize_device(&device, NULL);
+	if (err != CANOPY_SUCCESS) {
+		printf("initialize_device returned: %d", err);
+		return -2;
+	}
+
+	struct canopy_var out_var;
+	err = canopy_device_var_declare(&device,
+			CANOPY_VAR_OUT,
+			CANOPY_VAR_DATATYPE_BOOL,
+	       "test_var",
+			&out_var);
+	if (err != CANOPY_SUCCESS) {
+		printf("canopy_device_var_declare name: %s returned: %d", "test_var", err);
+		return -3;
+	}
+
+	err = c_json_emit_vardcl(&device, &state);
+	if (err != CANOPY_SUCCESS) {
+		printf("c_json_emit_vardcl() returned: %d", err);
+		return -4;
+	}
+
+	printf("\n%s\n\n", buffer);
+
+	return 0;
+}
+
 int main() {
 	test(test_result, "general test for the 'result' tag");
+	test(test_vardcl_output, "test emit_vardcl");
 }
 
 

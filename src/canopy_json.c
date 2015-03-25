@@ -24,10 +24,10 @@
 
 #ifdef DOCUMENTATION
 struct c_json_state {
-	char	*buffer;	/* the buffr being built in */
-	int		buffer_len;	/* how big is the raw buffer */
-	int		offset;		/* offset where the \0 is relative to the start of the buffer*/
-	int		indent;
+	char *buffer; /* the buffr being built in */
+	int buffer_len; /* how big is the raw buffer */
+	int offset; /* offset where the \0 is relative to the start of the buffer*/
+	int indent;
 };
 #endif
 
@@ -40,21 +40,17 @@ typedef enum {
 	C_JOSN_VAL_FLOAT,
 } c_json_data_types;
 
-#if 0
-static const char **indent_spaces = {
-		{ "    " },
-		{ "        " },
-		{"            " },
-		{ "                " }
-};
-#endif
+static const char *indent_spaces[] = {
+		"    ",
+		"        ",
+		"            ",
+		"                ", };
 
 /*****************************************************************************/
 
 /*		static definitions go here */
 
 /*****************************************************************************/
-
 
 /*******************************************************
  * Initialize the buffer to use to build json string
@@ -72,8 +68,7 @@ int c_json_buffer_init(struct c_json_state *state, char *buffer, int len) {
 /******************************************************************************
  *	Check to see if there's space left in the buffer.
  */
-static int check_buffer_length(struct c_json_state *state)
-{
+static int check_buffer_length(struct c_json_state *state) {
 	/*
 	 * Check for buffer overflow condition here, and then copy remaining
 	 * data using snprintf. This makes sure there is no mem corruption in
@@ -86,7 +81,6 @@ static int check_buffer_length(struct c_json_state *state)
 		return 0;
 }
 
-
 /*
  * These procedures emit tokens into the buffer supplied above.
  */
@@ -96,11 +90,13 @@ static int check_buffer_length(struct c_json_state *state)
  */
 int c_json_emit_open_object(struct c_json_state *state) {
 	if (check_buffer_length(state) != 0) {
-		cos_log(LOG_LEVEL_DEBUG, "buffer out of space c_json_emit_open_object()");
+		cos_log(LOG_LEVEL_DEBUG,
+				"buffer out of space c_json_emit_open_object()");
 		return C_JSON_BUFFER_OVERFLOW;
 	}
-	/* snprintf(&state->buffer[state->offset], state->buffer_len - state->offset, "\n%s{\n", indent_spaces[state->indent]); */
-	snprintf(&state->buffer[state->offset], state->buffer_len - state->offset, "\n    {\n");
+	snprintf(&state->buffer[state->offset], state->buffer_len - state->offset,
+			"%s{\n", indent_spaces[state->indent]);
+	// snprintf(&state->buffer[state->offset], state->buffer_len - state->offset, "\n    {\n");
 	state->indent++;
 	state->offset = strlen(state->buffer);
 	return C_JSON_OK;
@@ -112,12 +108,14 @@ int c_json_emit_open_object(struct c_json_state *state) {
  */
 int c_json_emit_close_object(struct c_json_state *state) {
 	if (check_buffer_length(state) != 0) {
-		cos_log(LOG_LEVEL_DEBUG, "buffer out of space c_json_emit_close_object()");
+		cos_log(LOG_LEVEL_DEBUG,
+				"buffer out of space c_json_emit_close_object()");
 		return C_JSON_BUFFER_OVERFLOW;
 	}
-	/* snprintf(&state->buffer[state->offset], state->buffer_len - state->offset, "\n%s{\n", indent_spaces[state->indent]); */
-	snprintf(&state->buffer[state->offset], state->buffer_len - state->offset, "\n    }\n");
 	state->indent--;
+	snprintf(&state->buffer[state->offset], state->buffer_len - state->offset,
+			"%s}\n", indent_spaces[state->indent]);
+	// snprintf(&state->buffer[state->offset], state->buffer_len - state->offset, "\n    }\n");
 	state->offset = strlen(state->buffer);
 	return C_JSON_OK;
 }
@@ -128,12 +126,14 @@ int c_json_emit_close_object(struct c_json_state *state) {
  */
 int c_json_emit_open_array(struct c_json_state *state) {
 	if (check_buffer_length(state) != 0) {
-		cos_log(LOG_LEVEL_DEBUG, "buffer out of space c_json_emit_open_array()");
+		cos_log(LOG_LEVEL_DEBUG,
+				"buffer out of space c_json_emit_open_array()");
 		return C_JSON_BUFFER_OVERFLOW;
 	}
-	/* snprintf(&state->buffer[state->offset], state->buffer_len - state->offset, "\n%s[\n", indent_spaces[state->indent]); */
-	snprintf(&state->buffer[state->offset], state->buffer_len - state->offset, "\n    [\n");
-	state->indent--;
+	snprintf(&state->buffer[state->offset], state->buffer_len - state->offset,
+			"%s[\n", indent_spaces[state->indent]);
+	// snprintf(&state->buffer[state->offset], state->buffer_len - state->offset, "\n    [\n");
+	state->indent++;
 	state->offset = strlen(state->buffer);
 	return C_JSON_OK;
 }
@@ -144,12 +144,14 @@ int c_json_emit_open_array(struct c_json_state *state) {
  */
 int c_json_emit_close_array(struct c_json_state *state) {
 	if (check_buffer_length(state) != 0) {
-		cos_log(LOG_LEVEL_DEBUG, "buffer out of space c_json_emit_close_array()");
+		cos_log(LOG_LEVEL_DEBUG,
+				"buffer out of space c_json_emit_close_array()");
 		return C_JSON_BUFFER_OVERFLOW;
 	}
-	/* snprintf(&state->buffer[state->offset], state->buffer_len - state->offset, "\n%s]\n", indent_spaces[state->indent]); */
-	snprintf(&state->buffer[state->offset], state->buffer_len - state->offset, "\n    ]\n");
 	state->indent--;
+	snprintf(&state->buffer[state->offset], state->buffer_len - state->offset,
+			"%s]\n", indent_spaces[state->indent]);
+	// snprintf(&state->buffer[state->offset], state->buffer_len - state->offset, "\n    ]\n");
 	state->offset = strlen(state->buffer);
 	return C_JSON_OK;
 }
@@ -158,12 +160,15 @@ int c_json_emit_close_array(struct c_json_state *state) {
  * Emits:
  * 		"name" : "value"
  */
-int c_json_emit_name_and_value(struct c_json_state *state, char *name, char *value) {
+int c_json_emit_name_and_value(struct c_json_state *state, char *name,
+		char *value) {
 	if (check_buffer_length(state) != 0) {
-		cos_log(LOG_LEVEL_DEBUG, "buffer out of space c_json_emit_name_and_value()");
+		cos_log(LOG_LEVEL_DEBUG,
+				"buffer out of space c_json_emit_name_and_value()");
 		return C_JSON_BUFFER_OVERFLOW;
 	}
-	snprintf(&state->buffer[state->offset], state->buffer_len - state->offset, "\n    \"%s\" : \"%s\"  \n", name, value);
+	snprintf(&state->buffer[state->offset], state->buffer_len - state->offset,
+			"%s\"%s\" : \"%s\"  \n", indent_spaces[state->indent], name, value);
 	state->offset = strlen(state->buffer);
 	return C_JSON_OK;
 }
@@ -174,10 +179,12 @@ int c_json_emit_name_and_value(struct c_json_state *state, char *name, char *val
  */
 int c_json_emit_name_and_object(struct c_json_state *state, char *name) {
 	if (check_buffer_length(state) != 0) {
-		cos_log(LOG_LEVEL_DEBUG, "buffer out of space c_json_emit_name_and_object()");
+		cos_log(LOG_LEVEL_DEBUG,
+				"buffer out of space c_json_emit_name_and_object()");
 		return C_JSON_BUFFER_OVERFLOW;
 	}
-	snprintf(&state->buffer[state->offset], state->buffer_len - state->offset, "\n    \"%s\" {  \n", name);
+	snprintf(&state->buffer[state->offset], state->buffer_len - state->offset,
+			"%s\"%s\" {  \n", indent_spaces[state->indent], name);
 	state->indent++;
 	state->offset = strlen(state->buffer);
 	return C_JSON_OK;
@@ -189,10 +196,12 @@ int c_json_emit_name_and_object(struct c_json_state *state, char *name) {
  */
 int c_json_emit_name_and_array(struct c_json_state *state, char *name) {
 	if (check_buffer_length(state) != 0) {
-		cos_log(LOG_LEVEL_DEBUG, "buffer out of space c_json_emit_name_and_array()");
+		cos_log(LOG_LEVEL_DEBUG,
+				"buffer out of space c_json_emit_name_and_array()");
 		return C_JSON_BUFFER_OVERFLOW;
 	}
-	snprintf(&state->buffer[state->offset], state->buffer_len - state->offset, "\n    \"%s\" : [  \n", name);
+	snprintf(&state->buffer[state->offset], state->buffer_len - state->offset,
+			"%s\"%s\" : [  \n", indent_spaces[state->indent], name);
 	state->indent++;
 	state->offset = strlen(state->buffer);
 	return C_JSON_OK;
@@ -202,38 +211,43 @@ int c_json_emit_name_and_array(struct c_json_state *state, char *name) {
  * emits:
  * 		"name" : [
  */
-int c_json_emit_name_and_boolean(struct c_json_state *state, char *name, bool out) {
+int c_json_emit_name_and_boolean(struct c_json_state *state, char *name,
+		bool out) {
 	if (check_buffer_length(state) != 0) {
-		cos_log(LOG_LEVEL_DEBUG, "buffer out of space c_json_emit_name_and_boolean()");
+		cos_log(LOG_LEVEL_DEBUG,
+				"buffer out of space c_json_emit_name_and_boolean()");
 		return C_JSON_BUFFER_OVERFLOW;
 	}
-	snprintf(&state->buffer[state->offset], state->buffer_len - state->offset, "\n    \"%s\" : %s  \n", name, (out ? "true" : "false"));
+	snprintf(&state->buffer[state->offset], state->buffer_len - state->offset,
+			"%s\"%s\" : %s  \n", indent_spaces[state->indent], name,
+			(out ? "true" : "false"));
 	state->offset = strlen(state->buffer);
 	return C_JSON_OK;
 }
-
-
 
 /******************************************************************************
  * emits:
  * 		"name" : integer based on size
  */
-int c_json_emit_name_and_int(struct c_json_state *state, char *name, int32_t out, int size) {
+int c_json_emit_name_and_int(struct c_json_state *state, char *name,
+		int32_t out, int size) {
 	if (check_buffer_length(state) != 0) {
-		cos_log(LOG_LEVEL_DEBUG, "buffer out of space c_json_emit_name_and_int()");
+		cos_log(LOG_LEVEL_DEBUG,
+				"buffer out of space c_json_emit_name_and_int()");
 		return C_JSON_BUFFER_OVERFLOW;
 	}
 	char *fmt;
 	if (size == 1) {
-		fmt = "\n    \"%s\" : %1d  \n";
-	} else if (size ==2) {
-		fmt = "\n    \"%s\" : %2d  \n";
+		fmt = "%s\"%s\" : %1d  \n";
+	} else if (size == 2) {
+		fmt = "%s\"%s\" : %2d  \n";
 	} else if (size == 4) {
-		fmt = "\n    \"%s\" : %4d  \n";
+		fmt = "%s\"%s\" : %4d  \n";
 	} else {
 		return C_JSON_INVALID_SIZE;
 	}
-	snprintf(&state->buffer[state->offset], state->buffer_len - state->offset, fmt, name, out);
+	snprintf(&state->buffer[state->offset], state->buffer_len - state->offset,
+			fmt, indent_spaces[state->indent], name, out);
 	state->offset = strlen(state->buffer);
 	return C_JSON_OK;
 }
@@ -242,22 +256,25 @@ int c_json_emit_name_and_int(struct c_json_state *state, char *name, int32_t out
  * emits:
  * 		"name" : unsigned integer based on size
  */
-int c_json_emit_name_and_uint(struct c_json_state *state, char *name, uint32_t out, int size) {
+int c_json_emit_name_and_uint(struct c_json_state *state, char *name,
+		uint32_t out, int size) {
 	if (check_buffer_length(state) != 0) {
-		cos_log(LOG_LEVEL_DEBUG, "buffer out of space c_json_emit_name_and_int()");
+		cos_log(LOG_LEVEL_DEBUG,
+				"buffer out of space c_json_emit_name_and_int()");
 		return C_JSON_BUFFER_OVERFLOW;
 	}
 	char *fmt;
 	if (size == 1) {
-		fmt = "\n    \"%s\" : %1u  \n";
-	} else if (size ==2) {
-		fmt = "\n    \"%s\" : %2u  \n";
+		fmt = "%s\"%s\" : %1u  \n";
+	} else if (size == 2) {
+		fmt = "%s\"%s\" : %2u  \n";
 	} else if (size == 4) {
-		fmt = "\n    \"%s\" : %4u  \n";
+		fmt = "%s\"%s\" : %4u  \n";
 	} else {
 		return C_JSON_INVALID_SIZE;
 	}
-	snprintf(&state->buffer[state->offset], state->buffer_len - state->offset, fmt, name, out);
+	snprintf(&state->buffer[state->offset], state->buffer_len - state->offset,
+			fmt, indent_spaces[state->indent], name, out);
 	state->offset = strlen(state->buffer);
 	return C_JSON_OK;
 }
@@ -266,12 +283,16 @@ int c_json_emit_name_and_uint(struct c_json_state *state, char *name, uint32_t o
  * emits:
  * 		"name" : signed 64 bit integer
  */
-int c_json_emit_name_and_int64(struct c_json_state *state, char *name, int64_t out) {
+int c_json_emit_name_and_int64(struct c_json_state *state, char *name,
+		int64_t out) {
 	if (check_buffer_length(state) != 0) {
-		cos_log(LOG_LEVEL_DEBUG, "buffer out of space c_json_emit_name_and_int()");
+		cos_log(LOG_LEVEL_DEBUG,
+				"buffer out of space c_json_emit_name_and_int()");
 		return C_JSON_BUFFER_OVERFLOW;
 	}
-	snprintf(&state->buffer[state->offset], state->buffer_len - state->offset, "    %s : %lld\n", name, (unsigned long long)out);
+	snprintf(&state->buffer[state->offset], state->buffer_len - state->offset,
+			"%s%s : %lld\n", indent_spaces[state->indent], name,
+			(unsigned long long) out);
 	state->offset = strlen(state->buffer);
 	return C_JSON_OK;
 }
@@ -280,12 +301,15 @@ int c_json_emit_name_and_int64(struct c_json_state *state, char *name, int64_t o
  * emits:
  * 		"name" : float
  */
-int c_json_emit_name_and_float32(struct c_json_state *state, char *name, float out) {
+int c_json_emit_name_and_float32(struct c_json_state *state, char *name,
+		float out) {
 	if (check_buffer_length(state) != 0) {
-		cos_log(LOG_LEVEL_DEBUG, "buffer out of space c_json_emit_name_and_int()");
+		cos_log(LOG_LEVEL_DEBUG,
+				"buffer out of space c_json_emit_name_and_int()");
 		return C_JSON_BUFFER_OVERFLOW;
 	}
-	snprintf(&state->buffer[state->offset], state->buffer_len - state->offset, "    %s : %e\n", name, (double)out);
+	snprintf(&state->buffer[state->offset], state->buffer_len - state->offset,
+			"%s%s : %e\n", indent_spaces[state->indent], name, (double) out);
 	state->offset = strlen(state->buffer);
 	return C_JSON_OK;
 }
@@ -294,21 +318,24 @@ int c_json_emit_name_and_float32(struct c_json_state *state, char *name, float o
  * emits:
  * 		"name" : double
  */
-int c_json_emit_name_and_float64(struct c_json_state *state, char *name, double out) {
+int c_json_emit_name_and_float64(struct c_json_state *state, char *name,
+		double out) {
 	if (check_buffer_length(state) != 0) {
-		cos_log(LOG_LEVEL_DEBUG, "buffer out of space c_json_emit_name_and_int()");
+		cos_log(LOG_LEVEL_DEBUG,
+				"buffer out of space c_json_emit_name_and_int()");
 		return C_JSON_BUFFER_OVERFLOW;
 	}
-	snprintf(&state->buffer[state->offset], state->buffer_len - state->offset, "    %s : %e\n", name, out);
+	snprintf(&state->buffer[state->offset], state->buffer_len - state->offset,
+			"%s%s : %e\n", indent_spaces[state->indent], name, out);
 	state->offset = strlen(state->buffer);
 	return C_JSON_OK;
 }
 
-
 /******************************************************************************
  * Parse the string using jsmn
  */
-int c_json_parse_string(char* js, int js_len, jsmntok_t *token, int tok_len, int *active) {
+int c_json_parse_string(char* js, int js_len, jsmntok_t *token, int tok_len,
+		int *active) {
 	int r;
 	jsmn_parser p;
 
@@ -324,7 +351,8 @@ int c_json_parse_string(char* js, int js_len, jsmntok_t *token, int tok_len, int
 /***************************************************************************
  * Returns the value of the result string.
  */
-int c_json_get_result_key(char* js, int js_len, jsmntok_t *token, int tok_len, int active, bool *result) {
+int c_json_get_result_key(char* js, int js_len, jsmntok_t *token, int tok_len,
+		int active, bool *result) {
 	char* err = "no error";
 	if (tok_len < 2 || tok_len < active) {
 		err = "token length error";
@@ -349,7 +377,9 @@ int c_json_get_result_key(char* js, int js_len, jsmntok_t *token, int tok_len, i
 	 * OK, there's a big hack here to avoid allocating any additional memory
 	 * for the string.
 	 */
-	int equal = strncmp((const char*)&js[token[1].start], "result", (token[1].end - token[1].start));
+	// int equal = CHECK_TOKEN_STRING(js, token[1], "result");
+	int equal = strncmp((const char*) &js[token[1].start], "result",
+			(token[1].end - token[1].start));
 	if (equal != 0) {
 		err = "first token isn't 'result'";
 		goto error;
@@ -360,19 +390,18 @@ int c_json_get_result_key(char* js, int js_len, jsmntok_t *token, int tok_len, i
 		goto error;
 	}
 
-	int ok = strncmp(&js[token[2].start], "ok", (token[2].end - token[2].start));
-	int error = strncmp(&js[token[2].start], "error", (token[2].end - token[2].start));
+	int ok = strncmp(&js[token[2].start], "ok",
+			(token[2].end - token[2].start));
+	int error = strncmp(&js[token[2].start], "error",
+			(token[2].end - token[2].start));
 	if (ok == 0 || error == 0) {
-		*result = ok == 0;
+		*result = (ok == 0);
 	} else {
 		err = "result isn't 'ok' or 'error'";
 		goto error;
 	}
 	return C_JSON_OK;
-error:
-	cos_log(LOG_LEVEL_DEBUG, err);
+	error: cos_log(LOG_LEVEL_DEBUG, err);
 	return C_JSON_PARSE_ERROR;
 }
-
-
 

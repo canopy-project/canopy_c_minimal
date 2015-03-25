@@ -21,6 +21,25 @@
 #include	<canopy_os.h>
 
 
+/****************************************************************************/
+/****************************************************************************/
+/*
+ *
+ */
+canopy_error initialize_device(struct canopy_device *device, struct canopy_remote *remote) {
+	COS_ASSERT(device != NULL);
+	memset(device, 0, sizeof(struct canopy_device));
+	/*
+	 * It's OK that the remote is null....
+	 */
+	device->remote = remote;
+	return CANOPY_SUCCESS;
+}
+
+
+/****************************************************************************/
+/****************************************************************************/
+
 // Get the device based on the authentication information provided to
 // canopy_remote_init.
 //

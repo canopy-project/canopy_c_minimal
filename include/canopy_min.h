@@ -75,6 +75,9 @@ typedef enum {
 
 	/* we've run out of memory */
 	CANOPY_ERROR_OUT_OF_MEMORY,
+
+	/* there's been an error emiting a JSON string */
+	CANOPY_ERROR_JSON,
 } canopy_error;
 
 struct canopy_error_strings {
@@ -95,7 +98,8 @@ const static struct canopy_error_strings canopy_error_strings_table[] = {
         {CANOPY_ERROR_VAR_IN_USE, "cloud variable already in use"},
         {CANOPY_ERROR_VAR_NOT_FOUND, "cloud variable not found"},
         {CANOPY_ERROR_VAR_NOT_SET, "cloud variable has never been set"},
-        {CANOPY_ERROR_OUT_OF_MEMORY, "out of memory"}
+        {CANOPY_ERROR_OUT_OF_MEMORY, "out of memory"},
+        {CANOPY_ERROR_JSON, "could not emit a JSON string"},
 };
 
 inline static const char *canopy_error_string(canopy_error err) {
@@ -880,6 +884,24 @@ typedef enum {
     CANOPY_VAR_INOUT,
 } canopy_var_direction;
 
+struct canopy_var_direction_strings {
+	canopy_var_direction dir;
+    const char *str;
+};
+const static struct canopy_var_direction_strings canopy_var_direction_table[] = {
+        {CANOPY_VAR_DIRECTION_INVALID, "INVALID"},
+        {CANOPY_VAR_OUT, "out"},
+        {CANOPY_VAR_IN, "in"},
+        {CANOPY_VAR_INOUT, "inout"},
+};
+inline static const char *canopy_var_direction_string(canopy_var_direction dir) {
+    return canopy_var_direction_table[dir].str;
+}
+
+
+/**************************************************************************
+ * Data types
+ */
 typedef enum {
     CANOPY_VAR_DATATYPE_INVALID=0,
     CANOPY_VAR_DATATYPE_VOID,
@@ -898,6 +920,36 @@ typedef enum {
     CANOPY_VAR_DATATYPE_ARRAY,
 } canopy_var_datatype;
 
+struct canopy_var_datatype_strings {
+	canopy_var_datatype type;
+    const char *str;
+};
+const static struct canopy_var_datatype_strings canopy_var_datatype_table[] = {
+		{CANOPY_VAR_DATATYPE_INVALID, "invalid"},
+	    {CANOPY_VAR_DATATYPE_VOID, "VOID"},
+	    {CANOPY_VAR_DATATYPE_STRING, "STRING"},
+	    {CANOPY_VAR_DATATYPE_BOOL, "BOOL"},
+	    {CANOPY_VAR_DATATYPE_INT8, "INT8"},
+	    {CANOPY_VAR_DATATYPE_UINT8, "UINT8"},
+	    {CANOPY_VAR_DATATYPE_INT16, "INT16"},
+	    {CANOPY_VAR_DATATYPE_UINT16, "UIN16"},
+	    {CANOPY_VAR_DATATYPE_INT32, "INT32"},
+	    {CANOPY_VAR_DATATYPE_UINT32, "UINT32"},
+	    {CANOPY_VAR_DATATYPE_FLOAT32, "FLOAT32"},
+	    {CANOPY_VAR_DATATYPE_FLOAT64, "FLOAT64"},
+	    {CANOPY_VAR_DATATYPE_DATETIME, "DATETIME"},
+	    {CANOPY_VAR_DATATYPE_STRUCT, "STRUCT"},
+	    {CANOPY_VAR_DATATYPE_ARRAY, "ARRAY"},
+};
+inline static const char *canopy_var_datatype_string(canopy_var_datatype type) {
+    return canopy_var_datatype_table[type].str;
+}
+
+
+
+/*
+ * Canopy var value
+ */
 #define CANOPY_VAR_VALUE_MAX_LENGTH 128
 struct canopy_var_value {
     canopy_var_datatype type;

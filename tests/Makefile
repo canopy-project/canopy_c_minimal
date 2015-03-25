@@ -26,6 +26,8 @@ NEEDED_H_FILES	= \
 		../include/canopy_min.h \
 		../include/canopy_os.h
 
+all: $(PROGRAM_FILES)
+
 default: $(PROGRAM_FILES)
 
 test_json: test_json.c $(NEEDED_H_FILES)
