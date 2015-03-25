@@ -14,6 +14,7 @@
 
 #include 	<stdlib.h>
 #include 	<curl/curl.h>
+#include	<string.h>
 
 #include	<canopy_min.h>
 #include	<canopy_os.h>
@@ -36,7 +37,7 @@ static size_t _curl_write_handler(void *ptr, size_t size, size_t nmemb, void *us
 	 * TODO Check to make sure there's enough buffer space before the copy, so
 	 * we can return the actual length we used.
 	 */
-	memcpy(http->buffer[http->offset], ptr, (http->buffer_len - http->offset));
+	memcpy((void*)&http->buffer[http->offset], ptr, (http->buffer_len - http->offset));
 	http->offset += len;
 	http->buffer[http->offset + 1] = '\0';
 	return len;
@@ -73,7 +74,7 @@ canopy_error canopy_http_post(
 
 	curl_easy_perform(curl);
 
-	used_buffer = private.offset;
+	*used_buffer = private.offset;
 	return CANOPY_SUCCESS;
 
 cleanup:
