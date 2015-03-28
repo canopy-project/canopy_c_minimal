@@ -53,31 +53,53 @@ canopy_error canopy_http_post(
 		int						*used_buffer,
 		struct canopy_barrier *barrier) {
 
+	canopy_error err = CANOPY_SUCCESS;
 	CURL *curl = NULL;
+	CURLcode res;
+	char local_buf[256];
 	struct private private;
 	private.buffer = buffer;
 	private.buffer_len = buffer_length;
 	private.offset = 0;
 
+	if (barrier != NULL) {
+		return CANOPY_ERROR_NOT_IMPLEMENTED;
+	}
 	cos_log(LOG_LEVEL_DEBUG, "Sending payload to %s:\n%s\n\n", url, payload);
 
 	curl = curl_easy_init();
 	if (!curl) {
-		cos_log(LOG_LEVEL_WARN, "Initialzation of curl failed");
+		cos_log(LOG_LEVEL_WARN, "Initialization of curl failed");
+		err = CANOPY_ERROR_NETWORK;
 		goto cleanup;
 	}
 
+	snprintf(local_buf, sizeof(local_buf), "%s:%s", remote->params->name, remote->params->password);
+
 	curl_easy_setopt(curl, CURLOPT_URL, url);
-	curl_easy_setopt(curl, CURLOPT_POSTFIELDS, payload);
+	if (payload == NULL || strlen(payload) == 0) {
+		curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, 0);
+	} else {
+		int len = strlen(payload);
+		curl_easy_setopt(curl, CURLOPT_POSTFIELDS, payload);
+		curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, len);
+	}
 	curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, _curl_write_handler);
 	curl_easy_setopt(curl, CURLOPT_WRITEDATA, &private);
+	curl_easy_setopt(curl, CURLOPT_HTTPAUTH, (long)CURLAUTH_BASIC);
+	/* set user name and password for the authentication */
+	curl_easy_setopt(curl, CURLOPT_USERPWD, local_buf);
 
-	curl_easy_perform(curl);
-
+	res = curl_easy_perform(curl);
+	if (res != CURLE_OK) {
+		cos_log(LOG_LEVEL_WARN, "Transfer failed, res: %d", res);
+		err = CANOPY_ERROR_NETWORK;
+		goto cleanup;
+	}
 	*used_buffer = private.offset;
-	return CANOPY_SUCCESS;
 
 cleanup:
-	return CANOPY_ERROR_UNKNOWN;
+	curl_easy_cleanup(curl);
+	return err;
 }
 
