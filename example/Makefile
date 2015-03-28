@@ -19,7 +19,7 @@ CFLAGS += $(CFLAGS_INCLUDES) -g
 
 PROGRAM_FILES	=	toaster
 
-LIBS	=	-L../src/ -lcanopy -L../src/linux -lcanopy_os -lcurl
+LIBS	=	-L../src/ -lcanopy -L../src/linux -lcanopy_os -L../src/jsmn -ljsmn -lcurl
 
 NEEDED_H_FILES	= \
         ../include/canopy_min.h \
