@@ -25,6 +25,9 @@
 // header also link with the same version number of the library.
 #define CANOPY_MIN_HEADER_VERSION "15.02.030"
 
+#define LOCAL_MIN(x,y) ((x) < (y) ? (x) : (y))
+
+
 
 /*****************************************************************************/
 // ERRORS
@@ -78,6 +81,9 @@ typedef enum {
 
 	/* there's been an error emiting a JSON string */
 	CANOPY_ERROR_JSON,
+
+	/* Network error, either HTTP of websocket */
+	CANOPY_ERROR_NETWORK,
 } canopy_error;
 
 struct canopy_error_strings {
@@ -100,6 +106,7 @@ const static struct canopy_error_strings canopy_error_strings_table[] = {
         {CANOPY_ERROR_VAR_NOT_SET, "cloud variable has never been set"},
         {CANOPY_ERROR_OUT_OF_MEMORY, "out of memory"},
         {CANOPY_ERROR_JSON, "could not emit a JSON string"},
+        {CANOPY_ERROR_NETWORK, "network error"},
 };
 
 inline static const char *canopy_error_string(canopy_error err) {
@@ -897,6 +904,17 @@ const static struct canopy_var_direction_strings canopy_var_direction_table[] = 
 inline static const char *canopy_var_direction_string(canopy_var_direction dir) {
     return canopy_var_direction_table[dir].str;
 }
+inline static canopy_var_direction direction_from_string(const char* str, int len) {
+	int i;
+	for (i = 0; i < sizeof(canopy_var_direction_table); i++) {
+		int tl = sizeof(canopy_var_direction_table[i].str);
+		int small = LOCAL_MIN(len, tl);
+		if (strncmp(str, canopy_var_direction_table[i].str, small) == 0) {
+			return canopy_var_direction_table[i].dir;
+		}
+	}
+	return CANOPY_VAR_DIRECTION_INVALID;
+}
 
 
 /**************************************************************************
@@ -926,25 +944,35 @@ struct canopy_var_datatype_strings {
 };
 const static struct canopy_var_datatype_strings canopy_var_datatype_table[] = {
 		{CANOPY_VAR_DATATYPE_INVALID, "invalid"},
-	    {CANOPY_VAR_DATATYPE_VOID, "VOID"},
-	    {CANOPY_VAR_DATATYPE_STRING, "STRING"},
-	    {CANOPY_VAR_DATATYPE_BOOL, "BOOL"},
-	    {CANOPY_VAR_DATATYPE_INT8, "INT8"},
-	    {CANOPY_VAR_DATATYPE_UINT8, "UINT8"},
-	    {CANOPY_VAR_DATATYPE_INT16, "INT16"},
-	    {CANOPY_VAR_DATATYPE_UINT16, "UIN16"},
-	    {CANOPY_VAR_DATATYPE_INT32, "INT32"},
-	    {CANOPY_VAR_DATATYPE_UINT32, "UINT32"},
-	    {CANOPY_VAR_DATATYPE_FLOAT32, "FLOAT32"},
-	    {CANOPY_VAR_DATATYPE_FLOAT64, "FLOAT64"},
-	    {CANOPY_VAR_DATATYPE_DATETIME, "DATETIME"},
-	    {CANOPY_VAR_DATATYPE_STRUCT, "STRUCT"},
-	    {CANOPY_VAR_DATATYPE_ARRAY, "ARRAY"},
+	    {CANOPY_VAR_DATATYPE_VOID, "void"},
+	    {CANOPY_VAR_DATATYPE_STRING, "string"},
+	    {CANOPY_VAR_DATATYPE_BOOL, "bool"},
+	    {CANOPY_VAR_DATATYPE_INT8, "int8"},
+	    {CANOPY_VAR_DATATYPE_UINT8, "uint8"},
+	    {CANOPY_VAR_DATATYPE_INT16, "int16"},
+	    {CANOPY_VAR_DATATYPE_UINT16, "uint16"},
+	    {CANOPY_VAR_DATATYPE_INT32, "int32"},
+	    {CANOPY_VAR_DATATYPE_UINT32, "uint32"},
+	    {CANOPY_VAR_DATATYPE_FLOAT32, "float32"},
+	    {CANOPY_VAR_DATATYPE_FLOAT64, "float64"},
+	    {CANOPY_VAR_DATATYPE_DATETIME, "datetime"},
+	    {CANOPY_VAR_DATATYPE_STRUCT, "struct"},
+	    {CANOPY_VAR_DATATYPE_ARRAY, "array"},
 };
 inline static const char *canopy_var_datatype_string(canopy_var_datatype type) {
     return canopy_var_datatype_table[type].str;
 }
-
+inline static canopy_var_datatype datatype_from_string(const char* str, int len) {
+	int i;
+	for (i = 0; i < sizeof(canopy_var_datatype_table); i++) {
+		int tl = sizeof(canopy_var_datatype_table[i].str);
+		int small = LOCAL_MIN(len, tl);
+		if (strncmp(str, canopy_var_datatype_table[i].str, small) == 0) {
+			return canopy_var_datatype_table[i].type;
+		}
+	}
+	return CANOPY_VAR_DATATYPE_INVALID;
+}
 
 
 /*

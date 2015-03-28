@@ -16,10 +16,12 @@
 #include	<stdint.h>
 #include	<stdbool.h>
 #include	<string.h>
+#include	<stdio.h>
 
 #include	<canopy_min.h>
 #include	<canopy_min_internal.h>
 #include	<canopy_os.h>
+#include	<jsmn/jsmn.h>
 
 /******************************************************************************/
 
@@ -222,18 +224,24 @@ canopy_error canopy_device_get_var_by_name(canopy_device_t *device,
 }
 
 /***************************************************************************
- * 	c_json_emit_vardcl(struct canopy_device *device, struct c_json_state *state)
+ * 	c_json_emit_vardcl(struct canopy_device *device, struct c_json_state *state,
+ * 	bool emit_obj)
  *
  * 		creates the JSON  request to register the variables that are registered
- * 	with the remote. (in canopy_variables.c)
+ * 	with the remote. (in canopy_variables.c) "emit_obj" sends the opening
+ * 	and closing object keys.
  */
-canopy_error c_json_emit_vardcl(struct canopy_device *device, struct c_json_state *state) {
+canopy_error c_json_emit_vardcl(struct canopy_device *device,
+		struct c_json_state *state, bool emit_obj) {
 	int err = CANOPY_SUCCESS;
 	struct canopy_var *var;
-	err = c_json_emit_open_object(state);
-	if (err != C_JSON_OK) {
-		cos_log(LOG_LEVEL_DEBUG, "unable to emit opening object err: %d\n", err);
-		return CANOPY_ERROR_JSON;
+	if (emit_obj) {
+		err = c_json_emit_open_object(state);
+		if (err != C_JSON_OK) {
+			cos_log(LOG_LEVEL_DEBUG, "unable to emit opening object err: %d\n",
+					err);
+			return CANOPY_ERROR_JSON;
+		}
 	}
 
 	err = c_json_emit_name_and_object(state, "var_decls");
@@ -245,37 +253,165 @@ canopy_error c_json_emit_vardcl(struct canopy_device *device, struct c_json_stat
 	var = device->vars;
 	while (var != NULL) {
 		char * name = var->name;
-	    snprintf(buffer, sizeof(buffer), "%s %s %s",
-	    		canopy_var_direction_string(var->direction),
-	    		canopy_var_datatype_string(var->type), name);
+		snprintf(buffer, sizeof(buffer), "%s %s %s",
+				canopy_var_direction_string(var->direction),
+				canopy_var_datatype_string(var->type), name);
 		err = c_json_emit_name_and_object(state, buffer);
 		if (err != C_JSON_OK) {
-			cos_log(LOG_LEVEL_DEBUG, "unable to emit variable: %s err: %d\n", name, err);
+			cos_log(LOG_LEVEL_DEBUG, "unable to emit variable: %s err: %d\n",
+					name, err);
 			return CANOPY_ERROR_JSON;
 		}
 		err = c_json_emit_close_object(state);
 		if (err != C_JSON_OK) {
-			cos_log(LOG_LEVEL_DEBUG, "unable to emit variable %s closing object err: %d\n", name, err);
+			cos_log(LOG_LEVEL_DEBUG,
+					"unable to emit variable %s closing object err: %d\n", name,
+					err);
 			return CANOPY_ERROR_JSON;
 		}
 		var = var->next;
 	}
 
-
 	err = c_json_emit_close_object(state);
 	if (err != C_JSON_OK) {
-		cos_log(LOG_LEVEL_DEBUG, "unable to emit var_decls closing object err: %d\n", err);
+		cos_log(LOG_LEVEL_DEBUG,
+				"unable to emit var_decls closing object err: %d\n", err);
 		return CANOPY_ERROR_JSON;
 	}
 
-	err = c_json_emit_close_object(state);
-	if (err != C_JSON_OK) {
-		cos_log(LOG_LEVEL_DEBUG, "unable to emit opening object err: %d\n", err);
-		return CANOPY_ERROR_JSON;
+	if (emit_obj) {
+		err = c_json_emit_close_object(state);
+		if (err != C_JSON_OK) {
+			cos_log(LOG_LEVEL_DEBUG, "unable to emit opening object err: %d\n",
+					err);
+			return CANOPY_ERROR_JSON;
+		}
 	}
 	return err;
 }
 
+/***************************************************************************
+ * 	c_json_parse_vardcl(struct canopy_device *device,
+ *		char* js, int js_len,
+ *		jsmntok_t *token, int tok_len,
+ *		int current,
+ *		bool check_obj)
+ *
+ * 		parses the JSON vardecl tag from the server to register the variables that are registered
+ * 	with the device. (in canopy_variables.c)
+ */
+canopy_error c_json_parse_vardcl(struct canopy_device *device,
+		char* js, int js_len, 			/* the input JSON and total length  */
+		jsmntok_t *token, int tok_len,	/* token array with length */
+		int offset,						/* token offset for name vardecl */
+		bool check_obj) {				/* expect outer-most object */
+	int err = CANOPY_SUCCESS;
+	int i;
+
+	COS_ASSERT(device != NULL);
+	COS_ASSERT(device->remote != NULL);
+
+	/*
+	 * The JSON returned parses to the following structure.
+	 * 	{type = JSMN_STRING, start = 6, end = 15, size = 1}, 	var_decls
+	 *	{type = JSMN_OBJECT, start = 19, end = 68, size = 2}, 		{
+     *	{type = JSMN_STRING, start = 31, end = 48, size = 0}, 			 out bool test_var
+     *	{type = JSMN_OBJECT, start = 50, end = 62, size = 0}, 			{
+	 *
+	 * or
+	 *
+	 * 	{type = JSMN_STRING, start = 6, end = 15, size = 1}, 	var_decls
+	 * 	{type = JSMN_OBJECT, start = 19, end = 114, size = 4}, 		{
+	 * 	{type = JSMN_STRING, start = 31, end = 48, size = 0}, 			"out bool test_var"
+	 * 	{type = JSMN_OBJECT, start = 50, end = 62, size = 0}, 			{
+	 * 	{type = JSMN_STRING, start = 72, end = 94, size = 0},			"in datetime  test_time"
+	 * 	{type = JSMN_OBJECT, start = 96, end = 108, size = 0}, 			{
+	 *
+	 * or
+	 *
+	 * 	{type = JSMN_STRING, start = 6, end = 15, size = 1}, 	var_decls
+	 * 	{type = JSMN_OBJECT, start = 19, end = 159, size = 6}, 		{
+	 * 	{type = JSMN_STRING, start = 31, end = 48, size = 0}, 			"out bool test_var"
+	 * 	{type = JSMN_OBJECT, start = 50, end = 62, size = 0}, 			{
+	 * 	{type = JSMN_STRING, start = 72, end = 94, size = 0}, 			"in datetime  test_time"
+	 * 	{type = JSMN_OBJECT, start = 96, end = 108, size = 0}, 			{
+	 * 	{type = JSMN_STRING, start = 118, end = 139, size = 0}, 		"inout uint32  test_32"
+	 * 	{type = JSMN_OBJECT, start = 141, end = 153, size = 0}, 		{
+	 *
+	 */
+
+	COS_ASSERT(token[offset].type == JSMN_STRING);
+	COS_ASSERT(strncmp((const char*) &js[token[offset].start], "var_decls", (token[offset].end - token[offset].start)) == 0);
+	COS_ASSERT(token[offset].size == 1);
+	offset++;
+
+	/*
+	 * We should be at the object after the decls.  The size of this object indicates
+	 * the number of entries in the list times 2.
+	 * 		The first thing should be a string that has the specification in it.  Its size should be 0.
+	 * 		The next token is the object, which also should have a size of 0.
+	 *
+	 * repeat as necessary.........
+	 */
+	COS_ASSERT(token[offset].type == JSMN_OBJECT);
+	int n_decls = token[offset].size;
+	COS_ASSERT((n_decls % 2) == 0);
+	offset++;
+	for (i = 0; i < (n_decls / 2); i++) {
+		char dir[32];
+		char type[32];
+		char name[128];
+		memset(&dir, 0, sizeof(dir));
+		memset(&type, 0, sizeof(type));
+		memset(&name, 0, sizeof(name));
+
+		/*
+		 * the token at offset should be the string we need to parse,
+		 */
+		COS_ASSERT(token[offset].type == JSMN_STRING);
+		COS_ASSERT(token[offset].size == 0);
+		strncpy(buffer, &js[token[offset].start], (token[offset].end - token[offset].start));
+		buffer[(token[offset].start - token[offset].end)] = '\0';
+
+		sscanf(buffer, "%s %s %s", (char*)&dir, (char*)&type, (char*)&name);
+		canopy_var_direction v_dir = direction_from_string((const char*) dir,  sizeof(dir));
+		canopy_var_datatype v_type = datatype_from_string((const char*) type, sizeof(type));
+		if (v_dir == CANOPY_VAR_DIRECTION_INVALID) {
+			cos_log(LOG_LEVEL_DEBUG, "v_dir in string is invalid: %s\n", dir);
+			return CANOPY_ERROR_JSON;
+		}
+		if (v_type == CANOPY_VAR_DATATYPE_INVALID) {
+			cos_log(LOG_LEVEL_DEBUG, "v_dir in string is invalid: %s\n", type);
+			return CANOPY_ERROR_JSON;
+		}
+
+		/*
+		 * We've got the name, so we need to look to see if this variable has
+		 * already been defined.  If it has, we're done, but log any
+		 * Difference in direction or type
+		 */
+		struct canopy_var* var = find_name(device, (const char*) name);
+		if (var != NULL) {
+
+		} else {
+
+		}
+
+		/*
+		 * Go on to the next token
+		 */
+		offset++;
+
+		/*
+		 * Now there should be an empty object...
+		 */
+		COS_ASSERT(token[offset].type == JSMN_OBJECT);
+		COS_ASSERT(token[offset].size == 0);
+		offset++;
+	} /* decl loop */
+
+	return err;
+}
 
 /*****************************************************************************/
 /*****************************************************************************/

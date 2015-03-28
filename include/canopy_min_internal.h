@@ -23,7 +23,6 @@
 #include	<canopy_min.h>
 
 
-
 /***************************************************************************
  * Procedures related to canopy_remote's
  */
@@ -156,9 +155,25 @@ int c_json_emit_name_and_float64(struct c_json_state *state, char *name, double 
  * 	c_json_emit_vardcl(struct canopy_device *device, struct c_json_state *state)
  *
  * 		creates the JSON  request to register the variables that are registered
- * 	with the remote. (in canopy_variables.c)
+ * 	with the device. (in canopy_variables.c)
  */
-canopy_error c_json_emit_vardcl(struct canopy_device *device, struct c_json_state *state);
+canopy_error c_json_emit_vardcl(struct canopy_device *device, struct c_json_state *state, bool emit_obj);
+
+
+/***************************************************************************
+ * 	c_json_parse_vardcl(struct canopy_device *device,
+ *		char* js, int js_len, jsmntok_t *token, int tok_len,
+ *		int current)
+ *
+ * 		parses the JSON vardecl tag from the server to register the variables that are registered
+ * 	with the device. (in canopy_variables.c)
+ */
+canopy_error c_json_parse_vardcl(struct canopy_device *device,
+		char* js, int js_len, 			/* the input JSON and total length  */
+		jsmntok_t *token, int tok_len,	/* token array with length */
+		int name_offset,				/* token offset for name vardecl */
+		bool check_obj);				/* expect outer-most object */
+
 
 /***************************************************************************/
 /***************************************************************************/
