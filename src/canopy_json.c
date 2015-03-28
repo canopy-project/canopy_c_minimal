@@ -184,7 +184,7 @@ int c_json_emit_name_and_object(struct c_json_state *state, char *name) {
 		return C_JSON_BUFFER_OVERFLOW;
 	}
 	snprintf(&state->buffer[state->offset], state->buffer_len - state->offset,
-			"%s\"%s\" {  \n", indent_spaces[state->indent], name);
+			"%s\"%s\" : {  \n", indent_spaces[state->indent], name);
 	state->indent++;
 	state->offset = strlen(state->buffer);
 	return C_JSON_OK;
