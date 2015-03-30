@@ -96,6 +96,8 @@ canopy_error canopy_remote_init(canopy_context_t *ctx,
 	}
 	remote->params = params;
 
+	remote->ctx = ctx;
+
 	if (ctx->remotes == NULL) {
 		ctx->remotes = remote;
 	} else {

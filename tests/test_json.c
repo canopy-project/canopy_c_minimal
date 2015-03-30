@@ -123,8 +123,36 @@ int test_vardcl_output() {
 		return -1;
 	}
 
+	canopy_context_t ctx;
+    canopy_remote_params_t params;
+    canopy_remote_t remote;
+
+
+    canopy_error err = canopy_ctx_init(&ctx, 0);
+    if (err != CANOPY_SUCCESS) {
+        cos_log(LOG_LEVEL_ERROR, "Error initializing ctx: %s\n", canopy_error_string(err));
+        exit(-1);
+    }
+
+    // Initialize remote
+    memset(&params, 0, sizeof(params));
+    params.credential_type = CANOPY_DEVICE_CREDENTIALS;
+    params.name = TOASTER_UUID;
+    params.password = TOASTER_SECRET_KEY;
+    params.auth_type = CANOPY_BASIC_AUTH;
+    params.remote = REMOTE_ADDR;
+    params.use_ws = false;
+    params.persistent = false;
+    err = canopy_remote_init(&ctx, &params, &remote);
+    if (err != CANOPY_SUCCESS) {
+        cos_log(LOG_LEVEL_ERROR, "Error initializing remote: %s\n", canopy_error_string(err));
+         return -3;
+    }
+
+
+
 	struct canopy_device device;
-	canopy_error err = initialize_device(&device, NULL);
+	err = initialize_device(&device, &remote);
 	if (err != CANOPY_SUCCESS) {
 		printf("initialize_device returned: %d", err);
 		return -2;
@@ -141,6 +169,19 @@ int test_vardcl_output() {
 		return -3;
 	}
 
+	// in datetime  test_time
+	err = canopy_device_var_declare(&device,
+			CANOPY_VAR_IN,
+			CANOPY_VAR_DATATYPE_DATETIME,
+	       "test_time",
+			&out_var);
+	if (err != CANOPY_SUCCESS) {
+		printf("canopy_device_var_declare name: %s returned: %d", "test_var", err);
+		return -4;
+	}
+
+
+	printf("about to call c_json_emit_vardcl\n");
 	err = c_json_emit_vardcl(&device, &state, true);
 	if (err != CANOPY_SUCCESS) {
 		printf("c_json_emit_vardcl() returned: %d", err);
@@ -151,6 +192,8 @@ int test_vardcl_output() {
 
 	return 0;
 }
+
+/************************************************************************/
 
 
 /*
@@ -185,15 +228,15 @@ static const char* var_decls3 = "{"
 
 
 /*****************************************************************************
- * 		test_vardecl_1_input
+ * Proccess var_decls()
  */
-int test_vardecl_1_input() {
+static int proccess_var_decls(const char*  js) {
 	int out;
 	int tok_len = 128;
 	jsmntok_t tokens[128];
-	const char *js;
 	int i;
 	int ti = 1;
+	int next_token;
 
 	canopy_context_t ctx;
     canopy_remote_params_t params;
@@ -222,15 +265,15 @@ int test_vardecl_1_input() {
          return -3;
     }
 
-	js = var_decls1;
-	memset(&tokens, 0, sizeof(jsmntok_t) * tok_len);
-	bool answer;
-	int active = 0;
 	err = initialize_device(&device, &remote);
 	if (err != CANOPY_SUCCESS) {
 		printf("initialize_device returned: %d", err);
 		return -2;
 	}
+
+	memset(&tokens, 0, sizeof(jsmntok_t) * tok_len);
+	bool answer;
+	int active = 0;
 
 	out = c_json_parse_string((char*)js, strlen(js), tokens, tok_len, &active);
 	printf("parse string returned %d active tokens %d\n", out, active);
@@ -239,9 +282,24 @@ int test_vardecl_1_input() {
 			(char*)js, strlen(js), 			/* the input JSON and total length  */
 			tokens, tok_len,	/* token array with length */
 			1,						/* token offset for name vardecl */
+			&next_token,
 			false);				/* expect outer-most object */
 
 	printf("get result key returned %d, answer: %d\n", out, answer);
+	printf("%s\n\n", js);
+
+	return 0;
+
+
+}
+
+/*****************************************************************************
+ * 		test_vardecl_1_input
+ */
+int test_vardecl_1_input() {
+	int out;
+
+	out = proccess_var_decls(var_decls1);
 	printf("%s\n\n", var_decls1);
 
 	return 0;
@@ -253,22 +311,8 @@ int test_vardecl_1_input() {
  */
 int test_vardecl_2_input() {
 	int out;
-	int tok_len = 128;
-	jsmntok_t tokens[128];
-	const char *js;
-	int i;
-	int ti = 1;
 
-	js = var_decls2;
-	memset(&tokens, 0, sizeof(jsmntok_t) * tok_len);
-	bool answer;
-	int active = 0;
-
-	out = c_json_parse_string((char*)js, strlen(js), tokens, tok_len, &active);
-	printf("parse string returned %d active tokens %d\n", out, active);
-
-	out = c_json_get_result_key((char*)js, strlen(js), tokens, tok_len, active, &answer);
-	printf("get result key returned %d, answer: %d\n", out, answer);
+	out = proccess_var_decls(var_decls2);
 	printf("%s\n\n", var_decls2);
 
 	return 0;
@@ -280,26 +324,22 @@ int test_vardecl_2_input() {
  */
 int test_vardecl_3_input() {
 	int out;
-	int tok_len = 128;
-	jsmntok_t tokens[128];
-	const char *js;
-	int i;
-	int ti = 1;
 
-	js = var_decls3;
-	memset(&tokens, 0, sizeof(jsmntok_t) * tok_len);
-	bool answer;
-	int active = 0;
-
-	out = c_json_parse_string((char*)js, strlen(js), tokens, tok_len, &active);
-	printf("parse string returned %d active tokens %d\n", out, active);
-
-	out = c_json_get_result_key((char*)js, strlen(js), tokens, tok_len, active, &answer);
-	printf("get result key returned %d, answer: %d\n", out, answer);
+	out = proccess_var_decls(var_decls3);
 	printf("%s\n\n", var_decls3);
 
 	return 0;
 }
+
+
+static const char* vars_int = "{"
+"    \"vars\" : {	"
+"        \"temperature\" : 43.0,	"
+"        \"humidity\" : 32.41,	"
+"        \"dimmer_level\" : 4,	"
+"        \"happy\" : true	"
+"    }	"
+"}	";
 
 
 /*******************************************************************************

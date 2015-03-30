@@ -30,7 +30,8 @@ canopy_error initialize_device(struct canopy_device *device, struct canopy_remot
 	COS_ASSERT(device != NULL);
 	memset(device, 0, sizeof(struct canopy_device));
 	/*
-	 * It's OK that the remote is null....
+	 * It's OK that the remote is null....  Well not really, the'res an
+	 * assertion in the variable code that checks for null;
 	 */
 	device->remote = remote;
 	return CANOPY_SUCCESS;

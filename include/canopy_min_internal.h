@@ -151,29 +151,6 @@ int c_json_emit_name_and_float32(struct c_json_state *state, char *name, float o
 int c_json_emit_name_and_float64(struct c_json_state *state, char *name, double out);
 
 
-/***************************************************************************
- * 	c_json_emit_vardcl(struct canopy_device *device, struct c_json_state *state)
- *
- * 		creates the JSON  request to register the variables that are registered
- * 	with the device. (in canopy_variables.c)
- */
-canopy_error c_json_emit_vardcl(struct canopy_device *device, struct c_json_state *state, bool emit_obj);
-
-
-/***************************************************************************
- * 	c_json_parse_vardcl(struct canopy_device *device,
- *		char* js, int js_len, jsmntok_t *token, int tok_len,
- *		int current)
- *
- * 		parses the JSON vardecl tag from the server to register the variables that are registered
- * 	with the device. (in canopy_variables.c)
- */
-canopy_error c_json_parse_vardcl(struct canopy_device *device,
-		char* js, int js_len, 			/* the input JSON and total length  */
-		jsmntok_t *token, int tok_len,	/* token array with length */
-		int name_offset,				/* token offset for name vardecl */
-		bool check_obj);				/* expect outer-most object */
-
 
 /***************************************************************************/
 /***************************************************************************/
@@ -205,5 +182,56 @@ int c_json_parse_string(char* js, int js_len, jsmntok_t *token, int tok_len, int
  * 	call returns C_JSON_PARSE_ERROR.
  */
 int c_json_get_result_key(char* js, int js_len, jsmntok_t *token, int tok_len, int active, bool *result);
+
+/******************************************************************************/
+/******************************************************************************/
+
+/* variable related stuff */
+
+/***************************************************************************
+ * 	c_json_emit_vardcl(struct canopy_device *device, struct c_json_state *state)
+ *
+ * 		creates the JSON  request to register the variables that are registered
+ * 	with the device. (in canopy_variables.c)
+ */
+canopy_error c_json_emit_vardcl(struct canopy_device *device, struct c_json_state *state, bool emit_obj);
+
+
+/***************************************************************************
+ * 	c_json_parse_vardcl(struct canopy_device *device,
+ *		char* js, int js_len, jsmntok_t *token, int tok_len,
+ *		int current)
+ *
+ * 		parses the JSON vardecl tag from the server to register the variables that are registered
+ * 	with the device. (in canopy_variables.c)
+ */
+canopy_error c_json_parse_vardcl(struct canopy_device *device,
+		char* js, int js_len, 			/* the input JSON and total length  */
+		jsmntok_t *token, int tok_len,	/* token array with length */
+		int name_offset,				/* token offset for name vardecl */
+		int *next_token,				/* the token after the decls */
+		bool check_obj);				/* expect outer-most object */
+
+
+#if 0
+// THIS DOESN'T BELONG HERE!!!
+/***************************************************************************
+ * Allocates a variable, initializes it and hangs it on the device...
+ *
+ * 	<device>	device
+ * 	<direction>	direction
+ * 	<type>		datatype
+ * 	<name>		variable name
+ * 	<var_out>	pointer to a pointer to the variable.
+ *
+ * 	Returns error if the variable can't be created.
+ *
+ */
+canopy_error create_variable(canopy_device_t *device,
+        canopy_var_direction direction,
+        canopy_var_datatype type,
+        const char *name);
+#endif
+
 
 #endif	/* CANOPY_MIN_INTERNAL_INCLUDED */

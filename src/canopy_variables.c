@@ -59,6 +59,11 @@
 static char buffer[1024];
 
 static struct canopy_var* find_name(canopy_device_t *device, const char* name);
+static struct canopy_var * create_variable(canopy_device_t *device,
+        canopy_var_direction direction,
+        canopy_var_datatype type,
+        const char *name);
+
 
 #ifdef DOCUMENT
 typedef enum {
@@ -121,6 +126,55 @@ typedef struct canopy_var {
 
 #endif
 
+/******************************************************
+/***************************************************************************
+ * Allocates a variable, initializes it and hangs it on the device...
+ *
+ * 	<device>	device
+ * 	<direction>	direction
+ * 	<type>		datatype
+ * 	<name>		variable name
+ *
+ * 	Returns NULL if the variable can't be created.
+ *
+ */
+static struct canopy_var * create_variable(canopy_device_t *device,
+        canopy_var_direction direction,
+        canopy_var_datatype type,
+        const char *name) {
+
+	struct canopy_var *var;
+
+	if (device == NULL) {
+		cos_log(LOG_LEVEL_FATAL, "device is null in call to create_variable()");
+		return NULL;
+	}
+	if (name == NULL) {
+		cos_log(LOG_LEVEL_FATAL, "name is null in call to create_variable()");
+		return NULL;
+	}
+
+	var = (struct canopy_var*)cos_alloc(sizeof(struct canopy_var));
+	if (var == NULL) {
+		cos_log(LOG_LEVEL_FATAL, "could not allocate memory create_variable()");
+		return NULL;
+	}
+
+	/*
+	 * Setup the variable
+	 */
+	memset(var, 0, sizeof(struct canopy_var));
+	strncpy(var->name, name, CANOPY_VAR_NAME_MAX_LENGTH - 2);
+	var->name[CANOPY_VAR_NAME_MAX_LENGTH - 1] = '\0';
+	var->direction = direction;
+	var->type = type;
+	var->set = false;
+	var->val.type = type;
+
+	return var;
+}
+
+
 /*****************************************************
  * canopy_device_var_init()
  */
@@ -129,18 +183,8 @@ canopy_error canopy_device_var_declare(canopy_device_t *device,
         canopy_var_datatype type,
         const char *name,
         struct canopy_var *out_var) {
-	if (device == NULL) {
-		cos_log(LOG_LEVEL_FATAL, "device is null in call to canopy_device_var_declare()");
-		return CANOPY_ERROR_BAD_PARAM;
-	}
-	if (out_var == NULL) {
-		cos_log(LOG_LEVEL_FATAL, "out_var is null in call to canopy_device_var_declare()");
-		return CANOPY_ERROR_BAD_PARAM;
-	}
-	if (name == NULL) {
-		cos_log(LOG_LEVEL_FATAL, "name is null in call to canopy_device_var_declare()");
-		return CANOPY_ERROR_BAD_PARAM;
-	}
+
+	struct canopy_var *var;
 
 	struct canopy_var *tmp = find_name(device, name);
 	if (tmp != NULL) {
@@ -148,26 +192,27 @@ canopy_error canopy_device_var_declare(canopy_device_t *device,
 		return CANOPY_ERROR_VAR_IN_USE;
 	}
 
-	/*
-	 * Setup the out_var before we hang it on the device...
-	 */
-	memset(out_var, 0, sizeof(struct canopy_var));
-	strncpy(out_var->name, name, CANOPY_VAR_NAME_MAX_LENGTH - 2);
-	out_var->name[CANOPY_VAR_NAME_MAX_LENGTH - 1] = '\0';
-	out_var->direction = direction;
-	out_var->type = type;
-	out_var->set = false;
-	out_var->val.type = type;
+	var = create_variable(device, direction, type, name);
+	if (var == NULL) {
+		cos_log(LOG_LEVEL_DEBUG, "create_variable() failed");
+		return CANOPY_ERROR_OUT_OF_MEMORY;
+	}
 
 	/*
-	 * TODO Figure out why the cast is needed.  I've turned the warning off
-	 * but I'd shough would like to know why...
-	 *
 	 * We stick the new variable at the front of the list.  Device->vars can be
 	 * NULL, but it get's updated correctly when it is.
 	 */
-	out_var->next = device->vars;
-	device->vars = out_var;
+#ifdef HAVE_MEMORY
+    /*
+     * TODO, write code to store this into the hash table on the device.....
+     */
+#else
+
+	var->next = device->vars;
+	device->vars = var;
+#endif
+
+	memcpy(out_var, var, sizeof(struct canopy_var));
 	return CANOPY_SUCCESS;
 }
 
@@ -175,6 +220,11 @@ canopy_error canopy_device_var_declare(canopy_device_t *device,
  * find_name()
  */
 static struct canopy_var* find_name(canopy_device_t *device, const char* name) {
+#ifdef HAVE_MEMORY
+    /*
+     * TODO, write code to travers the hash table on the device.....
+     */
+#else
 	struct canopy_var *var = device->vars;
 	while (var != NULL) {
 		if (strncmp(var->name, name, CANOPY_VAR_NAME_MAX_LENGTH - 1) == 0) {
@@ -183,6 +233,7 @@ static struct canopy_var* find_name(canopy_device_t *device, const char* name) {
 		var = (struct canopy_var *)var->next; /* I have no idea why this is needed */
 	}
 	return NULL;
+#endif
 }
 
 /*****************************************************
@@ -304,6 +355,7 @@ canopy_error c_json_parse_vardcl(struct canopy_device *device,
 		char* js, int js_len, 			/* the input JSON and total length  */
 		jsmntok_t *token, int tok_len,	/* token array with length */
 		int offset,						/* token offset for name vardecl */
+		int *next_token,				/* the token after the decls */
 		bool check_obj) {				/* expect outer-most object */
 	int err = CANOPY_SUCCESS;
 	int i;
@@ -388,13 +440,35 @@ canopy_error c_json_parse_vardcl(struct canopy_device *device,
 		/*
 		 * We've got the name, so we need to look to see if this variable has
 		 * already been defined.  If it has, we're done, but log any
-		 * Difference in direction or type
+		 * Difference in direction or type.
 		 */
 		struct canopy_var* var = find_name(device, (const char*) name);
 		if (var != NULL) {
 
+			/*
+			 * We found the variable, check to see if something's different
+			 */
+			if (var->direction != v_dir) {
+				cos_log(LOG_LEVEL_DEBUG, "v_dir %d doesn't match: %d\n", v_dir, var->direction);
+			}
+			if (var->type != v_type) {
+				cos_log(LOG_LEVEL_DEBUG, "v_type %d doesn't match: %d\n", v_type, var->type);
+			}
 		} else {
 
+			/*
+			 * We need to create a new variable, and hang it on the device.
+			 */
+			var = create_variable(device, v_dir, v_type, name);
+		#ifdef HAVE_MEMORY
+		    /*
+		     * TODO, write code to store this into the hash table on the device.....
+		     */
+		#else
+
+			var->next = device->vars;
+			device->vars = var;
+		#endif
 		}
 
 		/*
@@ -409,6 +483,8 @@ canopy_error c_json_parse_vardcl(struct canopy_device *device,
 		COS_ASSERT(token[offset].size == 0);
 		offset++;
 	} /* decl loop */
+
+	*next_token = offset;
 
 	return err;
 }
