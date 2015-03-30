@@ -95,7 +95,8 @@ const static struct canopy_error_strings canopy_error_strings_table[] = {
         {CANOPY_ERROR_UNKNOWN, "unknown error"},
         {CANOPY_ERROR_BAD_CREDENTIALS, "bad credentials"},
         {CANOPY_ERROR_FATAL, "fatal error"},
-        {CANOPY_ERROR_INCOMPATIBLE_LIBRARY_VERSION, "incompatible library version"},
+        {CANOPY_ERROR_INCOMPATIBLE_LIBRARY_VERSION,
+        		"incompatible library version"},
         {CANOPY_ERROR_NOT_IMPLEMENTED, "not implemented yet"},
         {CANOPY_ERROR_BAD_PARAM, "bad parameter"},
         {CANOPY_ERROR_WRONG_TYPE, "wrong datatype"},
@@ -201,7 +202,8 @@ typedef enum canopy_credential {
  */
 typedef struct canopy_barrier {
     struct canopy_remote *remote;
-    canopy_error (*canopy_barrier_cb)(struct canopy_barrier *barrier, void *userdata);
+    canopy_error (*canopy_barrier_cb)(struct canopy_barrier *barrier,
+    								  void *userdata);
     void *userdata;
     enum canopy_credential type;
     union {
@@ -227,7 +229,8 @@ typedef canopy_error (*canopy_barrier_cb)(struct canopy_barrier *barrier,
 // <timeout_ms> is number of milliseconds to wait before CANOPY_ERROR_TIMEOUT
 // is returned.
 //
-extern canopy_error canopy_barrier_wait_for_complete(canopy_barrier_t *barrier, int timeout_ms);
+extern canopy_error canopy_barrier_wait_for_complete(canopy_barrier_t *barrier,
+		int timeout_ms);
 
 // Cancels the barrier.
 // Any threads blocked in canopy_barrier_wait_for_complete will return with
@@ -332,28 +335,29 @@ typedef enum {
  */
 typedef struct canopy_remote_params {
     canopy_credential_type   credential_type;
-    char                     *name;           // user's username or device id
-    char                     *password;       // user's password or device secret
-    uint16_t                 http_port;       // 0 for default
-    uint16_t                 https_port;      // 0 for default
-    bool                     use_http;        // false=use HTTPS, otherwise use HTTP
-    canopy_auth_type         auth_type;       // Defaults to BASIC
-    char                     *remote;         // hostname or IP address of remote server
-    bool                     use_ws;          // hint: use websockets if available
-    bool                     persistent;      // hint: keep communication channel open
+    char                     *name;        // user's username or device id
+    char                     *password;    // user's password or device secret
+    uint16_t                 http_port;    // 0 for default
+    uint16_t                 https_port;   // 0 for default
+    bool                     use_http;     // true to use HTTP
+    canopy_auth_type         auth_type;    // Defaults to BASIC
+    char                     *remote;      // hostname or IP  of remote server
+    bool                     use_ws;       // hint: use websockets if available
+    bool                     persistent;   // hint: keep comm channel open
 } canopy_remote_params_t;
 
 /*
  * canopy_remote:
- *         used to hold information about the remote we're using.  The details of how to connect
- *         to the remote is passed in as part of the params.
+ *         used to hold information about the remote we're using.
+ *         The details of how to connect to the remote is passed in as part
+ *         of the params.
  */
 typedef struct canopy_remote {
-    struct canopy_remote         *next;        /* pointer to new remote known to the library */
+    struct canopy_remote         *next;        /* pointer to next remote */
     struct canopy_context         *ctx;        /* back pointer to the context */
     struct canopy_remote_params *params;       /* params for this remote */
 
-    bool                         ws_connected;    /* we currently have a webscocket connection */
+    bool                         ws_connected; /* currently connection WS */
 } canopy_remote_t;
 
 
@@ -379,9 +383,9 @@ typedef enum {
 
 
 /*
- * This stuff provides the text string used for the canopy_active_status as used in
- * the filters.  The idea is that you would use this lookup table when referring to
- * canopy_active_status.
+ * This stuff provides the text string used for the canopy_active_status as
+ * used in the filters.  The idea is that you would use this lookup table when
+ * referring to canopy_active_status.
  */
 #define  CANOPY_ACTIVE_STATUS "system.active_status"
 struct activity_status {
@@ -430,8 +434,10 @@ struct ws_connection_status {
 };
 const static struct ws_connection_status ws_connection_status_table[] = {
         {CANOPY_WS_CONNECTION_STATUS_INVALID, "ws_connection_status_invalid"},
-        {CANOPY_WS_CONNECTION_STATUS_DONT_CARE, "ws_connection_status_dont_care"},
-        {CANOPY_WS_CONNECTION_STATUS_WS_NOT_USED, "ws_connection_status_ws_not_used"},
+        {CANOPY_WS_CONNECTION_STATUS_DONT_CARE,
+        					"ws_connection_status_dont_care"},
+        {CANOPY_WS_CONNECTION_STATUS_WS_NOT_USED,
+        					"ws_connection_status_ws_not_used"},
         {CANOPY_WS_NEVER_CONNECTED, "ws_connection_status_never_connected"},
         {CANOPY_WS_DISCONNECTED, "ws_connection_status_disconnected"},
         {CANOPY_WS_CONNECTED, "ws_connection_status_connected"},
@@ -443,8 +449,8 @@ const static struct ws_connection_status ws_connection_status_table[] = {
 /*
  * Query specification stuff.
  *
- * A query consists of a list of filters, a sort order, and a limit specifying how many devices or users
- * to return.
+ * A query consists of a list of filters, a sort order, and a limit specifying
+ * how many devices or users to return.
  *
  * Filters consist of a list of filter_terms and term relations.  The first
  * filter in the chain on the query is the first entry on the stack, followed
@@ -551,28 +557,31 @@ typedef struct canopy_filter {
  * This is used during the construction of a filter list.
  */
 typedef struct canopy_filter_root {
-    canopy_filter_t *head;        /* First one on the list.  This points to the start of the filter stack */
-    canopy_filter_t *tail;        /* tracks the tail of the list for adding new filters */
+    canopy_filter_t *head;        /* points to the start of the filter stack */
+    canopy_filter_t *tail;        /* tracks the tail of the list */
 } canopy_filter_root_t;
 
-extern canopy_error append_term_filter(canopy_filter_root_t *root, canopy_filter_t *ft,
+extern canopy_error append_term_filter(canopy_filter_root_t *root,
+		canopy_filter_t *ft,
         const char *variable_name,
         const char *value, /*  TBD should we use canopy_var_value_t here? */
         canopy_relation_op relation
         );
 
-extern canopy_error append_unary_filter(canopy_filter_root_t *root, canopy_filter_t *ft,
+extern canopy_error append_unary_filter(canopy_filter_root_t *root,
+		canopy_filter_t *ft,
         enum unary_type type,
         const char *variable_name    /* only used for HAS */
         );
 
-extern canopy_error append_boolean_filter(canopy_filter_root_t *root, canopy_filter_t *ft,
+extern canopy_error append_boolean_filter(canopy_filter_root_t *root,
+		canopy_filter_t *ft,
         enum boolean_type type);
 
-extern canopy_error append_open_paren_filter(canopy_filter_root_t *root, canopy_filter_t *ft);
-extern canopy_error append_close_paren_filter(canopy_filter_root_t *root, canopy_filter_t *ft);
-
-
+extern canopy_error append_open_paren_filter(canopy_filter_root_t *root,
+		canopy_filter_t *ft);
+extern canopy_error append_close_paren_filter(canopy_filter_root_t *root,
+		canopy_filter_t *ft);
 
 
 /************************************************************
@@ -613,7 +622,7 @@ typedef struct canopy_sort {
  *      5,30
  */
 typedef struct canopy_limits {
-    uint32_t             start;    /* which entry to start with, 0 starts at the head of the list */
+    uint32_t             start;    /* 0 starts at the head of the list */
     uint32_t             count;    /* how many to return */
 } canopy_limits_t;
 
@@ -624,6 +633,20 @@ typedef struct canopy_query {
     canopy_limits_t *limits;    /* How many to return */
 } canopy_query_t;
 
+
+/*****************************************************************************/
+
+/*
+ * 	A few words about memory usage.
+ *
+ * 	The various calls into the library provide the storage for the various
+ * 	data structures.  The exception to this is the way memory is allocated
+ * 	for device variables, the library allocates the memory for variables.
+ * 	(there are places where the library
+ * 	needs to allocate memory for itself, primarily variables that are
+ * 	created external to the device.)
+ *
+ */
 
 /*****************************************************************************/
 // REMOTE
@@ -663,63 +686,77 @@ extern canopy_error canopy_remote_get_time(canopy_remote_t *remote,
 extern canopy_error canopy_get_local_time(canopy_remote_t *remote,
         cos_time_t *time);
 
-// Get a list of devices from the server based on the filters in a device query
-// object.
-//
-// <remote> is the remote object used for connecting to the server.
-// 
-// <query> contains the constraints that devices must satisfy to be included in
-// the resulting list.
-//
-// <max_count> is the maximum number of devices to fetch.
-//
-// <devices> is an array of at least <max_count> device objects that will store
-// the results of this operation.
-//
-// <barrier> will store a new barrier object that can be used to obtain the
-// result when it is ready.  If NULL, this operation will block the current
-// thread.
+/*
+ *
+ * Get a list of devices from the server based on the filters in a device query
+ * object.
+ *
+ * <remote> is the remote object used for connecting to the server.
+ *
+ * <query> contains the constraints that devices must satisfy to be included in
+ * the resulting list.
+ *
+ * <max_count> is the maximum number of devices to fetch.
+ *
+ * <devices> is an array of at least <max_count> device objects that will store
+ * the results of this operation.  The library will copy the internal memory
+ * holding the device into the array provided.  It's up to the client to
+ * manage its own memory for these
+ *
+ * <barrier> will store a new barrier object that can be used to obtain the
+ * result when it is ready.  If NULL, this operation will block the current
+ * thread.
+ *
+ */
 extern canopy_error canopy_remote_get_devices(canopy_remote_t *remote,
         struct canopy_query *query,
         size_t max_count, 
         struct canopy_device **devices,
         struct canopy_barrier *barrier);
 
-// Get the device based on the authentication information provided to
-// canopy_remote_init.
-//
-// <remote> is the remote object used for connecting to the server.
-//
-// <device> will store the device object returned from the server.  If
-// <barrier> is NULL, this will contain the result upon a successful return.
-// If <barrier> is provided, this will be updated when the result is ready, and
-// will also be passed along to the barrier object.
-//
-// <barrier> will store a new barrier object that can be used to obtain the
-// result when it is ready.  If NULL, this operation will block the current
-// thread.
+/******************************************************************************
+ * Get the device based on the authentication information provided to
+ *  canopy_remote_init.
+ *
+ *  <remote> is the remote object used for connecting to the server.
+ *
+ *  <device> will store the device object returned from the server.  If
+ *  <barrier> is NULL, this will contain the result upon a successful return.
+ *  If <barrier> is provided, this will be updated when the result is ready, and
+ *  will also be passed along to the barrier object.`
+ *
+ *  <barrier> will store a new barrier object that can be used to obtain the
+ *  result when it is ready.  If NULL, this operation will block the current
+ *  thread.
+ */
 extern canopy_error canopy_get_self_device(canopy_remote_t *remote,
         struct canopy_device *device,
         canopy_barrier_t *barrier);
 
-// Get the device based on the authentication information provided to
-// canopy_remote_init.
-//
-// <remote> is the remote object used for connecting to the server.
-//
-// <user> will store the user object returned from the server.  If
-// <barrier> is NULL, this will contain the result upon a successful return.
-// If <barrier> is provided, this will be updated when the result is ready, and
-// will also be passed along to the barrier object.
-//
-// <barrier> will store a new barrier object that can be used to obtain the
-// result when it is ready.
+/*
+ *
+ *  Get the device based on the authentication information provided to
+ *  canopy_remote_init.
+ *
+ *  <remote> is the remote object used for connecting to the server.
+ *
+ *  <user> will store the user object returned from the server.  If
+ *  <barrier> is NULL, this will contain the result upon a successful return.
+ *  If <barrier> is provided, this will be updated when the result is ready, and
+ *  will also be passed along to the barrier object.
+ *
+ *  <barrier> will store a new barrier object that can be used to obtain the
+ *  result when it is ready.
+ */
 extern canopy_error canopy_get_self_user(canopy_remote_t *remote,
         struct canopy_user *user,
         canopy_barrier_t *barrier);
 
 /*****************************************************************************/
 // DEVICE
+
+#define CANOPY_NOTE_MAX_LENGTH 1024
+
 
 /*
  * canopy_device:
@@ -729,10 +766,15 @@ extern canopy_error canopy_get_self_user(canopy_remote_t *remote,
 typedef struct canopy_device {
     struct canopy_device	*next;        /* hung off of User or remote */
     char					*uuid;        /* the uuid of the device */
-    char					*friendly_name;/* a friendly name for the device */
+    char					friendly_name[CANOPY_NOTE_MAX_LENGTH];
+    char					location_note[CANOPY_NOTE_MAX_LENGTH];
     bool					ws_connected;
     canopy_remote_t			*remote;
+#ifdef HAVE_MEMORY
+    struct canopy_hash_table	var_hash;
+#else
     struct canopy_var		*vars;        /* list of vars on this device */
+#endif
 } canopy_device_t;
 
 
@@ -772,6 +814,11 @@ extern canopy_error canopy_device_get_active_status(
 
 /*****************************************************************************/
 // USERS
+
+/*
+ * TODO:  This needs some thought about who supplies the memory for the device
+ * list.
+ */
 
 typedef struct canopy_user {
     struct canopy_user *next;
@@ -1013,12 +1060,34 @@ struct canopy_var {
 };
 // typedef struct canopy_var canopy_var_t;
 
+/*****************************************************************************
+ *
+ * Creates the variable defined and attaches it to the device.
+ *
+ * 	<device>	the device
+ * 	<direction>	access direction
+ * 	<type>		variable datatype
+ * 	<name>		the variables name
+ * 	<out_var>	this is a pointer to storage that the library will copy
+ * 				the created variable into.
+ *
+ * 	This will return CANOPY_ERROR_VAR_IN_USE if the variable already exists
+ *
+ */
 canopy_error canopy_device_var_declare(canopy_device_t *device,
         canopy_var_direction direction,
         canopy_var_datatype type,
         const char *name,
 		struct canopy_var *out_var);
 
+/****************************************************************************
+ * Looks up a variable by looking on the device.  If the variable does not
+ * exist, this call will return CANOPY_ERROR_VAR_NOT_FOUND.
+ *
+ * <device>		the device
+ * <var_name>	the name of the variable to look up
+ * <var>		is a pointer to storage that the variable will be copied into
+ */
 canopy_error canopy_device_get_var_by_name(canopy_device_t *device, 
         const char *var_name, 
 		struct canopy_var *var);
@@ -1072,6 +1141,7 @@ canopy_error canopy_var_get_string(struct canopy_var *var,
         cos_time_t *last_time);
 
 /*
+ * 	Javascript example for creating a variable
  *  myVar = device.varInit("out", "float32", "temperature");
  *
  *  device.updateToServer().onDone(
@@ -1083,13 +1153,13 @@ canopy_error canopy_var_get_string(struct canopy_var *var,
 
 /*
  *  Variable initialization will be ignored if the variable already exists on
- *  the server. 
+ *  the remote.
  *
- *  You can't change the datatype after initialization.
+ *  An attempt to change the datatype will fail silently
  *
  *  POST api/devices/UUID
  *  {
- *      "var_init" : {
+ *      "var_decl" : {
  *          "out int8 coffee_mode" : {},
  *          "out float32 temperature" : {},
  *      }
@@ -1097,9 +1167,10 @@ canopy_error canopy_var_get_string(struct canopy_var *var,
  *
  *  POST api/devices/UUID
  *  {
- *      "var_init" : {
+ *      "var_decl" : {
  *          "out int8 coffee_mode" : {},
  *          "out float32 temperature" : {},
+ *          "out string statusmsg" : {},
  *      }
  *      "vars" : {
  *          "coffee_mode" : 4,
@@ -1114,7 +1185,7 @@ canopy_error canopy_var_get_string(struct canopy_var *var,
  *          "last_seen" : "2015-03-09 10:44:32.245 UTC",
  *          "ws_connected" : true,
  *      }
- *      "sddl" : {
+ *      "var_decl" : {
  *          "out int8 coffee_mode" : {}
  *      }
  *      "vars" : {
