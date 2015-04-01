@@ -113,11 +113,14 @@ int test_result() {
  * 	test_vardcl_output()
  */
 int test_vardcl_output() {
+	char *buffer;
+	size_t buffer_size = 4096;
+
 	int out;
 	struct c_json_state state;
-	char *buffer = (char*)malloc(1024);
-	memset(buffer, 0, 1024);
-	out = c_json_buffer_init(&state, buffer, 1024);
+	char *json_buffer = (char*)malloc(1024);
+	memset(json_buffer, 0, 1024);
+	out = c_json_buffer_init(&state, json_buffer, 1024);
 	if (out != 0) {
 		printf("c_json_buffer_init() returned: %d", out);
 		return -1;
@@ -134,6 +137,12 @@ int test_vardcl_output() {
         exit(-1);
     }
 
+    buffer = (char *)cos_alloc(buffer_size);
+    if (buffer == NULL) {
+        cos_log(LOG_LEVEL_ERROR, "Unable to allocate buffer\n");
+        exit(-1);
+    }
+
     // Initialize remote
     memset(&params, 0, sizeof(params));
     params.credential_type = CANOPY_DEVICE_CREDENTIALS;
@@ -143,7 +152,7 @@ int test_vardcl_output() {
     params.remote = REMOTE_ADDR;
     params.use_ws = false;
     params.persistent = false;
-    err = canopy_remote_init(&ctx, &params, &remote);
+    err = canopy_remote_init(&ctx, &params, buffer, buffer_size, &remote);
     if (err != CANOPY_SUCCESS) {
         cos_log(LOG_LEVEL_ERROR, "Error initializing remote: %s\n", canopy_error_string(err));
          return -3;
@@ -237,6 +246,8 @@ static int proccess_var_decls(const char*  js) {
 	int i;
 	int ti = 1;
 	int next_token;
+	char *buffer;
+	size_t buffer_size = 4096;
 
 	canopy_context_t ctx;
     canopy_remote_params_t params;
@@ -250,6 +261,12 @@ static int proccess_var_decls(const char*  js) {
         exit(-1);
     }
 
+    buffer = (char *)cos_alloc(buffer_size);
+    if (buffer == NULL) {
+        cos_log(LOG_LEVEL_ERROR, "Unable to allocate buffer\n");
+        exit(-1);
+    }
+
     // Initialize remote
     memset(&params, 0, sizeof(params));
     params.credential_type = CANOPY_DEVICE_CREDENTIALS;
@@ -259,7 +276,7 @@ static int proccess_var_decls(const char*  js) {
     params.remote = REMOTE_ADDR;
     params.use_ws = false;
     params.persistent = false;
-    err = canopy_remote_init(&ctx, &params, &remote);
+    err = canopy_remote_init(&ctx, &params, buffer, buffer_size, &remote);
     if (err != CANOPY_SUCCESS) {
         cos_log(LOG_LEVEL_ERROR, "Error initializing remote: %s\n", canopy_error_string(err));
          return -3;
@@ -332,7 +349,7 @@ int test_vardecl_3_input() {
 }
 
 
-static const char* vars_int = "{"
+static const char* vars_init = "{"
 "    \"vars\" : {	"
 "        \"temperature\" : 43.0,	"
 "        \"humidity\" : 32.41,	"
@@ -340,6 +357,137 @@ static const char* vars_int = "{"
 "        \"happy\" : true	"
 "    }	"
 "}	";
+
+/*****************************************************************************
+ * Proccess var_decls()
+ */
+static int process_vars(const char*  js) {
+	int out;
+	int tok_len = 128;
+	jsmntok_t tokens[128];
+	int i;
+	int ti = 1;
+	int next_token;
+	char *buffer;
+	size_t buffer_size = 4096;
+	int js_size = strlen(js);
+
+	canopy_context_t ctx;
+    canopy_remote_params_t params;
+    canopy_remote_t remote;
+    canopy_device_t device;
+
+    // Initialize canopy ctx
+    canopy_error err = canopy_ctx_init(&ctx, 0);
+    if (err != CANOPY_SUCCESS) {
+        cos_log(LOG_LEVEL_ERROR, "Error initializing ctx: %s\n", canopy_error_string(err));
+        exit(-1);
+    }
+
+    buffer = (char *)cos_alloc(buffer_size);
+    if (buffer == NULL) {
+        cos_log(LOG_LEVEL_ERROR, "Unable to allocate buffer\n");
+        exit(-1);
+    }
+
+    // Initialize remote
+    memset(&params, 0, sizeof(params));
+    params.credential_type = CANOPY_DEVICE_CREDENTIALS;
+    params.name = TOASTER_UUID;
+    params.password = TOASTER_SECRET_KEY;
+    params.auth_type = CANOPY_BASIC_AUTH;
+    params.remote = REMOTE_ADDR;
+    params.use_ws = false;
+    params.persistent = false;
+    err = canopy_remote_init(&ctx, &params, buffer, buffer_size, &remote);
+    if (err != CANOPY_SUCCESS) {
+        cos_log(LOG_LEVEL_ERROR, "Error initializing remote: %s\n", canopy_error_string(err));
+         return -3;
+    }
+
+	err = initialize_device(&device, &remote);
+	if (err != CANOPY_SUCCESS) {
+		printf("initialize_device returned: %d", err);
+		return -2;
+	}
+
+	struct canopy_var out_var;
+	err = canopy_device_var_declare(&device,
+			CANOPY_VAR_OUT,
+			CANOPY_VAR_DATATYPE_FLOAT32,
+	       "temperature",
+			&out_var);
+	if (err != CANOPY_SUCCESS) {
+		printf("canopy_device_var_declare name: %s returned: %d", "temperature", err);
+		return -3;
+	}
+
+	// in datetime  test_time
+	err = canopy_device_var_declare(&device,
+			CANOPY_VAR_IN,
+			CANOPY_VAR_DATATYPE_FLOAT32,
+	       "humidity",
+			&out_var);
+	if (err != CANOPY_SUCCESS) {
+		printf("canopy_device_var_declare name: %s returned: %d", "humidity", err);
+		return -4;
+	}
+
+	err = canopy_device_var_declare(&device,
+			CANOPY_VAR_OUT,
+			CANOPY_VAR_DATATYPE_UINT8,
+	       "dimmer_level",
+			&out_var);
+	if (err != CANOPY_SUCCESS) {
+		printf("canopy_device_var_declare name: %s returned: %d", "dimmer_level", err);
+		return -3;
+	}
+
+	// in datetime  test_time
+	err = canopy_device_var_declare(&device,
+			CANOPY_VAR_IN,
+			CANOPY_VAR_DATATYPE_BOOL,
+	       "happy",
+			&out_var);
+	if (err != CANOPY_SUCCESS) {
+		printf("canopy_device_var_declare name: %s returned: %d", "happy", err);
+		return -4;
+	}
+
+
+	memset(&tokens, 0, sizeof(jsmntok_t) * tok_len);
+	bool answer;
+	int active = 0;
+
+	out = c_json_parse_string((char*)js, strlen(js), tokens, tok_len, &active);
+	printf("parse string returned %d active tokens %d\n", out, active);
+
+	err = c_json_parse_vars(&device,
+			(char*)js, js_size, 			/* the input JSON and total length  */
+			tokens, tok_len,	/* token array with length */
+			1,				/* token offset for name vardecl */
+			&next_token,				/* the token after the decls */
+			false);				/* expect outer-most object */
+
+
+	printf("c_json_parse_vars returned %d, next_token: %d\n", out, next_token);
+	printf("%s\n\n", js);
+
+	return 0;
+}
+
+/*****************************************************************************
+ * 		test_vardecl_3_input
+ */
+int test_var_input() {
+	int out;
+
+	out = process_vars(vars_init);
+	printf("%s\n\n", vars_init);
+
+	return 0;
+}
+
 
 
 /*******************************************************************************
@@ -351,6 +499,7 @@ int main() {
 	test(test_vardecl_1_input, "tests parsing of one var_dcls");
 	test(test_vardecl_2_input, "tests parsing of two var_dcls");
 	test(test_vardecl_3_input, "tests parsing of three var_dcls");
+	test(test_var_input, "tests parsing of vars");
 }
 
 

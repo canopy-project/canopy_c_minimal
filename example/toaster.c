@@ -26,6 +26,8 @@
 #define REMOTE_ADDR "dev02.canopy.link"
 
 int main(void) {
+	char *buffer;
+	size_t buffer_size = 4096;
     canopy_error err;
     canopy_context_t ctx;
     canopy_remote_t remote;
@@ -43,6 +45,12 @@ int main(void) {
         exit(-1);
     }
 
+    buffer = (char *)cos_alloc(buffer_size);
+    if (buffer == NULL) {
+        cos_log(LOG_LEVEL_ERROR, "Unable to allocate buffer\n");
+        exit(-1);
+    }
+
     // Initialize remote
     memset(&params, 0, sizeof(params));
     params.credential_type = CANOPY_DEVICE_CREDENTIALS;
@@ -52,7 +60,7 @@ int main(void) {
     params.remote = REMOTE_ADDR;
     params.use_ws = false;
     params.persistent = false;
-    err = canopy_remote_init(&ctx, &params, &remote);
+    err = canopy_remote_init(&ctx, &params, buffer, buffer_size, &remote);
     if (err != CANOPY_SUCCESS) {
         cos_log(LOG_LEVEL_ERROR, "Error initializing remote: %s\n", canopy_error_string(err));
         goto cleanup;

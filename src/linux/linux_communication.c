@@ -44,13 +44,22 @@ static size_t _curl_write_handler(void *ptr, size_t size, size_t nmemb, void *us
 }
 
 
+/*
+ * Performs an HTTP POST request to the remote.
+ *
+ * 	<url>		URL to send to
+ * 	<payload>	Payload to deliver
+ *
+ * 	<barrier>	Non-null get's used for syncronizing with the remote.  When
+ * 	NULL, the call blocks.
+ *
+ * 	NOTE:	The memory that the response gets put into is the rcv_buffer that
+ * 	was initialzed in the call to canopy_remote_init().
+ */
 canopy_error canopy_http_post(
         struct canopy_remote	*remote,
         const char 				*url,
         const char 				*payload,
-		char					*buffer,
-		int						buffer_length,
-		int						*used_buffer,
 		struct canopy_barrier *barrier) {
 
 	canopy_error err = CANOPY_SUCCESS;
@@ -58,8 +67,8 @@ canopy_error canopy_http_post(
 	CURLcode res;
 	char local_buf[256];
 	struct private private;
-	private.buffer = buffer;
-	private.buffer_len = buffer_length;
+	private.buffer = remote->rcv_buffer;
+	private.buffer_len = remote->rcv_buffer_size;
 	private.offset = 0;
 
 	if (barrier != NULL) {
@@ -96,7 +105,7 @@ canopy_error canopy_http_post(
 		err = CANOPY_ERROR_NETWORK;
 		goto cleanup;
 	}
-	*used_buffer = private.offset;
+	remote->rcv_end = private.offset;
 
 cleanup:
 	curl_easy_cleanup(curl);

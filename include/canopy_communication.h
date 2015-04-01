@@ -18,20 +18,24 @@
 
 #include	<canopy_min.h>
 
-// Send an HTTP POST request.
-// <url> is the URL to POST to.
-// <payload> is the request body.
-// <barrier>, if non-NULL, gets set to the address of a newly-allocated
-// promise object that can be used to wait for completion of the request.
+
+/*
+ * Performs an HTTP POST request to the remote.
+ *
+ * 	<url>		URL to send to
+ * 	<payload>	Payload to deliver
+ *
+ * 	<barrier>	Non-null get's used for syncronizing with the remote.  When
+ * 	NULL, the call blocks.
+ *
+ * 	NOTE:	The memory that the response gets put into is the rcv_buffer that
+ * 	was initialzed in the call to canopy_remote_init().
+ */
 canopy_error canopy_http_post(
         struct canopy_remote	*remote,
         const char 				*url,
         const char 				*payload,
-		char					*buffer,
-		int						buffer_length,
-		int						*used_buffer,
 		struct canopy_barrier	*barrier);
-
 
 
 

@@ -48,21 +48,37 @@ canopy_error canopy_cleanup_remote(canopy_remote_t *remote) {
  * params.persistent = false;
 */
 
-// Initializes a new remote object.  Does not necessarily open a TCP or
-// websocket connection to the server, but initializes an object with the
-// parameters to do so when needed.
-//
-// <ctx> is the context.
-//
-// <params> must be populated by the caller.  Sets all of the options for
-// subsequent connections to the server.
-//
-// <remote> is a remote object that is initialized by this call.
-canopy_error canopy_remote_init(canopy_context_t *ctx,
+/*
+ * Initializes a new remote object.  Does not necessarily open a TCP or
+ *  websocket connection to the server, but initializes an object with the
+ *  parameters to do so when needed.
+ *
+ * 		 <ctx> is the context.
+ *
+ * 		<params> must be populated by the caller.  Sets all of the options for
+ * subsequent connections to the server.
+ *
+ *      <buffer> is a pointer to storage that gets used as temporary data
+ *      primarily as the buffer used for payload and response
+ *      communication.  (http)
+ *
+ *      <buffer_size>	The size of the temporary buffer.
+ *
+ * 		<remote> is a remote object that is initialized by this call.
+ *
+ */
+extern canopy_error canopy_remote_init(canopy_context_t *ctx,
         canopy_remote_params_t *params,
+		char *rcv_buffer,
+		size_t rcv_buffer_size,
         canopy_remote_t *remote) {
+
 	if (ctx == NULL) {
 		cos_log(LOG_LEVEL_FATAL, "ctx is null in call to canopy_remote_init()");
+		return CANOPY_ERROR_BAD_PARAM;
+	}
+	if (rcv_buffer == NULL) {
+		cos_log(LOG_LEVEL_FATAL, "rcv_buffer is null in call to canopy_remote_init()");
 		return CANOPY_ERROR_BAD_PARAM;
 	}
 	if (remote == NULL) {
@@ -95,8 +111,10 @@ canopy_error canopy_remote_init(canopy_context_t *ctx,
 		params->https_port = 433;
 	}
 	remote->params = params;
-
 	remote->ctx = ctx;
+	remote->rcv_buffer = rcv_buffer;
+	remote->rcv_buffer_size = rcv_buffer_size;
+	remote->rcv_end = 0;
 
 	if (ctx->remotes == NULL) {
 		ctx->remotes = remote;

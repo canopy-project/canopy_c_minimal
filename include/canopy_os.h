@@ -81,7 +81,7 @@ char * cos_strdup(const char *src);
  * clock time.  (While this starts outs as seconds since epoch, we turn
  * seconds into milli-seconts by multiplying it with 1000.)
  */
-typedef unsigned long cos_time_t;
+typedef unsigned long long cos_time_t;
 int cos_get_time(cos_time_t *time);
 
 

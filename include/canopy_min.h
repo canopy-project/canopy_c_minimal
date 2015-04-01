@@ -143,10 +143,18 @@ typedef struct canopy_context {
  * Returns CANOPY_ERROR_INCOMPATIBLE_LIBRARY_VERSION if the version of the
  * library you have linked with is incompatible with the header file you are
  * using.
+ *
+ *      <buffer> is a pointer to storage that gets used as temporary data
+ *      storage primarily as the buffer used for payload and response
+ *      communication.  (http)
+ *
+ *      <buffer_size>	The size of the temporary buffer.
+ *
  *      <update_period> is the rate in seconds at which the library updates the
  *      state of things from the remotes.
  */
-extern canopy_error canopy_ctx_init(canopy_context_t *ctx, int update_period);
+extern canopy_error canopy_ctx_init(canopy_context_t *ctx,
+		int update_period);
 
 // Shutdown context
 // Closes any connections that might still be open.
@@ -356,6 +364,11 @@ typedef struct canopy_remote {
     struct canopy_remote         *next;        /* pointer to next remote */
     struct canopy_context         *ctx;        /* back pointer to the context */
     struct canopy_remote_params *params;       /* params for this remote */
+
+    /* general purpose buffer needs to be supplied by client     */
+    char						*rcv_buffer;
+    size_t						 rcv_buffer_size;
+    int							 rcv_end;
 
     bool                         ws_connected; /* currently connection WS */
 } canopy_remote_t;
@@ -651,18 +664,29 @@ typedef struct canopy_query {
 /*****************************************************************************/
 // REMOTE
 
-// Initializes a new remote object.  Does not necessarily open a TCP or
-// websocket connection to the server, but initializes an object with the
-// parameters to do so when needed.
-//
-// <ctx> is the context.
-//
-// <params> must be populated by the caller.  Sets all of the options for
-// subsequent connections to the server.
-//
-// <remote> is a remote object that is initialized by this call.
+/*
+ * Initializes a new remote object.  Does not necessarily open a TCP or
+ *  websocket connection to the server, but initializes an object with the
+ *  parameters to do so when needed.
+ *
+ * 		 <ctx> is the context.
+ *
+ * 		<params> must be populated by the caller.  Sets all of the options for
+ * subsequent connections to the server.
+ *
+ *      <rcv_buffer> is a pointer to storage that gets used as temporary data
+ *      primarily as the buffer used for payload and response
+ *      communication.  (http)
+ *
+ *      <rcv_buffer_size>	The size of the temporary buffer.
+ *
+ * 		<remote> is a remote object that is initialized by this call.
+ *
+ */
 extern canopy_error canopy_remote_init(canopy_context_t *ctx,
         canopy_remote_params_t *params,
+		char *rcv_buffer,
+		size_t rcv_buffer_size,
         canopy_remote_t *remote);
 
 // Shutdown a remote object.
@@ -781,7 +805,7 @@ typedef struct canopy_device {
 // Updates a device object's status and properties from the remote server.  Any
 // status or properties with a more recent clock ms value will be updated
 // locally.
-extern canopy_error canopy_device_update_from_remote(
+extern canopy_error canopy_device_update_from_remote   (
         canopy_remote_t *remote,
         canopy_device_t *device, 
         canopy_barrier_t *barrier);
@@ -789,7 +813,7 @@ extern canopy_error canopy_device_update_from_remote(
 // Updates a device object's status and properties to the remote server.  Any
 // status or properties with a more recent clock ms value will be updated
 // remotely.
-extern canopy_error canopy_device_update_to_remote(
+extern canopy_error canopy_device_update_to_remote (
         canopy_remote_t *remote,
         canopy_device_t *device, 
         canopy_barrier_t *barrier);
@@ -801,13 +825,13 @@ extern canopy_error canopy_device_update_to_remote(
 //  canopy_device_update_from_remote(device, remote, NULL);
 //  canopy_device_update_to_remote(device, remote, barrier);
 //
-extern canopy_error canopy_device_sync_with_remote(
+extern canopy_error canopy_device_sync_with_remote (
         canopy_remote_t *remote,
         canopy_device_t *device, 
         canopy_barrier_t *barrier);
 
 // Get the active status for a device.
-extern canopy_error canopy_device_get_active_status(
+extern canopy_error canopy_device_get_active_status (
         canopy_device_t *device, 
         canopy_active_status *active_status,
         canopy_ws_connection_status *ws_status);

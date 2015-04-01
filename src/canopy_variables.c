@@ -489,6 +489,326 @@ canopy_error c_json_parse_vardcl(struct canopy_device *device,
 	return err;
 }
 
+/***************************************************************************
+ * 	c_json_emit_vars(struct canopy_device *device, struct c_json_state *state)
+ *
+ * 		creates the JSON  request to register the variables that are registered
+ * 	with the device. (in canopy_variables.c)
+ */
+canopy_error c_json_emit_vars(struct canopy_device *device,
+		struct c_json_state *state,
+		bool emit_obj) {
+
+	int err = CANOPY_SUCCESS;
+	struct canopy_var *var;
+	if (emit_obj) {
+		err = c_json_emit_open_object(state);
+		if (err != C_JSON_OK) {
+			cos_log(LOG_LEVEL_DEBUG, "unable to emit opening object err: %d\n",
+					err);
+			return CANOPY_ERROR_JSON;
+		}
+	}
+
+	err = c_json_emit_name_and_object(state, "vars");
+	if (err != C_JSON_OK) {
+		cos_log(LOG_LEVEL_DEBUG, "unable to emit vars err: %d\n", err);
+		return CANOPY_ERROR_JSON;
+	}
+
+	var = device->vars;
+	while (var != NULL) {
+		char * name = var->name;
+		canopy_var_datatype type = var->type;
+
+		switch (type) {
+			break;
+
+		case CANOPY_VAR_DATATYPE_STRING:
+			return CANOPY_ERROR_NOT_IMPLEMENTED;
+
+		case CANOPY_VAR_DATATYPE_BOOL:
+			snprintf(buffer, sizeof(buffer), "%s", (var->val.value.val_bool ? "true" : "false"));
+			break;
+
+		case CANOPY_VAR_DATATYPE_INT8:
+			snprintf(buffer, sizeof(buffer), "%d", var->val.value.val_int8);
+			break;
+
+		case CANOPY_VAR_DATATYPE_INT16:
+			snprintf(buffer, sizeof(buffer), "%d", var->val.value.val_int16);
+			break;
+
+		case CANOPY_VAR_DATATYPE_INT32:
+			snprintf(buffer, sizeof(buffer), "%d", var->val.value.val_int32);
+			break;
+
+		case CANOPY_VAR_DATATYPE_UINT8:
+			snprintf(buffer, sizeof(buffer), "%u", var->val.value.val_uint8);
+			break;
+
+		case CANOPY_VAR_DATATYPE_UINT16:
+			snprintf(buffer, sizeof(buffer), "%u", var->val.value.val_uint16);
+			break;
+
+		case CANOPY_VAR_DATATYPE_UINT32:
+			snprintf(buffer, sizeof(buffer), "%u", var->val.value.val_uint32);
+			break;
+
+		case CANOPY_VAR_DATATYPE_FLOAT32:
+			snprintf(buffer, sizeof(buffer), "%e", var->val.value.val_float);
+			break;
+
+		case CANOPY_VAR_DATATYPE_FLOAT64:
+			snprintf(buffer, sizeof(buffer), "%e", var->val.value.val_double);
+			break;
+
+		case CANOPY_VAR_DATATYPE_DATETIME:
+			snprintf(buffer, sizeof(buffer), "%llu", (unsigned long long)var->val.value.val_time);
+			break;
+
+		case CANOPY_VAR_DATATYPE_VOID:
+		case CANOPY_VAR_DATATYPE_STRUCT:
+		case CANOPY_VAR_DATATYPE_ARRAY:
+		case CANOPY_VAR_DATATYPE_INVALID:
+		default:
+			cos_log(LOG_LEVEL_FATAL, "invalid type code %d\n", type);
+			return CANOPY_ERROR_FATAL;
+		} /* switch(type) */
+
+		err = c_json_emit_name_and_value(state, name, buffer);
+		if (err != C_JSON_OK) {
+			cos_log(LOG_LEVEL_DEBUG, "unable to emit variable: %s err: %d\n",
+					name, err);
+			return CANOPY_ERROR_JSON;
+		}
+		var = var->next;
+	}
+
+	err = c_json_emit_close_object(state);
+	if (err != C_JSON_OK) {
+		cos_log(LOG_LEVEL_DEBUG,
+				"unable to emit vars closing object err: %d\n", err);
+		return CANOPY_ERROR_JSON;
+	}
+
+	if (emit_obj) {
+		err = c_json_emit_close_object(state);
+		if (err != C_JSON_OK) {
+			cos_log(LOG_LEVEL_DEBUG, "unable to emit closing object err: %d\n",
+					err);
+			return CANOPY_ERROR_JSON;
+		}
+	}
+	return err;
+}
+
+
+/***************************************************************************
+ * 	c_json_parse_vars(struct canopy_device *device,
+ *		char* js, int js_len, jsmntok_t *token, int tok_len,
+ *		int current)
+ *
+ * 		parses the JSON vardecl tag from the server to register the variables that are registered
+ * 	with the device. (in canopy_variables.c)
+ */
+canopy_error c_json_parse_vars(struct canopy_device *device,
+		char* js, int js_len, 			/* the input JSON and total length  */
+		jsmntok_t *token, int tok_len,	/* token array with length */
+		int offset,				/* token offset for name vardecl */
+		int *next_token,				/* the token after the decls */
+		bool check_obj) {				/* expect outer-most object */
+
+	int err = CANOPY_SUCCESS;
+	int i;
+	char name[128];
+	memset(&name, 0, sizeof(name));
+	char primative[128];
+	memset(&primative, 0, sizeof(primative));
+
+	COS_ASSERT(device != NULL);
+	COS_ASSERT(device->remote != NULL);
+
+	/*
+	 * 		JSON.  This is how
+	 *
+	 *  "{ "
+	 *	"    \"vars\" : {	"
+	 *	"        \"temperature\" : 43.0,	"
+	 *	"        \"humidity\" : 32.41,	"
+	 *	"        \"dimmer_level\" : 4,	"
+	 *	"        \"happy\" : true	"
+	 *	"    }	"
+	 *	"}	";
+	 *
+	 * 	gets parsed to
+	 *
+	 * 			outer object
+	 * 	{type = JSMN_OBJECT, start = 0, end = 132, size = 1},
+	 * 			"vars" : {
+	 *	{type = JSMN_STRING, start = 6, end = 10, size = 1},
+	 * 	{type = JSMN_OBJECT, start = 14, end = 130, size = 4},
+	 *
+	 *			"tempurature" : 43.0
+	 * 	{type = JSMN_STRING, start = 25, end = 36, size = 1},
+	 * 	{type = JSMN_PRIMITIVE, start = 40, end = 44, size = 0},
+	 *
+	 * 			"humidity" : 32.41
+	 * 	{type = JSMN_STRING, start = 55, end = 63, size = 1},
+	 * 	{type = JSMN_PRIMITIVE, start = 67, end = 72, size = 0},
+	 *
+	 * 			"dimmer_level" : 4
+	 * 	{type = JSMN_STRING, start = 83, end = 95, size = 1},
+	 * 	{type = JSMN_PRIMITIVE, start = 99, end = 100, size = 0},
+	 *
+	 * 			"happy" : true
+	 * 	{type = JSMN_STRING, start = 111, end = 116, size = 1},
+	 * 	{type = JSMN_PRIMITIVE, start = 120, end = 124, size = 0}
+	 *
+	 */
+
+	COS_ASSERT(token[offset].type == JSMN_STRING);
+	COS_ASSERT(strncmp((const char*) &js[token[offset].start], "vars", (token[offset].end - token[offset].start)) == 0);
+	COS_ASSERT(token[offset].size == 1);
+	offset++;
+
+	/*
+	 * We should be at the object after the vars.  The size of this object indicates
+	 * the number of entries in the list times 2.
+	 * 		The first thing should be a string that has the name in it.  Its size should be 1.
+	 * 		The next token is the value, which should have a size of 0.
+	 *
+	 * repeat as necessary.........
+	 */
+	COS_ASSERT(token[offset].type == JSMN_OBJECT);
+	int n_vars = token[offset].size;
+	offset++;
+	for (i = 0; i < n_vars; i++) {
+		memset(&name, 0, sizeof(name));
+		memset(&primative, 0, sizeof(primative));
+
+
+		/*
+		 * the token at offset should be the string we need to parse,
+		 */
+		COS_ASSERT(token[offset].type == JSMN_STRING);
+		COS_ASSERT(token[offset].size == 1);
+		strncpy(name, &js[token[offset].start], (token[offset].end - token[offset].start));
+		name[(token[offset].start - token[offset].end)] = '\0';
+		offset++;
+
+		COS_ASSERT(token[offset].type == JSMN_PRIMITIVE);
+		COS_ASSERT(token[offset].size == 0);
+		strncpy(primative, &js[token[offset].start], (token[offset].end - token[offset].start));
+		primative[(token[offset].start - token[offset].end)] = '\0';
+
+		/*
+		 * We've got the name, and the primative, now we need to look to see if this variable has
+		 * already been defined.  If it has, we need to update the varaible.
+		 */
+		struct canopy_var* var = find_name(device, (const char*) name);
+		if (var != NULL) {
+			int v;
+			double dv;
+			unsigned long long ull;
+
+			/*
+			 * We found the variable, get the value based on the var we find,
+			 */
+			canopy_var_datatype type = var->type;
+			switch (type) {
+				break;
+
+			case CANOPY_VAR_DATATYPE_STRING:
+				return CANOPY_ERROR_NOT_IMPLEMENTED;
+
+			case CANOPY_VAR_DATATYPE_BOOL:
+				if (strncmp(primative, "true", sizeof(primative)) == 0) {
+					var->val.value.val_bool = true;
+				} else if (strncmp(primative, "false", sizeof(primative)) == 0) {
+					var->val.value.val_bool = false;
+				} else {
+					/* something bad happened */
+					return CANOPY_ERROR_FATAL;
+				}
+				break;
+
+			case CANOPY_VAR_DATATYPE_INT8:
+				v = atoi(primative);
+				var->val.value.val_int8 = (int8_t)v;
+				break;
+
+			case CANOPY_VAR_DATATYPE_INT16:
+				v = atoi(primative);
+				var->val.value.val_int16 = (int16_t)v;
+				break;
+
+			case CANOPY_VAR_DATATYPE_INT32:
+				v = atoi(primative);
+				var->val.value.val_int32 = (int32_t)v;
+				break;
+
+			case CANOPY_VAR_DATATYPE_UINT8:
+				v = atoi(primative);
+				var->val.value.val_uint8 = (uint8_t)v;
+				break;
+
+			case CANOPY_VAR_DATATYPE_UINT16:
+				v = atoi(primative);
+				var->val.value.val_uint16 = (uint16_t)v;
+				break;
+
+			case CANOPY_VAR_DATATYPE_UINT32:
+				v = atoi(primative);
+				var->val.value.val_uint32 = (uint32_t)v;
+				break;
+
+			case CANOPY_VAR_DATATYPE_FLOAT32:
+				dv = atof(primative);
+				var->val.value.val_float = (float)dv;
+				break;
+
+			case CANOPY_VAR_DATATYPE_FLOAT64:
+				dv = atof(primative);
+				var->val.value.val_double = dv;
+				break;
+
+			case CANOPY_VAR_DATATYPE_DATETIME:
+				ull = atoll(primative);
+				var->val.value.val_time = (cos_time_t)ull;
+				break;
+
+			case CANOPY_VAR_DATATYPE_VOID:
+			case CANOPY_VAR_DATATYPE_STRUCT:
+			case CANOPY_VAR_DATATYPE_ARRAY:
+			case CANOPY_VAR_DATATYPE_INVALID:
+			default:
+				cos_log(LOG_LEVEL_FATAL, "invalid type code %d\n", type);
+				return CANOPY_ERROR_FATAL;
+			} /* switch(type) */
+
+
+		} else {
+
+			/*
+			 * We didn't find it, so this is an error.
+			 */
+			return CANOPY_ERROR_VAR_NOT_FOUND;
+		}
+
+		/*
+		 * Go on to the next token
+		 */
+		offset++;
+	} /* var loop */
+
+	*next_token = offset;
+
+	return err;
+}
+
+
+
 /*****************************************************************************/
 /*****************************************************************************/
 
