@@ -50,6 +50,7 @@ static size_t _curl_write_handler(void *ptr, size_t size, size_t nmemb, void *us
 canopy_error canopy_http_perform(
         canopy_http_method      method,
         bool                    use_http,
+        bool                    skip_cert_check,
         const char              *name,
         const char              *password,
         char                    *rcv_buffer,
@@ -107,8 +108,10 @@ canopy_error canopy_http_perform(
         default:
             COS_ASSERT(!"Unsupported HTTP method");
     }
-    curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 0L);
-    curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0L);
+    if (skip_cert_check) {
+        curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 0L);
+        curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0L);
+    }
 	curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, _curl_write_handler);
 	curl_easy_setopt(curl, CURLOPT_WRITEDATA, &private);
 	curl_easy_setopt(curl, CURLOPT_HTTPAUTH, (long)CURLAUTH_BASIC);
@@ -140,6 +143,7 @@ canopy_error canopy_remote_http_get(
     return canopy_http_perform(
             CANOPY_HTTP_GET,
             remote->params->use_http,
+            remote->params->skip_cert_check,
             remote->params->name,
             remote->params->password,
             remote->rcv_buffer,
@@ -163,6 +167,7 @@ canopy_error canopy_remote_http_post(
     return canopy_http_perform(
             CANOPY_HTTP_POST,
             remote->params->use_http,
+            remote->params->skip_cert_check,
             remote->params->name,
             remote->params->password,
             remote->rcv_buffer,
@@ -186,6 +191,7 @@ canopy_error canopy_remote_http_delete(
     return canopy_http_perform(
             CANOPY_HTTP_DELETE,
             remote->params->use_http,
+            remote->params->skip_cert_check,
             remote->params->name,
             remote->params->password,
             remote->rcv_buffer,

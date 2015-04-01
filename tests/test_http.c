@@ -61,6 +61,7 @@ static int test_raw_api_info() {
     err = canopy_http_perform(
             CANOPY_HTTP_GET,
             USE_HTTP,
+            true,
             USERNAME,
             PASSWORD,
             buf,

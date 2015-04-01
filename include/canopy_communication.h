@@ -25,10 +25,13 @@ typedef enum {
 } canopy_http_method;
 
 /*
- * Performs an HTTP GET request to the remote.
+ * Performs an HTTP request.
  *
  *     <method>         HTTP method to perform (i.e. GET, POST, DELETE)
  *     <use_http>       Uses HTTP if true, HTTPS if false
+ *     <skip_cert_check>Skips CA cert check if true.  This parameter is only
+ *                      relevant if <use_http> is false (otherwise it is
+ *                      ignored).
  *     <name>           Username provided using HTTP BASIC auth
  *     <password>       Password provided using HTTP BASIC auth
  *     <rcv_buffer>     Destination buffer
@@ -47,15 +50,16 @@ typedef enum {
 canopy_error canopy_http_perform(
         canopy_http_method      method,
         bool                    use_http,
+        bool                    skip_cert_check,
         const char              *name,
         const char              *password,
         char                    *rcv_buffer,
         size_t                  rcv_buffer_size,
         int                     *rcv_end,
-        const char                 *remote_name,
-        const char                 *api,
-        const char                 *payload,
-        struct canopy_barrier    *barrier);
+        const char              *remote_name,
+        const char              *api,
+        const char              *payload,
+        struct canopy_barrier   *barrier);
 
 /*
  * Performs an HTTP GET request using a canopy remote object.
@@ -86,9 +90,9 @@ canopy_error canopy_http_perform(
  */
 canopy_error canopy_remote_http_get(
         struct canopy_remote    *remote,
-        const char                 *api,
-        const char                 *payload,
-        struct canopy_barrier    *barrier);
+        const char              *api,
+        const char              *payload,
+        struct canopy_barrier   *barrier);
 
 /*
  * Performs an HTTP POST request to the remote.
@@ -104,9 +108,9 @@ canopy_error canopy_remote_http_get(
  */
 canopy_error canopy_http_post(
         struct canopy_remote    *remote,
-        const char                 *api,
-        const char                 *payload,
-        struct canopy_barrier    *barrier);
+        const char              *api,
+        const char              *payload,
+        struct canopy_barrier   *barrier);
 
 
 /*
@@ -123,8 +127,8 @@ canopy_error canopy_http_post(
  */
 canopy_error canopy_http_delete(
         struct canopy_remote    *remote,
-        const char                 *api,
-        const char                 *payload,
-        struct canopy_barrier    *barrier);
+        const char              *api,
+        const char              *payload,
+        struct canopy_barrier   *barrier);
 
 #endif /* _CANOPY_HTTP_H_ */

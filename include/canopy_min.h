@@ -342,6 +342,7 @@ typedef struct canopy_remote_params {
     uint16_t                 http_port;    // 0 for default
     uint16_t                 https_port;   // 0 for default
     bool                     use_http;     // true to use HTTP
+    bool                     skip_cert_check;// true to ignore SSL cert errors
     canopy_auth_type         auth_type;    // Defaults to BASIC
     char                     *remote;      // hostname or IP  of remote server
     bool                     use_ws;       // hint: use websockets if available
