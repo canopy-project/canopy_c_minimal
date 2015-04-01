@@ -18,7 +18,6 @@
 
 #include	<canopy_min.h>
 #include	<canopy_os.h>
-#include	<canopy_communication.h>
 
 
 struct private {
@@ -44,37 +43,38 @@ static size_t _curl_write_handler(void *ptr, size_t size, size_t nmemb, void *us
 	return len;
 }
 
-/*****************************************************************************
- * canopy_remote_http_perform
+
+/*
+ * Performs an HTTP POST request to the remote.
+ *
+ * 	<url>		URL to send to
+ * 	<payload>	Payload to deliver
+ *
+ * 	<barrier>	Non-null get's used for syncronizing with the remote.  When
+ * 	NULL, the call blocks.
+ *
+ * 	NOTE:	The memory that the response gets put into is the rcv_buffer that
+ * 	was initialzed in the call to canopy_remote_init().
  */
-canopy_error canopy_http_perform(
-        canopy_http_method      method,
-        bool                    use_http,
-        bool                    skip_cert_check,
-        const char              *name,
-        const char              *password,
-        char                    *rcv_buffer,
-        size_t                  rcv_buffer_size,
-        int                     *rcv_end,
-        const char 				*remote_name,
-        const char 				*api,
+canopy_error canopy_http_post(
+        struct canopy_remote	*remote,
+        const char 				*url,
         const char 				*payload,
-		struct canopy_barrier	*barrier)
-{
+		struct canopy_barrier *barrier) {
+
 	canopy_error err = CANOPY_SUCCESS;
 	CURL *curl = NULL;
 	CURLcode res;
-	char local_buf[256]; // TODO: big enough?
-	char url[256]; // TODO: big enough?
+	char local_buf[256];
 	struct private private;
-	private.buffer = rcv_buffer;
-	private.buffer_len = rcv_buffer_size;
+	private.buffer = remote->rcv_buffer;
+	private.buffer_len = remote->rcv_buffer_size;
 	private.offset = 0;
 
 	if (barrier != NULL) {
 		return CANOPY_ERROR_NOT_IMPLEMENTED;
 	}
-	cos_log(LOG_LEVEL_DEBUG, "Sending payload to %s%s:\n%s\n\n", remote_name, api, payload);
+	cos_log(LOG_LEVEL_DEBUG, "Sending payload to %s:\n%s\n\n", url, payload);
 
 	curl = curl_easy_init();
 	if (!curl) {
@@ -83,9 +83,7 @@ canopy_error canopy_http_perform(
 		goto cleanup;
 	}
 
-	snprintf(local_buf, sizeof(local_buf), "%s:%s", name, password);
-	snprintf(url, sizeof(url), "%s://%s%s", 
-            (use_http ? "http" : "https"), remote_name, api);
+	snprintf(local_buf, sizeof(local_buf), "%s:%s", remote->params->name, remote->params->password);
 
 	curl_easy_setopt(curl, CURLOPT_URL, url);
 	if (payload == NULL || strlen(payload) == 0) {
@@ -95,23 +93,6 @@ canopy_error canopy_http_perform(
 		curl_easy_setopt(curl, CURLOPT_POSTFIELDS, payload);
 		curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, len);
 	}
-    switch (method) {
-        case CANOPY_HTTP_GET:
-            curl_easy_setopt(curl, CURLOPT_HTTPGET, 1L);
-            break;
-        case CANOPY_HTTP_POST:
-            curl_easy_setopt(curl, CURLOPT_HTTPPOST, 1L);
-            break;
-        case CANOPY_HTTP_DELETE:
-            curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "DELETE");
-            break;
-        default:
-            COS_ASSERT(!"Unsupported HTTP method");
-    }
-    if (skip_cert_check) {
-        curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 0L);
-        curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0L);
-    }
 	curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, _curl_write_handler);
 	curl_easy_setopt(curl, CURLOPT_WRITEDATA, &private);
 	curl_easy_setopt(curl, CURLOPT_HTTPAUTH, (long)CURLAUTH_BASIC);
@@ -124,81 +105,10 @@ canopy_error canopy_http_perform(
 		err = CANOPY_ERROR_NETWORK;
 		goto cleanup;
 	}
-	*rcv_end = private.offset;
+	remote->rcv_end = private.offset;
 
 cleanup:
 	curl_easy_cleanup(curl);
 	return err;
 }
 
-/*****************************************************************************
- * canopy_remote_http_get
- */
-canopy_error canopy_remote_http_get(
-        struct canopy_remote	*remote,
-        const char 				*api,
-        const char 				*payload,
-		struct canopy_barrier	*barrier)
-{
-    return canopy_http_perform(
-            CANOPY_HTTP_GET,
-            remote->params->use_http,
-            remote->params->skip_cert_check,
-            remote->params->name,
-            remote->params->password,
-            remote->rcv_buffer,
-            remote->rcv_buffer_size,
-            &remote->rcv_end,
-            remote->params->remote,
-            api,
-            payload,
-            barrier);
-}
-
-/*****************************************************************************
- * canopy_remote_http_post
- */
-canopy_error canopy_remote_http_post(
-        struct canopy_remote	*remote,
-        const char 				*api,
-        const char 				*payload,
-		struct canopy_barrier	*barrier)
-{
-    return canopy_http_perform(
-            CANOPY_HTTP_POST,
-            remote->params->use_http,
-            remote->params->skip_cert_check,
-            remote->params->name,
-            remote->params->password,
-            remote->rcv_buffer,
-            remote->rcv_buffer_size,
-            &remote->rcv_end,
-            remote->params->remote,
-            api,
-            payload,
-            barrier);
-}
-
-/*****************************************************************************
- * canopy_remote_http_delete
- */
-canopy_error canopy_remote_http_delete(
-        struct canopy_remote	*remote,
-        const char 				*api,
-        const char 				*payload,
-		struct canopy_barrier	*barrier)
-{
-    return canopy_http_perform(
-            CANOPY_HTTP_DELETE,
-            remote->params->use_http,
-            remote->params->skip_cert_check,
-            remote->params->name,
-            remote->params->password,
-            remote->rcv_buffer,
-            remote->rcv_buffer_size,
-            &remote->rcv_end,
-            remote->params->remote,
-            api,
-            payload,
-            barrier);
-}

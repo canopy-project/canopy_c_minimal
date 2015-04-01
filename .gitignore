@@ -28,3 +28,5 @@ src/mrvl
 
 src/jsmn/jsmn_test
 tests/test_json
+tests/test_http
+

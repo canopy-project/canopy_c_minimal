@@ -83,7 +83,6 @@ static const char* canopy2 = "{"
 "    }	"
 "}	";
 
-
 /*****************************************************************************
  * 		test_result
  */
@@ -358,6 +357,26 @@ static const char* vars_init = "{"
 "    }	"
 "}	";
 
+static const char* new_vars = """    \"vars\" : {	"
+		"        \"temperature\" : {	"
+		"            \"t\" : 1426803897000000,	"
+		"            \"v\" : 37.4,	"
+		"        },	"
+		"        \"humidity\" : {	"
+		"            \"t\" : 1426803897000000,	"
+		"            \"v\" : 92.3,	"
+		"        },	"
+		"        \"dimmer_brightness\" : {	"
+		"            \"t\" : 1426803897000000,	"
+		"            \"v\" : 0,	"
+		"        },	"
+		"        \"reboot_now\" : {	"
+		"            \"t\" : 1426803897000000,	"
+		"            \"v\" : false,	"
+		"        }	";
+
+
+
 /*****************************************************************************
  * Proccess var_decls()
  */
@@ -447,7 +466,7 @@ static int process_vars(const char*  js) {
 	err = canopy_device_var_declare(&device,
 			CANOPY_VAR_IN,
 			CANOPY_VAR_DATATYPE_BOOL,
-	       "happy",
+	       "reboot_now",
 			&out_var);
 	if (err != CANOPY_SUCCESS) {
 		printf("canopy_device_var_declare name: %s returned: %d", "happy", err);
@@ -465,7 +484,7 @@ static int process_vars(const char*  js) {
 	err = c_json_parse_vars(&device,
 			(char*)js, js_size, 			/* the input JSON and total length  */
 			tokens, tok_len,	/* token array with length */
-			1,				/* token offset for name vardecl */
+			0,				/* token offset for name vardecl */
 			&next_token,				/* the token after the decls */
 			false);				/* expect outer-most object */
 
@@ -482,8 +501,8 @@ static int process_vars(const char*  js) {
 int test_var_input() {
 	int out;
 
-	out = process_vars(vars_init);
-	printf("%s\n\n", vars_init);
+	out = process_vars(new_vars);
+	printf("%s\n\n", new_vars);
 
 	return 0;
 }
