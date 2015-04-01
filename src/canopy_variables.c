@@ -627,6 +627,7 @@ canopy_error c_json_parse_vars(struct canopy_device *device,
 	memset(&name, 0, sizeof(name));
 	char primative[128];
 	memset(&primative, 0, sizeof(primative));
+	char time[128];
 
 	COS_ASSERT(device != NULL);
 	COS_ASSERT(device->remote != NULL);
@@ -634,41 +635,61 @@ canopy_error c_json_parse_vars(struct canopy_device *device,
 	/*
 	 * 		JSON.  This is how
 	 *
-	 *  "{ "
-	 *	"    \"vars\" : {	"
-	 *	"        \"temperature\" : 43.0,	"
-	 *	"        \"humidity\" : 32.41,	"
-	 *	"        \"dimmer_level\" : 4,	"
-	 *	"        \"happy\" : true	"
-	 *	"    }	"
-	 *	"}	";
+	 * static const char* new_vars = """    \"vars\" : {	"
+	 *  "        \"temperature\" : {	"
+	 *  "            \"t\" : 1426803897000000,	"
+	 *  "            \"v\" : 37.4,	"
+	 *  "        },	"
+	 *  "        \"humidity\" : {	"
+	 *  "            \"t\" : 1426803897000000,	"
+	 *  "            \"v\" : 92.3,	"
+	 *  "        },	"
+	 *  "        \"dimmer_brightness\" : {	"
+	 *  "            \"t\" : 1426803897000000,	"
+	 *  "            \"v\" : 0,	"
+	 *  "        },	"
+	 *  "        \"reboot_now\" : {	"
+	 *  "            \"t\" : 1426803897000000,	"
+	 *  "            \"v\" : false,	"
+	 *  "        }	";
 	 *
-	 * 	gets parsed to
 	 *
-	 * 			outer object
-	 * 	{type = JSMN_OBJECT, start = 0, end = 132, size = 1},
-	 * 			"vars" : {
-	 *	{type = JSMN_STRING, start = 6, end = 10, size = 1},
-	 * 	{type = JSMN_OBJECT, start = 14, end = 130, size = 4},
 	 *
-	 *			"tempurature" : 43.0
-	 * 	{type = JSMN_STRING, start = 25, end = 36, size = 1},
-	 * 	{type = JSMN_PRIMITIVE, start = 40, end = 44, size = 0},
-	 *
-	 * 			"humidity" : 32.41
-	 * 	{type = JSMN_STRING, start = 55, end = 63, size = 1},
-	 * 	{type = JSMN_PRIMITIVE, start = 67, end = 72, size = 0},
-	 *
-	 * 			"dimmer_level" : 4
-	 * 	{type = JSMN_STRING, start = 83, end = 95, size = 1},
-	 * 	{type = JSMN_PRIMITIVE, start = 99, end = 100, size = 0},
-	 *
-	 * 			"happy" : true
-	 * 	{type = JSMN_STRING, start = 111, end = 116, size = 1},
-	 * 	{type = JSMN_PRIMITIVE, start = 120, end = 124, size = 0}
+	 *   = JSMN_STRING, start = 5, end = 9, size = 1}, 	vars :
+	 *   = JSMN_OBJECT, start = 13, end = -1, size = 4}, 		{ outer
+	 *  type = JSMN_STRING, start = 24, end = 35, size = 1}, 			name
+	 *  {type = JSMN_OBJECT, start = 39, end = 110, size = 2}, 				{
+     *	{type = JSMN_STRING, start = 54, end = 55, size = 1}, 				t
+     *	{type = JSMN_PRIMITIVE, start = 59, end = 75, size = 0}, 				uint64_t
+     *	{type = JSMN_STRING, start = 90, end = 91, size = 1}, 				v
+     *	{type = JSMN_PRIMITIVE, start = 95, end = 99, size = 0}, 				value
+     *
+     *	{type = JSMN_STRING, start = 121, end = 129, size = 1},			name
+     *	{type = JSMN_OBJECT, start = 133, end = 204, size = 2}, 			{
+     *	{type = JSMN_STRING, start = 148, end = 149, size = 1}, 			t
+     *	{type = JSMN_PRIMITIVE, start = 153, end = 169, size = 0}, 				uint64_t
+     *	{type = JSMN_STRING, start = 184, end = 185, size = 1}, 			v
+     *	{type = JSMN_PRIMITIVE, start = 189, end = 193, size = 0}, 				value
+     *
+     *	{type = JSMN_STRING, start = 215, end = 232, size = 1}, 		name
+     *	{type = JSMN_OBJECT, start = 236, end = 304, size = 2},				{
+     *	{type = JSMN_STRING, start = 251, end = 252, size = 1}, 			t
+     *	{type = JSMN_PRIMITIVE, start = 256, end = 272, size = 0}, 				uint64_t
+     *	{type = JSMN_STRING, start = 287, end = 288, size = 1}, 			v
+     *	{type = JSMN_PRIMITIVE, start = 292, end = 293, size = 0}, 				value
+     *
+     *	{type = JSMN_STRING, start = 315, end = 325, size = 1}, 		name
+     *	{type = JSMN_OBJECT, start = 329, end = 401, size = 2}, 			{
+     *	{type = JSMN_STRING, start = 344, end = 345, size = 1}, 			t
+     *	{type = JSMN_PRIMITIVE, start = 349, end = 365, size = 0}, 				uint64_t
+     *	{type = JSMN_STRING, start = 380, end = 381, size = 1}, 			v
+     *	{type = JSMN_PRIMITIVE, start = 385, end = 390, size = 0}, 				value
 	 *
 	 */
 
+	/*
+	 * Verify the thing starts with "vars"
+	 */
 	COS_ASSERT(token[offset].type == JSMN_STRING);
 	COS_ASSERT(strncmp((const char*) &js[token[offset].start], "vars", (token[offset].end - token[offset].start)) == 0);
 	COS_ASSERT(token[offset].size == 1);
@@ -676,9 +697,13 @@ canopy_error c_json_parse_vars(struct canopy_device *device,
 
 	/*
 	 * We should be at the object after the vars.  The size of this object indicates
-	 * the number of entries in the list times 2.
+	 * the number of entries in the list
 	 * 		The first thing should be a string that has the name in it.  Its size should be 1.
-	 * 		The next token is the value, which should have a size of 0.
+	 * 		The next token is an object that should be size 2
+	 * 		The next should be the name "t" with a size of 1
+	 * 		The next is the cos_time_t as a primative
+	 * 		The next should be the name 'v' with a size of 1
+	 * 		There should be the value as a primative.
 	 *
 	 * repeat as necessary.........
 	 */
@@ -686,8 +711,10 @@ canopy_error c_json_parse_vars(struct canopy_device *device,
 	int n_vars = token[offset].size;
 	offset++;
 	for (i = 0; i < n_vars; i++) {
+		cos_time_t remote_time;
 		memset(&name, 0, sizeof(name));
 		memset(&primative, 0, sizeof(primative));
+		memset(&time, 0, sizeof(time));
 
 
 		/*
@@ -697,6 +724,28 @@ canopy_error c_json_parse_vars(struct canopy_device *device,
 		COS_ASSERT(token[offset].size == 1);
 		strncpy(name, &js[token[offset].start], (token[offset].end - token[offset].start));
 		name[(token[offset].start - token[offset].end)] = '\0';
+		offset++;
+
+		COS_ASSERT(token[offset].type == JSMN_OBJECT);
+		COS_ASSERT(token[offset].size == 2);
+		offset++;
+
+		COS_ASSERT(token[offset].type == JSMN_STRING);
+		COS_ASSERT(strncmp((const char*) &js[token[offset].start], "t", (token[offset].end - token[offset].start)) == 0);
+		COS_ASSERT(token[offset].size == 1);
+		offset++;
+
+		COS_ASSERT(token[offset].type == JSMN_PRIMITIVE);
+		COS_ASSERT(token[offset].size == 0);
+		strncpy(time, &js[token[offset].start], (token[offset].end - token[offset].start));
+		time[(token[offset].start - token[offset].end)] = '\0';
+		remote_time = (cos_time_t)atoll(time);
+		offset++;
+
+
+		COS_ASSERT(token[offset].type == JSMN_STRING);
+		COS_ASSERT(strncmp((const char*) &js[token[offset].start], "v", (token[offset].end - token[offset].start)) == 0);
+		COS_ASSERT(token[offset].size == 1);
 		offset++;
 
 		COS_ASSERT(token[offset].type == JSMN_PRIMITIVE);
@@ -715,8 +764,10 @@ canopy_error c_json_parse_vars(struct canopy_device *device,
 			unsigned long long ull;
 
 			/*
-			 * We found the variable, get the value based on the var we find,
+			 * We found the variable, get the value based on the var we find, but
+			 * first, update the time
 			 */
+			var->last = remote_time;
 			canopy_var_datatype type = var->type;
 			switch (type) {
 				break;
