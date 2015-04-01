@@ -18,12 +18,86 @@
 
 #include	<canopy_min.h>
 
+typedef enum {
+    CANOPY_HTTP_GET,
+    CANOPY_HTTP_POST,
+    CANOPY_HTTP_DELETE
+} canopy_http_method;
+
+/*
+ * Performs an HTTP GET request to the remote.
+ *
+ * 	<method>    HTTP method to perform (i.e. GET, POST, DELETE)
+ * 	<use_http>	Uses HTTP if true, HTTPS if false
+ * 	<name>		Username provided using HTTP BASIC auth
+ * 	<password>	Password provided using HTTP BASIC auth
+ * 	<rcv_buffer> Destination buffer
+ * 	<rcv_buffer_size> Size of destination buffer
+ * 	<rcv_end>   Pointer to integer that gets set to the end of the recieved
+ * 	            buffer.
+ * 	<remote_name> Hostname/IP of remote (makes up first part of URL)
+ * 	<api>		API endpoint and query params (makes up second part of URL)
+ * 	<payload>	Optional payload to deliver, or NULL
+ *
+ * 	<barrier>	Non-null get's used for syncronizing with the remote.  When
+ * 	NULL, the call blocks.
+ *
+ * 	NOTE:	The memory that the response gets put into is the rcv_buffer that
+ * 	was initialzed in the call to canopy_remote_init().
+ */
+canopy_error canopy_http_perform(
+        canopy_http_method      method,
+        bool                    use_http,
+        const char              *name,
+        const char              *password,
+        char                    *rcv_buffer,
+        size_t                  rcv_buffer_size,
+        int                     *rcv_end,
+        const char 				*remote_name,
+        const char 				*api,
+        const char 				*payload,
+		struct canopy_barrier	*barrier);
+
+/*
+ * Performs an HTTP GET request using a canopy remote object.
+ *
+ * 	<remote>	Remote server
+ * 	<api>		API endpoint and query params (ex: "/api/info")
+ * 	<payload>	Payload to deliver, or NULL
+ *
+ * 	<barrier>	Non-null get's used for syncronizing with the remote.  When
+ * 	NULL, the call blocks.
+ *
+ * 	NOTE:	The memory that the response gets put into is the rcv_buffer that
+ * 	was initialzed in the call to canopy_remote_init().
+ *
+ * Equivlent to:
+ *
+ *  canopy_http_perform(
+ *      CANOPY_HTTP_GET,
+ *      remote->params->use_http,
+ *      remote->params->name,
+ *      remote->params->password,
+ *      remote->rcv_buffer,
+ *      remote->rcv_buffer_size,
+ *      &remote->rcv_end,
+ *      remote->remote_name,
+ *      api,
+ *      payload,
+ *      barrier);
+ */
+canopy_error canopy_remote_http_get(
+        struct canopy_remote	*remote,
+        const char 				*api,
+        const char 				*payload,
+		struct canopy_barrier	*barrier);
 
 /*
  * Performs an HTTP POST request to the remote.
  *
- * 	<url>		URL to send to
- * 	<payload>	Payload to deliver
+ * 	<remote>	Remote server
+ * 	<api>		API endpoint and query params (ex: "/api/info")
+ * 	<payload>	Payload to deliver, or NULL
  *
  * 	<barrier>	Non-null get's used for syncronizing with the remote.  When
  * 	NULL, the call blocks.
@@ -33,10 +107,28 @@
  */
 canopy_error canopy_http_post(
         struct canopy_remote	*remote,
-        const char 				*url,
+        const char 				*api,
         const char 				*payload,
 		struct canopy_barrier	*barrier);
 
 
+/*
+ * Performs an HTTP DELETE request to the remote.
+ *
+ * 	<remote>	Remote server
+ * 	<api>		API endpoint and query params (ex: "/api/info")
+ * 	<payload>	Payload to deliver, or NULL
+ *
+ * 	<barrier>	Non-null get's used for syncronizing with the remote.  When
+ * 	NULL, the call blocks.
+ *
+ * 	NOTE:	The memory that the response gets put into is the rcv_buffer that
+ * 	was initialzed in the call to canopy_remote_init().
+ */
+canopy_error canopy_http_delete(
+        struct canopy_remote	*remote,
+        const char 				*api,
+        const char 				*payload,
+		struct canopy_barrier	*barrier);
 
 #endif /* _CANOPY_HTTP_H_ */

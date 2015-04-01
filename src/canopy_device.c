@@ -60,6 +60,9 @@ canopy_error canopy_get_self_device(canopy_remote_t *remote,
 
 	COS_ASSERT(remote != NULL);
 	COS_ASSERT(device != NULL);
+    // GET /api/device/self
+    // Parse the JSON payload
+    // Processing of the payload (initializing local copy of device)
 	return CANOPY_ERROR_NOT_IMPLEMENTED;
 }
 
@@ -74,6 +77,9 @@ canopy_error canopy_device_update_from_remote(
 
 	COS_ASSERT(remote != NULL);
 	COS_ASSERT(device != NULL);
+    // GET /api/device/self
+    // Parse the JSON payload
+    // Processing of the payload (updates local copy of device)
 	return CANOPY_ERROR_NOT_IMPLEMENTED;
 }
 

@@ -376,6 +376,8 @@ int c_json_get_result_key(char* js, int js_len, jsmntok_t *token, int tok_len,
 	 *
 	 * OK, there's a big hack here to avoid allocating any additional memory
 	 * for the string.
+     *
+     * TODO: Accept fields in arbitrary order
 	 */
 	// int equal = CHECK_TOKEN_STRING(js, token[1], "result");
 	int equal = strncmp((const char*) &js[token[1].start], "result",

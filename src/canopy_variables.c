@@ -230,7 +230,7 @@ static struct canopy_var* find_name(canopy_device_t *device, const char* name) {
 		if (strncmp(var->name, name, CANOPY_VAR_NAME_MAX_LENGTH - 1) == 0) {
 			return var;
 		}
-		var = (struct canopy_var *)var->next; /* I have no idea why this is needed */
+		var = var->next;
 	}
 	return NULL;
 #endif
@@ -447,6 +447,8 @@ canopy_error c_json_parse_vardcl(struct canopy_device *device,
 
 			/*
 			 * We found the variable, check to see if something's different
+             * TODO: What if there is a conflict in datatype/direction between
+             *      the local copy and the remote's copy
 			 */
 			if (var->direction != v_dir) {
 				cos_log(LOG_LEVEL_DEBUG, "v_dir %d doesn't match: %d\n", v_dir, var->direction);

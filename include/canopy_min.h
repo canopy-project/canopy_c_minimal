@@ -144,12 +144,6 @@ typedef struct canopy_context {
  * library you have linked with is incompatible with the header file you are
  * using.
  *
- *      <buffer> is a pointer to storage that gets used as temporary data
- *      storage primarily as the buffer used for payload and response
- *      communication.  (http)
- *
- *      <buffer_size>	The size of the temporary buffer.
- *
  *      <update_period> is the rate in seconds at which the library updates the
  *      state of things from the remotes.
  */
