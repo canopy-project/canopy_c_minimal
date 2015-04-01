@@ -24,24 +24,46 @@
 struct private {
     char *buffer;     /* the buffr being built in */
     int  buffer_len;  /* how big is the raw buffer */
-    int  offset;      /* offset where the \0 is relative to the start of the
-                         buffer*/
+    int  offset;      /* offset is where writting should start from in buffer*/
+    canopy_error err; /* did an error occur? */
 };
+//
+// Handler for CURL write callback.  Concatenates chunks of data into the
+// provided buffer.
+static size_t _curl_write_handler(void *ptr, size_t size, size_t nmemb, 
+                                  void *userdata) {
 
-// Handler for CURL write callback.  Concatenates received bytes into a
-// RedStringList object, for easy conversion to a string when the whole
-// response has been received.
-static size_t _curl_write_handler(void *ptr, size_t size, size_t nmemb, void *userdata) {
     struct private* http = (struct private*) userdata;
-    size_t len = size * nmemb;
+    size_t chunk_size = size * nmemb;
+
+    // buffer_remaining is amount of space left in buffer (not leaving room for
+    // NULL terminator).  When http->buffer_len == http->offset we have
+    // overfilled our buffer.
+    size_t buffer_remaining = http->buffer_len - http->offset;
+
+    // len is number of bytes to copy
+    size_t len = LOCAL_MIN(chunk_size, buffer_remaining);
+
     /*
      * Note..  There's no NULL character at the end of the transfered data.
-     * TODO Check to make sure there's enough buffer space before the copy, so
-     * we can return the actual length we used.
+     * If the payload fits in the provided buffer, we append a NULL character.
+     * If the provided buffer is too small, then we fill the buffer (without
+     * adding a NULL character) and signal an error.
      */
-    memcpy((void*)&http->buffer[http->offset], ptr, (http->buffer_len - http->offset));
+    memcpy((void*)&http->buffer[http->offset], ptr, len);
     http->offset += len;
-    http->buffer[http->offset + 1] = '\0';
+
+    if (http->buffer_len > http->offset) {
+        // There's more room in our buffer.  We're good.
+        http->buffer[http->offset + 1] = '\0';
+    } else if (http->buffer_len == http->offset) {
+        // Buffer filled up.  Report error
+        http->err = CANOPY_ERROR_OUT_OF_MEMORY;
+    } else {
+        // This should never happen (offset should never go beyond buffer_len)
+        COS_ASSERT(false);
+    }
+
     return len;
 }
 
@@ -71,6 +93,7 @@ canopy_error canopy_http_perform(
     private.buffer = rcv_buffer;
     private.buffer_len = rcv_buffer_size;
     private.offset = 0;
+    private.err = CANOPY_SUCCESS;
 
     if (barrier != NULL) {
         return CANOPY_ERROR_NOT_IMPLEMENTED;
@@ -126,6 +149,7 @@ canopy_error canopy_http_perform(
         goto cleanup;
     }
     *rcv_end = private.offset;
+    err = private.err;
 
 cleanup:
     curl_easy_cleanup(curl);
