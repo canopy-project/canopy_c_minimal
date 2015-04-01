@@ -17,7 +17,7 @@ CFLAGS_INCLUDES	 += -I. -I../include -I../src/
 
 CFLAGS += $(CFLAGS_INCLUDES) -g
 
-PROGRAM_FILES	=	test_json
+PROGRAM_FILES	=	test_json test_http
 
 LIBS	=	-L../src/ -lcanopy -L../src/linux -lcanopy_os -L../src/jsmn -ljsmn -lcurl
 
@@ -29,6 +29,9 @@ NEEDED_H_FILES	= \
 all: $(PROGRAM_FILES)
 
 default: $(PROGRAM_FILES)
+
+test_http: test_http.c $(NEEDED_H_FILES)
+	$(CC) $(CFLAGS) test_http.c -g -o test_http $(LIBS)
 
 test_json: test_json.c $(NEEDED_H_FILES)
 	$(CC) $(CFLAGS) test_json.c -g -o test_json $(LIBS)

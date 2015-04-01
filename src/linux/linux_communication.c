@@ -83,8 +83,8 @@ canopy_error canopy_http_perform(
 	}
 
 	snprintf(local_buf, sizeof(local_buf), "%s:%s", name, password);
-	snprintf(url, sizeof(url), "%s://%s:%s", 
-            (use_http ? "http" : "https"), name, password);
+	snprintf(url, sizeof(url), "%s://%s%s", 
+            (use_http ? "http" : "https"), remote_name, api);
 
 	curl_easy_setopt(curl, CURLOPT_URL, url);
 	if (payload == NULL || strlen(payload) == 0) {
@@ -107,6 +107,8 @@ canopy_error canopy_http_perform(
         default:
             COS_ASSERT(!"Unsupported HTTP method");
     }
+    curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 0L);
+    curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0L);
 	curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, _curl_write_handler);
 	curl_easy_setopt(curl, CURLOPT_WRITEDATA, &private);
 	curl_easy_setopt(curl, CURLOPT_HTTPAUTH, (long)CURLAUTH_BASIC);
