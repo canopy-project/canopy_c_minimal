@@ -78,6 +78,7 @@ static int test_raw_api_info() {
     }
 
     printf("Payload recieved: %s\n", buf);
+    return 0;
 }
 
 

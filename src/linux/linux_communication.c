@@ -25,7 +25,6 @@ struct private {
     char *buffer;     /* the buffr being built in */
     int  buffer_len;  /* how big is the raw buffer */
     int  offset;      /* offset is where writting should start from in buffer*/
-    canopy_error err; /* did an error occur? */
 };
 //
 // Handler for CURL write callback.  Concatenates chunks of data into the
@@ -53,17 +52,11 @@ static size_t _curl_write_handler(void *ptr, size_t size, size_t nmemb,
     memcpy((void*)&http->buffer[http->offset], ptr, len);
     http->offset += len;
 
+    COS_ASSERT(http->buffer_len >= http->offset);
     if (http->buffer_len > http->offset) {
         // There's more room in our buffer.  We're good.
         http->buffer[http->offset + 1] = '\0';
-    } else if (http->buffer_len == http->offset) {
-        // Buffer filled up.  Report error
-        http->err = CANOPY_ERROR_OUT_OF_MEMORY;
-    } else {
-        // This should never happen (offset should never go beyond buffer_len)
-        COS_ASSERT(false);
     }
-
     return len;
 }
 
@@ -93,7 +86,6 @@ canopy_error canopy_http_perform(
     private.buffer = rcv_buffer;
     private.buffer_len = rcv_buffer_size;
     private.offset = 0;
-    private.err = CANOPY_SUCCESS;
 
     if (barrier != NULL) {
         return CANOPY_ERROR_NOT_IMPLEMENTED;
@@ -143,13 +135,16 @@ canopy_error canopy_http_perform(
     curl_easy_setopt(curl, CURLOPT_USERPWD, local_buf);
 
     res = curl_easy_perform(curl);
-    if (res != CURLE_OK) {
-        cos_log(LOG_LEVEL_WARN, "Transfer failed, res: %d", res);
+    if (res == CURLE_WRITE_ERROR) {
+        cos_log(LOG_LEVEL_WARN, "Buffer too small for payload\n");
+        err = CANOPY_ERROR_OUT_OF_MEMORY;
+        goto cleanup;
+    } else if (res != CURLE_OK) {
+        cos_log(LOG_LEVEL_WARN, "Transfer failed, res: %d\n", res);
         err = CANOPY_ERROR_NETWORK;
         goto cleanup;
     }
     *rcv_end = private.offset;
-    err = private.err;
 
 cleanup:
     curl_easy_cleanup(curl);
