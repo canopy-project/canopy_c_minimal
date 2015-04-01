@@ -116,7 +116,7 @@ canopy_error canopy_http_perform(
             curl_easy_setopt(curl, CURLOPT_HTTPGET, 1L);
             break;
         case CANOPY_HTTP_POST:
-            curl_easy_setopt(curl, CURLOPT_HTTPPOST, 1L);
+            curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "POST");
             break;
         case CANOPY_HTTP_DELETE:
             curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "DELETE");

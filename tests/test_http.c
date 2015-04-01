@@ -81,13 +81,40 @@ static int test_raw_api_info() {
     return 0;
 }
 
+static int test_post_api_device_self() {
+    canopy_error err;
+    char buf[2048];
+    memset(buf, 0, sizeof(buf));
+    int end;
+    char *payload = "{\"location_note\" : \"mars\"}";
+    err = canopy_http_perform(
+            CANOPY_HTTP_POST,
+            USE_HTTP,
+            true,
+            USERNAME,
+            PASSWORD,
+            buf,
+            sizeof(buf),
+            &end,
+            REMOTE_NAME,
+            "/api/device/self",
+            payload,
+            NULL);
+
+    if (err != CANOPY_SUCCESS) {
+        printf("Error: %s\n", canopy_error_string(err));
+        return err;
+    }
+
+    printf("Payload recieved: %s\n", buf);
+    return 0;
+}
 
 /*******************************************************************************
  * 	main() start of program.
  */
 int main() {
-	test(test_raw_api_info, "test basic HTTP communication with remote");
+	test(test_raw_api_info, "test basic HTTP GET communication with remote");
+	test(test_post_api_device_self, "test basic HTTP POST communication with remote");
 }
-
-
 
