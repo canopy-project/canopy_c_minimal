@@ -60,11 +60,17 @@ static canopy_error _construct_device_sync_payload(
     }
 
     if (device->friendly_name_dirty) {
-        c_json_emit_name_and_value(&state, "friendly_name", device->friendly_name);
+        err = c_json_emit_name_and_value(&state, "friendly_name", device->friendly_name);
+        if (err != CANOPY_SUCCESS) {
+            return err;
+        }
     }
 
     if (device->location_note_dirty) {
-        c_json_emit_name_and_value(&state, "location_note", device->location_note);
+        err = c_json_emit_name_and_value(&state, "location_note", device->location_note);
+        if (err != CANOPY_SUCCESS) {
+            return err;
+        }
     }
 
     ierr = c_json_emit_close_object(&state);
