@@ -295,7 +295,7 @@ canopy_error c_json_emit_vardcl(struct canopy_device *device,
 		}
 	}
 
-	err = c_json_emit_name_and_object(state, "var_decls");
+	err = c_json_emit_name_and_object(state, TAG_VAR_DECLS);
 	if (err != C_JSON_OK) {
 		cos_log(LOG_LEVEL_DEBUG, "unable to emit var_decls err: %d\n", err);
 		return CANOPY_ERROR_JSON;
@@ -393,7 +393,7 @@ canopy_error c_json_parse_vardcl(struct canopy_device *device,
 	 */
 
 	COS_ASSERT(token[offset].type == JSMN_STRING);
-	COS_ASSERT(strncmp((const char*) &js[token[offset].start], "var_decls", (token[offset].end - token[offset].start)) == 0);
+	COS_ASSERT(strncmp((const char*) &js[token[offset].start], TAG_VAR_DECLS, (token[offset].end - token[offset].start)) == 0);
 	COS_ASSERT(token[offset].size == 1);
 	offset++;
 
@@ -510,7 +510,7 @@ canopy_error c_json_emit_vars(struct canopy_device *device,
 		}
 	}
 
-	err = c_json_emit_name_and_object(state, "vars");
+	err = c_json_emit_name_and_object(state, TAG_VARS);
 	if (err != C_JSON_OK) {
 		cos_log(LOG_LEVEL_DEBUG, "unable to emit vars err: %d\n", err);
 		return CANOPY_ERROR_JSON;
@@ -686,7 +686,7 @@ canopy_error c_json_parse_vars(struct canopy_device *device,
 	 * Verify the thing starts with "vars"
 	 */
 	COS_ASSERT(token[offset].type == JSMN_STRING);
-	COS_ASSERT(strncmp((const char*) &js[token[offset].start], "vars", (token[offset].end - token[offset].start)) == 0);
+	COS_ASSERT(strncmp((const char*) &js[token[offset].start], TAG_VARS, (token[offset].end - token[offset].start)) == 0);
 	COS_ASSERT(token[offset].size == 1);
 	offset++;
 
@@ -726,7 +726,7 @@ canopy_error c_json_parse_vars(struct canopy_device *device,
 		offset++;
 
 		COS_ASSERT(token[offset].type == JSMN_STRING);
-		COS_ASSERT(strncmp((const char*) &js[token[offset].start], "t", (token[offset].end - token[offset].start)) == 0);
+		COS_ASSERT(strncmp((const char*) &js[token[offset].start], TAG_T, (token[offset].end - token[offset].start)) == 0);
 		COS_ASSERT(token[offset].size == 1);
 		offset++;
 
@@ -739,7 +739,7 @@ canopy_error c_json_parse_vars(struct canopy_device *device,
 
 
 		COS_ASSERT(token[offset].type == JSMN_STRING);
-		COS_ASSERT(strncmp((const char*) &js[token[offset].start], "v", (token[offset].end - token[offset].start)) == 0);
+		COS_ASSERT(strncmp((const char*) &js[token[offset].start], TAG_V, (token[offset].end - token[offset].start)) == 0);
 		COS_ASSERT(token[offset].size == 1);
 		offset++;
 

@@ -30,6 +30,48 @@ canopy_error canopy_cleanup_remote(struct canopy_remote *remote);
 
 
 /******************************************************************************/
+
+
+/******************************************************************************
+ * JSON 'tags'
+ */
+#define		TAG_RESULT				"result"
+#define		TAG_USERNAME			"username"
+#define		TAG_PASSWORD			"password"
+#define		TAG_OLD_USERNAME		"old_username"
+#define		TAG_OLD_PASSWORD		"old_password"
+#define		TAG_EMAIL				"email"
+#define		TAG_SKIP_EMAIL			"skip-email"
+#define		TAG_VALIDATED			"validated"
+#define		TAG_QUANTITY			"quantity"
+#define		TAG_FRIENDLY_NAMES		"friendly_names"	/* note plural */
+#define		TAG_COUNT				"count"
+#define		TAG_DEVICES				"devices"
+#define		TAG_FRIENDLY_NAME		"friendly_name"		/* note not plural */
+#define		TAG_DEVICE_ID			"device_id"
+#define		TAG_UUID				"uuid"
+#define		TAG_DEVICE_SECRET_KEY	"device_secret_key"
+
+
+/*					status object tags */
+#define		TAG_STATUS				"status"
+#define		TAG_WS_CONNECTED			"ws_connected"
+#define		TAG_ACTIVE_STATUS			"active_status"
+#define		TAG_LAST_ACTIVITY_TIME		"last_activity_time"
+
+/*					historical data tags */
+#define		TAG_CURRENT_CLOCK_US	"current_clock_us"	/* uint64_t */
+#define		TAG_CURRENT_CLOCK_UTC	"current_clock_utc"	/* string */
+#define		TAG_SAMPLES				"samples"
+#define		TAG_T					"t"
+#define		TAG_V					"v"
+
+#define		TAG_LOCATION_NOTE		"location_note"
+
+#define		TAG_VAR_DECLS			"var_decls"
+#define		TAG_VARS				"vars"
+
+
 /******************************************************************************
  * 	JSON stuff.
  */
@@ -245,6 +287,7 @@ canopy_error c_json_parse_vars(struct canopy_device *device,
 canopy_error c_json_parse_device(struct canopy_device *device,
 		char* js, int js_len, 			/* the input JSON and total length  */
 		jsmntok_t *token, int tok_len,	/* token array with length */
+		bool *result_code,				/* the value of "result : " */
 		bool check_obj);				/* expect outer-most object */
 
 #endif	/* CANOPY_MIN_INTERNAL_INCLUDED */
