@@ -58,6 +58,14 @@ static canopy_error _construct_device_sync_payload(
         return err;
     }
 
+    if (device->friendly_name_dirty) {
+        c_json_emit_name_and_value(&state, "friendly_name", device->friendly_name);
+    }
+
+    if (device->location_note_dirty) {
+        c_json_emit_name_and_value(&state, "location_note", device->location_note);
+    }
+
     ierr = c_json_emit_close_object(&state);
     if (ierr != C_JSON_OK) {
         return CANOPY_ERROR_NETWORK;
@@ -66,7 +74,19 @@ static canopy_error _construct_device_sync_payload(
     return CANOPY_SUCCESS;
 }
 
-
+/*
+ * _clear_dirty_flags
+ *
+ * Some fields (such as "friendly_name" are only sent to the remote if they
+ * have been changed locally since the last sync.
+ *
+ * This routine should be called after reporting to the remote to clear the
+ * dirty flag for these fields.
+ */
+static void _clear_dirty_flags(struct canopy_device *device) {
+    device->friendly_name_dirty = false;
+    device->location_note_dirty = false;
+}
 
 /****************************************************************************/
 /****************************************************************************/
@@ -224,6 +244,9 @@ canopy_error canopy_device_update_to_remote(
         return err;
     }
 
+    // clear dirty flags
+    _clear_dirty_flags(device);
+
     // ignore response since this isn't a "sync"
 
     return CANOPY_SUCCESS;
@@ -280,6 +303,92 @@ canopy_error canopy_device_sync_with_remote(
         return err;
     }
 
+    // clear dirty flags
+    _clear_dirty_flags(device);
+    return CANOPY_SUCCESS;
+}
+
+/*
+ * canopy_device_get_friendly_name
+ */
+canopy_error canopy_device_get_friendly_name(
+        canopy_device_t *device, 
+        char *friendly_name, 
+        size_t len)
+{
+    COS_ASSERT(device != NULL);
+    COS_ASSERT(friendly_name != NULL);
+
+    if (strnlen(device->friendly_name, CANOPY_FRIENDLY_NAME_MAX_LENGTH) > len) {
+        return CANOPY_ERROR_BUFFER_TOO_SMALL;
+    }
+
+    strncpy(friendly_name, device->friendly_name, len);
+    if (len > 0) {
+        friendly_name[len - 1] = '\0';
+    }
+
+    return CANOPY_SUCCESS;
+}
+
+/*
+ * canopy_device_get_location_note
+ */
+canopy_error canopy_device_get_location_note(
+        canopy_device_t *device, 
+        char *location_note, 
+        size_t len)
+{
+    COS_ASSERT(device != NULL);
+    COS_ASSERT(location_note != NULL);
+
+    if (strnlen(device->location_note, CANOPY_NOTE_MAX_LENGTH) > len) {
+        return CANOPY_ERROR_BUFFER_TOO_SMALL;
+    }
+
+    strncpy(location_note, device->location_note, len);
+    if (len > 0) {
+        location_note[len - 1] = '\0';
+    }
+
+    return CANOPY_SUCCESS;
+}
+
+canopy_error canopy_device_set_friendly_name(
+        canopy_device_t *device, 
+        const char *friendly_name)
+{
+    COS_ASSERT(device != NULL);
+    COS_ASSERT(friendly_name != NULL);
+
+    if (strnlen(friendly_name, CANOPY_FRIENDLY_NAME_MAX_LENGTH+1) > 
+            CANOPY_FRIENDLY_NAME_MAX_LENGTH) {
+        return CANOPY_ERROR_BAD_PARAM;
+    }
+
+    // TODO: other input validation
+    strcpy(device->friendly_name, friendly_name);
+
+    device->friendly_name_dirty = true;
+    return CANOPY_SUCCESS;
+}
+
+canopy_error canopy_device_set_location_note(
+        canopy_device_t *device, 
+        const char *location_note)
+{
+    COS_ASSERT(device != NULL);
+    COS_ASSERT(location_note != NULL);
+
+    if (strnlen(location_note, CANOPY_NOTE_MAX_LENGTH+1) > 
+            CANOPY_NOTE_MAX_LENGTH) {
+        return CANOPY_ERROR_BAD_PARAM;
+    }
+
+    // TODO: other input validation
+    strcpy(device->location_note, location_note);
+
+    device->location_note_dirty = true;
     return CANOPY_SUCCESS;
 }
 

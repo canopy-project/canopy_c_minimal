@@ -76,8 +76,11 @@ typedef enum {
     // Requested variable has never been set
     CANOPY_ERROR_VAR_NOT_SET,
 
-	/* we've run out of memory */
+	/* we've run out of memory during dynamic memory allocation */
 	CANOPY_ERROR_OUT_OF_MEMORY,
+
+	/* The supplied buffer is too small to hold a result. */
+	CANOPY_ERROR_BUFFER_TOO_SMALL,
 
 	/* there's been an error emiting a JSON string */
 	CANOPY_ERROR_JSON,
@@ -106,6 +109,7 @@ const static struct canopy_error_strings canopy_error_strings_table[] = {
         {CANOPY_ERROR_VAR_NOT_FOUND, "cloud variable not found"},
         {CANOPY_ERROR_VAR_NOT_SET, "cloud variable has never been set"},
         {CANOPY_ERROR_OUT_OF_MEMORY, "out of memory"},
+        {CANOPY_ERROR_BUFFER_TOO_SMALL, "buffer too small"},
         {CANOPY_ERROR_JSON, "could not emit a JSON string"},
         {CANOPY_ERROR_NETWORK, "network error"},
 };
@@ -788,7 +792,9 @@ typedef struct canopy_device {
     struct canopy_device	*next;        /* hung off of User or remote */
     char					uuid[CANOPY_UUID_MAX_LENGTH];        /* the uuid of the device */
     char					friendly_name[CANOPY_FRIENDLY_NAME_MAX_LENGTH];
+    bool					friendly_name_dirty;
     char					location_note[CANOPY_NOTE_MAX_LENGTH];
+    bool					location_note_dirty;
     bool					ws_connected;
     canopy_remote_t			*remote;
 #ifdef HAVE_MEMORY
@@ -815,6 +821,39 @@ extern canopy_error canopy_device_init(
         canopy_remote_t *remote,
         const char *uuid);
 
+// Get device's friendly name.  This is a local operation that does not
+// interact with the remote.
+//
+// Copies the friendly_name to buffer pointed to by <friendly_name>.  Copies at
+// most <len> bytes.  Returns the error CANOPY_ERROR_BUFFER_TOO_SMALL if <len>
+// is not large enough to hold the result.
+extern canopy_error canopy_device_get_friendly_name(
+        canopy_device_t *device, 
+        char *friendly_name, 
+        size_t len);
+
+// Get device's location note.  This is a local operation that does not
+// interact with the remote.
+//
+// Copies the location_note to buffer pointed to by <email>.  Copies at most <len>
+// bytes.  Returns the error CANOPY_ERROR_BUFFER_TOO_SMALL if <len> is not
+// large enough to hold the result.
+extern canopy_error canopy_device_get_location_note(
+        canopy_device_t *device, 
+        char *location_note, 
+        size_t len);
+
+// Set device's friendly name.  This is a local operation that does not
+// interact with the remote.
+extern canopy_error canopy_device_set_friendly_name(
+        canopy_device_t *device, 
+        const char *friendly_name);
+
+// Set device's location note.  This is a local operation that does not
+// interact with the remote.
+extern canopy_error canopy_device_set_location_note(
+        canopy_device_t *device, 
+        const char *location_note);
 
 // Updates a device object's status and properties from the remote server.  Any
 // status or properties with a more recent clock ms value will be updated
