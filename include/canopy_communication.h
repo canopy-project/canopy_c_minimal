@@ -38,6 +38,7 @@ typedef enum {
  *     <rcv_buffer_size>Size of destination buffer
  *     <rcv_end>        Pointer to integer that gets set to the end of the
  *                      recieved buffer.
+ *     <status_code>    Pointer to integer that gets set to the HTTP status.
  *     <remote_name>    Hostname/IP of remote (makes up first part of URL)
  *     <api>            API endpoint and query params (makes up 2nd part of URL)
  *     <payload>        Optional payload to deliver, or NULL
@@ -56,6 +57,7 @@ canopy_error canopy_http_perform(
         char                    *rcv_buffer,
         size_t                  rcv_buffer_size,
         int                     *rcv_end,
+        int                     *status_code,
         const char              *remote_name,
         const char              *api,
         const char              *payload,
@@ -83,6 +85,7 @@ canopy_error canopy_http_perform(
  *      remote->rcv_buffer,
  *      remote->rcv_buffer_size,
  *      &remote->rcv_end,
+ *      status_code,
  *      remote->remote_name,
  *      api,
  *      payload,
@@ -92,6 +95,7 @@ canopy_error canopy_remote_http_get(
         struct canopy_remote    *remote,
         const char              *api,
         const char              *payload,
+        int                     *status_code,
         struct canopy_barrier   *barrier);
 
 /*
@@ -106,10 +110,11 @@ canopy_error canopy_remote_http_get(
  *     NOTE:    The memory that the response gets put into is the rcv_buffer that
  *     was initialzed in the call to canopy_remote_init().
  */
-canopy_error canopy_http_post(
+canopy_error canopy_remote_http_post(
         struct canopy_remote    *remote,
         const char              *api,
         const char              *payload,
+        int                     *status_code,
         struct canopy_barrier   *barrier);
 
 
@@ -125,10 +130,11 @@ canopy_error canopy_http_post(
  *     NOTE:    The memory that the response gets put into is the rcv_buffer that
  *     was initialzed in the call to canopy_remote_init().
  */
-canopy_error canopy_http_delete(
+canopy_error canopy_remote_http_delete(
         struct canopy_remote    *remote,
         const char              *api,
         const char              *payload,
+        int                     *status_code,
         struct canopy_barrier   *barrier);
 
 #endif /* _CANOPY_HTTP_H_ */

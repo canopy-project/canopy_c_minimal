@@ -67,6 +67,7 @@ static int test_raw_api_info() {
             buf,
             sizeof(buf),
             &end,
+            NULL,
             REMOTE_NAME,
             "/api/info",
             NULL,
@@ -86,6 +87,7 @@ static int test_post_api_device_self() {
     char buf[2048];
     memset(buf, 0, sizeof(buf));
     int end;
+    int status_code;
     char *payload = "{\"location_note\" : \"mars\"}";
     err = canopy_http_perform(
             CANOPY_HTTP_POST,
@@ -96,6 +98,7 @@ static int test_post_api_device_self() {
             buf,
             sizeof(buf),
             &end,
+            &status_code,
             REMOTE_NAME,
             "/api/device/self",
             payload,
@@ -106,7 +109,7 @@ static int test_post_api_device_self() {
         return err;
     }
 
-    printf("Payload recieved: %s\n", buf);
+    printf("Payload recieved: %d %s\n", status_code, buf);
     return 0;
 }
 

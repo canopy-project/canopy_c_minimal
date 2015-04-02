@@ -72,6 +72,7 @@ canopy_error canopy_http_perform(
         char                    *rcv_buffer,
         size_t                  rcv_buffer_size,
         int                     *rcv_end,
+        int                     *status_code,
         const char              *remote_name,
         const char              *api,
         const char              *payload,
@@ -144,7 +145,13 @@ canopy_error canopy_http_perform(
         err = CANOPY_ERROR_NETWORK;
         goto cleanup;
     }
+
     *rcv_end = private.offset;
+    if (status_code != NULL) {
+        long status_code_long;
+        curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &status_code_long);
+        *status_code = (int)(status_code_long);
+    }
 
 cleanup:
     curl_easy_cleanup(curl);
@@ -158,6 +165,7 @@ canopy_error canopy_remote_http_get(
         struct canopy_remote    *remote,
         const char              *api,
         const char              *payload,
+        int                     *status_code,
         struct canopy_barrier   *barrier)
 {
     return canopy_http_perform(
@@ -169,6 +177,7 @@ canopy_error canopy_remote_http_get(
             remote->rcv_buffer,
             remote->rcv_buffer_size,
             &remote->rcv_end,
+            status_code,
             remote->params->remote,
             api,
             payload,
@@ -182,6 +191,7 @@ canopy_error canopy_remote_http_post(
         struct canopy_remote    *remote,
         const char              *api,
         const char              *payload,
+        int                     *status_code,
         struct canopy_barrier   *barrier)
 {
     return canopy_http_perform(
@@ -193,6 +203,7 @@ canopy_error canopy_remote_http_post(
             remote->rcv_buffer,
             remote->rcv_buffer_size,
             &remote->rcv_end,
+            status_code,
             remote->params->remote,
             api,
             payload,
@@ -206,6 +217,7 @@ canopy_error canopy_remote_http_delete(
         struct canopy_remote    *remote,
         const char              *api,
         const char              *payload,
+        int                     *status_code,
         struct canopy_barrier   *barrier)
 {
     return canopy_http_perform(
@@ -217,6 +229,7 @@ canopy_error canopy_remote_http_delete(
             remote->rcv_buffer,
             remote->rcv_buffer_size,
             &remote->rcv_end,
+            status_code,
             remote->params->remote,
             api,
             payload,
