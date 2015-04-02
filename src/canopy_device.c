@@ -58,7 +58,6 @@ canopy_error canopy_get_self_device(canopy_remote_t *remote,
         struct canopy_device *device,
         canopy_barrier_t *barrier) {
 
-<<<<<<< Updated upstream
     jsmntok_t token[512]; // TODO: large enough?
     canopy_error err;
 
@@ -92,11 +91,6 @@ canopy_error canopy_get_self_device(canopy_remote_t *remote,
     }
 
     return CANOPY_SUCCESS;
-=======
-	COS_ASSERT(remote != NULL);
-	COS_ASSERT(device != NULL);
-	return CANOPY_ERROR_NOT_IMPLEMENTED;
->>>>>>> Stashed changes
 }
 
 
@@ -108,7 +102,6 @@ canopy_error canopy_device_update_from_remote(
         canopy_device_t *device,
         canopy_barrier_t *barrier) {
 
-<<<<<<< Updated upstream
     jsmntok_t token[512]; // TODO: large enough?
     canopy_error err;
 
@@ -139,11 +132,6 @@ canopy_error canopy_device_update_from_remote(
     }
 
     return CANOPY_SUCCESS;
-=======
-	COS_ASSERT(remote != NULL);
-	COS_ASSERT(device != NULL);
-	return CANOPY_ERROR_NOT_IMPLEMENTED;
->>>>>>> Stashed changes
 }
 
 // Updates a device object's status and properties to the remote server.  Any
