@@ -18,6 +18,7 @@
 
 #include	<canopy_min.h>
 #include	<canopy_min_internal.h>
+#include	<canopy_communication.h>
 #include	<canopy_os.h>
 
 /*
@@ -129,6 +130,7 @@ canopy_error canopy_get_self_device(canopy_remote_t *remote,
 
     jsmntok_t token[512]; // TODO: large enough?
     canopy_error err;
+    int http_status;
 
     COS_ASSERT(remote != NULL);
     COS_ASSERT(device != NULL);
@@ -142,12 +144,22 @@ canopy_error canopy_get_self_device(canopy_remote_t *remote,
     canopy_device_init(device, remote, remote->params->name);
 
     // GET /api/device/self
-    err = canopy_remote_http_get(remote, "/api/device/self", NULL, barrier);
+    err = canopy_remote_http_get(
+            remote, 
+            "/api/device/self", 
+            NULL, 
+            &http_status, 
+            barrier);
     if (err != CANOPY_SUCCESS) {
         cos_log(LOG_LEVEL_ERROR, 
                 "Error during GET /api/device/self: %s\n", 
                 canopy_error_string(err));
         return err;
+    }
+
+    if (http_status != 200) {
+        // TODO: Return the appropriate error based on the response
+        return CANOPY_ERROR_UNKNOWN;
     }
 
     // Parse response and update device object
@@ -178,17 +190,28 @@ canopy_error canopy_device_update_from_remote(
 
     jsmntok_t token[512]; // TODO: large enough?
     canopy_error err;
+    int http_status;
 
     COS_ASSERT(remote != NULL);
     COS_ASSERT(device != NULL);
 
     // GET /api/device/self
-    err = canopy_remote_http_get(remote, "/api/device/self", NULL, barrier);
+    err = canopy_remote_http_get(
+            remote, 
+            "/api/device/self", 
+            NULL, 
+            &http_status,
+            barrier);
     if (err != CANOPY_SUCCESS) {
         cos_log(LOG_LEVEL_ERROR, 
                 "Error during GET /api/device/self: %s\n", 
                 canopy_error_string(err));
         return err;
+    }
+
+    if (http_status != 200) {
+        // TODO: Return the appropriate error based on the response
+        return CANOPY_ERROR_UNKNOWN;
     }
 
     // Parse response and update device object
@@ -218,6 +241,7 @@ canopy_error canopy_device_update_to_remote(
 
     canopy_error err;
     char request_payload[2048];
+    int http_status;
 
     COS_ASSERT(remote != NULL);
     COS_ASSERT(device != NULL);
@@ -236,12 +260,18 @@ canopy_error canopy_device_update_to_remote(
             remote, 
             "/api/device/self", 
             request_payload, 
+            &http_status,
             barrier);
     if (err != CANOPY_SUCCESS) {
         cos_log(LOG_LEVEL_ERROR, 
                 "Error during POST /api/device/self: %s\n", 
                 canopy_error_string(err));
         return err;
+    }
+
+    if (http_status != 200) {
+        // TODO: Return the appropriate error based on the response
+        return CANOPY_ERROR_UNKNOWN;
     }
 
     // clear dirty flags
@@ -263,6 +293,7 @@ canopy_error canopy_device_sync_with_remote(
     canopy_error err;
     jsmntok_t token[512]; // TODO: large enough?
     char request_payload[2048];
+    int http_status;
 
     COS_ASSERT(remote != NULL);
     COS_ASSERT(device != NULL);
@@ -281,12 +312,18 @@ canopy_error canopy_device_sync_with_remote(
             remote, 
             "/api/device/self", 
             request_payload, 
+            &http_status,
             barrier);
     if (err != CANOPY_SUCCESS) {
         cos_log(LOG_LEVEL_ERROR, 
                 "Error during POST /api/device/self: %s\n", 
                 canopy_error_string(err));
         return err;
+    }
+
+    if (http_status != 200) {
+        // TODO: Return the appropriate error based on the response
+        return CANOPY_ERROR_UNKNOWN;
     }
 
     // Parse response and update device object
