@@ -17,6 +17,7 @@
 #include	<stdbool.h>
 #include	<string.h>
 #include	<stdio.h>
+#include	<stdlib.h>
 
 #include	<canopy_min.h>
 #include	<canopy_min_internal.h>
@@ -126,7 +127,6 @@ typedef struct canopy_var {
 
 #endif
 
-/******************************************************
 /***************************************************************************
  * Allocates a variable, initializes it and hangs it on the device...
  *
