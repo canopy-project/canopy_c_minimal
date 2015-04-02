@@ -58,6 +58,7 @@ canopy_error canopy_get_self_device(canopy_remote_t *remote,
         struct canopy_device *device,
         canopy_barrier_t *barrier) {
 
+<<<<<<< Updated upstream
     jsmntok_t token[512]; // TODO: large enough?
     canopy_error err;
 
@@ -91,6 +92,11 @@ canopy_error canopy_get_self_device(canopy_remote_t *remote,
     }
 
     return CANOPY_SUCCESS;
+=======
+	COS_ASSERT(remote != NULL);
+	COS_ASSERT(device != NULL);
+	return CANOPY_ERROR_NOT_IMPLEMENTED;
+>>>>>>> Stashed changes
 }
 
 
@@ -102,6 +108,7 @@ canopy_error canopy_device_update_from_remote(
         canopy_device_t *device,
         canopy_barrier_t *barrier) {
 
+<<<<<<< Updated upstream
     jsmntok_t token[512]; // TODO: large enough?
     canopy_error err;
 
@@ -132,6 +139,11 @@ canopy_error canopy_device_update_from_remote(
     }
 
     return CANOPY_SUCCESS;
+=======
+	COS_ASSERT(remote != NULL);
+	COS_ASSERT(device != NULL);
+	return CANOPY_ERROR_NOT_IMPLEMENTED;
+>>>>>>> Stashed changes
 }
 
 // Updates a device object's status and properties to the remote server.  Any
@@ -219,4 +231,23 @@ canopy_error canopy_device_get_active_status(
 	return CANOPY_ERROR_NOT_IMPLEMENTED;
 }
 
+/******************************************************************************/
+/******************************************************************************/
 
+/***************************************************************************
+ * 	c_json_parse_device(struct canopy_device *device,
+ *		char* js, int js_len, jsmntok_t *token, int tok_len,
+ *		int current)
+ *
+ * 		parses the JSON vardecl tag from the server to register the variables that are registered
+ * 	with the device. (in canopy_device.c)
+ */
+canopy_error c_json_parse_device(struct canopy_device *device,
+		char* js, int js_len, 			/* the input JSON and total length  */
+		jsmntok_t *token, int tok_len,	/* token array with length */
+		bool check_obj) {				/* expect outer-most object */
+
+
+
+	return CANOPY_SUCCESS;
+}

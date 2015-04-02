@@ -230,7 +230,7 @@ static struct canopy_var* find_name(canopy_device_t *device, const char* name) {
 		if (strncmp(var->name, name, CANOPY_VAR_NAME_MAX_LENGTH - 1) == 0) {
 			return var;
 		}
-		var = var->next;
+		var = (struct canopy_var *)var->next; /* I have no idea why this is needed */
 	}
 	return NULL;
 #endif
@@ -447,8 +447,6 @@ canopy_error c_json_parse_vardcl(struct canopy_device *device,
 
 			/*
 			 * We found the variable, check to see if something's different
-             * TODO: What if there is a conflict in datatype/direction between
-             *      the local copy and the remote's copy
 			 */
 			if (var->direction != v_dir) {
 				cos_log(LOG_LEVEL_DEBUG, "v_dir %d doesn't match: %d\n", v_dir, var->direction);
@@ -489,7 +487,7 @@ canopy_error c_json_parse_vardcl(struct canopy_device *device,
 	*next_token = offset;
 
 	return err;
-}
+} /* c_json_parse_vardcl */
 
 /***************************************************************************
  * 	c_json_emit_vars(struct canopy_device *device, struct c_json_state *state)
@@ -603,7 +601,7 @@ canopy_error c_json_emit_vars(struct canopy_device *device,
 		}
 	}
 	return err;
-}
+} /* c_json_emit_vars */
 
 
 /***************************************************************************
@@ -621,12 +619,9 @@ canopy_error c_json_parse_vars(struct canopy_device *device,
 		int *next_token,				/* the token after the decls */
 		bool check_obj) {				/* expect outer-most object */
 
-	int err = CANOPY_SUCCESS;
 	int i;
 	char name[128];
-	memset(&name, 0, sizeof(name));
 	char primative[128];
-	memset(&primative, 0, sizeof(primative));
 	char time[128];
 
 	COS_ASSERT(device != NULL);
@@ -739,7 +734,7 @@ canopy_error c_json_parse_vars(struct canopy_device *device,
 		COS_ASSERT(token[offset].size == 0);
 		strncpy(time, &js[token[offset].start], (token[offset].end - token[offset].start));
 		time[(token[offset].start - token[offset].end)] = '\0';
-		remote_time = (cos_time_t)atoll(time);
+		remote_time = atoll(time);
 		offset++;
 
 
@@ -752,6 +747,7 @@ canopy_error c_json_parse_vars(struct canopy_device *device,
 		COS_ASSERT(token[offset].size == 0);
 		strncpy(primative, &js[token[offset].start], (token[offset].end - token[offset].start));
 		primative[(token[offset].start - token[offset].end)] = '\0';
+		offset++;
 
 		/*
 		 * We've got the name, and the primative, now we need to look to see if this variable has
@@ -849,16 +845,12 @@ canopy_error c_json_parse_vars(struct canopy_device *device,
 			return CANOPY_ERROR_VAR_NOT_FOUND;
 		}
 
-		/*
-		 * Go on to the next token
-		 */
-		offset++;
 	} /* var loop */
 
 	*next_token = offset;
 
-	return err;
-}
+	return CANOPY_SUCCESS;
+} /* c_json_parse_vars */
 
 
 
@@ -869,10 +861,6 @@ canopy_error canopy_var_set_bool(struct canopy_var *var, bool value) {
 	struct canopy_var_value *var_val = &var->val;
 	if (var->type != CANOPY_VAR_DATATYPE_BOOL) {
 		return CANOPY_ERROR_BAD_PARAM;
-	}
-	if (cos_get_time(&var->last) != 0) {
-		cos_log(LOG_LEVEL_FATAL, "Could not get time in canopy_var_set_bool()");
-		return CANOPY_ERROR_FATAL;
 	}
 	var_val->type = CANOPY_VAR_DATATYPE_BOOL;
 	var_val->value.val_bool = value;
@@ -885,10 +873,6 @@ canopy_error canopy_var_set_int8(struct canopy_var *var, int8_t value) {
 	if (var->type != CANOPY_VAR_DATATYPE_INT8) {
 		return CANOPY_ERROR_BAD_PARAM;
 	}
-	if (cos_get_time(&var->last) != 0) {
-		cos_log(LOG_LEVEL_FATAL, "Could not get time in canopy_var_set_int8()");
-		return CANOPY_ERROR_FATAL;
-	}
 	var_val->type = CANOPY_VAR_DATATYPE_INT8;
 	var_val->value.val_int8 = value;
 	var->set = true;
@@ -899,10 +883,6 @@ canopy_error canopy_var_set_int16(struct canopy_var *var, int16_t value) {
 	struct canopy_var_value *var_val = &var->val;
 	if (var->type != CANOPY_VAR_DATATYPE_INT16) {
 		return CANOPY_ERROR_BAD_PARAM;
-	}
-	if (cos_get_time(&var->last) != 0) {
-		cos_log(LOG_LEVEL_FATAL, "Could not get time in canopy_var_set_int16()");
-		return CANOPY_ERROR_FATAL;
 	}
 	var_val->type = CANOPY_VAR_DATATYPE_INT16;
 	var_val->value.val_int16 = value;
@@ -915,10 +895,6 @@ canopy_error canopy_var_set_int32(struct canopy_var *var, int32_t value) {
 	if (var->type != CANOPY_VAR_DATATYPE_INT32) {
 		return CANOPY_ERROR_BAD_PARAM;
 	}
-	if (cos_get_time(&var->last) != 0) {
-		cos_log(LOG_LEVEL_FATAL, "Could not get time in canopy_var_set_int32()");
-		return CANOPY_ERROR_FATAL;
-	}
 	var_val->type = CANOPY_VAR_DATATYPE_INT32;
 	var_val->value.val_int32 = value;
 	var->set = true;
@@ -929,10 +905,6 @@ canopy_error canopy_var_set_uint8(struct canopy_var *var, uint8_t value) {
 	struct canopy_var_value *var_val = &var->val;
 	if (var->type != CANOPY_VAR_DATATYPE_UINT8) {
 		return CANOPY_ERROR_BAD_PARAM;
-	}
-	if (cos_get_time(&var->last) != 0) {
-		cos_log(LOG_LEVEL_FATAL, "Could not get time in canopy_var_set_uint8()");
-		return CANOPY_ERROR_FATAL;
 	}
 	var_val->type = CANOPY_VAR_DATATYPE_BOOL;
 	var_val->value.val_uint8 = value;
@@ -946,10 +918,6 @@ canopy_error canopy_var_set_uint16(struct canopy_var *var, uint16_t value) {
 	if (var->type != CANOPY_VAR_DATATYPE_UINT16) {
 		return CANOPY_ERROR_BAD_PARAM;
 	}
-	if (cos_get_time(&var->last) != 0) {
-		cos_log(LOG_LEVEL_FATAL, "Could not get time in canopy_var_set_uint16()");
-		return CANOPY_ERROR_FATAL;
-	}
 	var_val->type = CANOPY_VAR_DATATYPE_UINT16;
 	var_val->value.val_uint16 = value;
 	var->set = true;
@@ -960,10 +928,6 @@ canopy_error canopy_var_set_uint32(struct canopy_var *var, uint32_t value) {
 	struct canopy_var_value *var_val = &var->val;
 	if (var->type != CANOPY_VAR_DATATYPE_UINT32) {
 		return CANOPY_ERROR_BAD_PARAM;
-	}
-	if (cos_get_time(&var->last) != 0) {
-		cos_log(LOG_LEVEL_FATAL, "Could not get time in canopy_var_set_uint32()");
-		return CANOPY_ERROR_FATAL;
 	}
 	var_val->type = CANOPY_VAR_DATATYPE_UINT32;
 	var_val->value.val_bool = value;
@@ -976,10 +940,6 @@ canopy_error canopy_var_set_datetime(struct canopy_var *var, cos_time_t value) {
 	if (var->type != CANOPY_VAR_DATATYPE_DATETIME) {
 		return CANOPY_ERROR_BAD_PARAM;
 	}
-	if (cos_get_time(&var->last) != 0) {
-		cos_log(LOG_LEVEL_FATAL, "Could not get time in canopy_var_set_datetime()");
-		return CANOPY_ERROR_FATAL;
-	}
 	var_val->type = CANOPY_VAR_DATATYPE_DATETIME;
 	var_val->value.val_time = value;
 	var->set = true;
@@ -991,10 +951,6 @@ canopy_error canopy_var_set_float32(struct canopy_var *var, float value) {
 	if (var->type != CANOPY_VAR_DATATYPE_FLOAT32) {
 		return CANOPY_ERROR_BAD_PARAM;
 	}
-	if (cos_get_time(&var->last) != 0) {
-		cos_log(LOG_LEVEL_FATAL, "Could not get time in canopy_var_set_float32()");
-		return CANOPY_ERROR_FATAL;
-	}
 	var_val->type = CANOPY_VAR_DATATYPE_FLOAT32;
 	var_val->value.val_float = value;
 	var->set = true;
@@ -1005,10 +961,6 @@ canopy_error canopy_var_set_float64(struct canopy_var *var, double value) {
 	struct canopy_var_value *var_val = &var->val;
 	if (var->type != CANOPY_VAR_DATATYPE_FLOAT64) {
 		return CANOPY_ERROR_BAD_PARAM;
-	}
-	if (cos_get_time(&var->last) != 0) {
-		cos_log(LOG_LEVEL_FATAL, "Could not get time in canopy_var_set_float64()");
-		return CANOPY_ERROR_FATAL;
 	}
 	var_val->type = CANOPY_VAR_DATATYPE_FLOAT64;
 	var_val->value.val_double = value;
