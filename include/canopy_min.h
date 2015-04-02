@@ -22,7 +22,7 @@
 #include <canopy_os.h>
 
 // This is used to verify that programs compiled using this version of the
-// header also link with the same version number of the library.
+// header also link with a compatible version of the library.
 #define CANOPY_MIN_HEADER_VERSION "15.02.030"
 
 #define LOCAL_MIN(x,y) ((x) < (y) ? (x) : (y))
@@ -776,7 +776,8 @@ extern canopy_error canopy_get_self_user(canopy_remote_t *remote,
 // DEVICE
 
 #define CANOPY_NOTE_MAX_LENGTH 1024
-
+#define CANOPY_FRIENDLY_NAME_MAX_LENGTH 128
+#define CANOPY_UUID_MAX_LENGTH 36
 
 /*
  * canopy_device:
@@ -785,8 +786,8 @@ extern canopy_error canopy_get_self_user(canopy_remote_t *remote,
  */
 typedef struct canopy_device {
     struct canopy_device	*next;        /* hung off of User or remote */
-    char					*uuid;        /* the uuid of the device */
-    char					friendly_name[CANOPY_NOTE_MAX_LENGTH];
+    char					uuid[CANOPY_UUID_MAX_LENGTH];        /* the uuid of the device */
+    char					friendly_name[CANOPY_FRIENDLY_NAME_MAX_LENGTH];
     char					location_note[CANOPY_NOTE_MAX_LENGTH];
     bool					ws_connected;
     canopy_remote_t			*remote;
@@ -796,6 +797,23 @@ typedef struct canopy_device {
     struct canopy_var		*vars;        /* list of vars on this device */
 #endif
 } canopy_device_t;
+
+// Initializes a new local device object without interacting with the remote.
+// The initialized device starts with no cloud variables and no friendly name.
+//
+//      <device> points to the uninitialized canopy_device_t to initialize.
+//
+//      <remote> configures the remote to use for syncing with the cloud.
+//
+//      <uuid> is the UUID of this device.  If NULL, a random type-4 UUID will
+//          be assigned.
+//
+// Typically canopy_get_self_device() should be used instead, which initializes
+// a new device by pulling from the remote.
+extern canopy_error canopy_device_init(
+        canopy_device_t *device, 
+        canopy_remote_t *remote,
+        const char *uuid);
 
 
 // Updates a device object's status and properties from the remote server.  Any

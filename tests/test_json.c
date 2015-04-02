@@ -160,9 +160,9 @@ int test_vardcl_output() {
 
 
 	struct canopy_device device;
-	err = initialize_device(&device, &remote);
+	err = canopy_device_init(&device, &remote, NULL);
 	if (err != CANOPY_SUCCESS) {
-		printf("initialize_device returned: %d", err);
+		printf("canopy_device_init returned: %d", err);
 		return -2;
 	}
 
@@ -281,9 +281,9 @@ static int proccess_var_decls(const char*  js) {
          return -3;
     }
 
-	err = initialize_device(&device, &remote);
+	err = canopy_device_init(&device, &remote, NULL);
 	if (err != CANOPY_SUCCESS) {
-		printf("initialize_device returned: %d", err);
+		printf("canopy_device_init returned: %d", err);
 		return -2;
 	}
 
@@ -424,9 +424,9 @@ static int process_vars(const char*  js) {
          return -3;
     }
 
-	err = initialize_device(&device, &remote);
+	err = canopy_device_init(&device, &remote, NULL);
 	if (err != CANOPY_SUCCESS) {
-		printf("initialize_device returned: %d", err);
+		printf("canopy_device_init returned: %d", err);
 		return -2;
 	}
 

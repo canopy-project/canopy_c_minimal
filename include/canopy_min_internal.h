@@ -30,12 +30,6 @@ canopy_error canopy_cleanup_remote(struct canopy_remote *remote);
 
 
 /******************************************************************************/
-/*	device stuff
- *
- */
-canopy_error initialize_device(struct canopy_device *device, struct canopy_remote *remote);
-
-/******************************************************************************/
 /******************************************************************************
  * 	JSON stuff.
  */
@@ -240,5 +234,17 @@ canopy_error c_json_parse_vars(struct canopy_device *device,
 		bool check_obj);				/* expect outer-most object */
 
 
+/***************************************************************************
+ * 	c_json_parse_device(struct canopy_device *device,
+ *		char* js, int js_len, jsmntok_t *token, int tok_len,
+ *		int current)
+ *
+ * 		parses the JSON vardecl tag from the server to register the variables that are registered
+ * 	with the device. (in canopy_device.c)
+ */
+canopy_error c_json_parse_device(struct canopy_device *device,
+		char* js, int js_len, 			/* the input JSON and total length  */
+		jsmntok_t *token, int tok_len,	/* token array with length */
+		bool check_obj);				/* expect outer-most object */
 
 #endif	/* CANOPY_MIN_INTERNAL_INCLUDED */
