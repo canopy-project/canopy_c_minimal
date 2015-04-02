@@ -739,10 +739,11 @@ extern canopy_error canopy_remote_get_devices(canopy_remote_t *remote,
  *
  *  <remote> is the remote object used for connecting to the server.
  *
- *  <device> will store the device object returned from the server.  If
+ *  <device> points to an uninitialized canopy_device_t object that will be
+ *  initialized and set to the device object returned from the server.  If
  *  <barrier> is NULL, this will contain the result upon a successful return.
- *  If <barrier> is provided, this will be updated when the result is ready, and
- *  will also be passed along to the barrier object.`
+ *  If <barrier> is provided, this will be updated when the result is ready,
+ *  and will also be passed along to the barrier object.
  *
  *  <barrier> will store a new barrier object that can be used to obtain the
  *  result when it is ready.  If NULL, this operation will block the current
@@ -800,6 +801,10 @@ typedef struct canopy_device {
 // Updates a device object's status and properties from the remote server.  Any
 // status or properties with a more recent clock ms value will be updated
 // locally.
+// 
+//  <device> must point to an initialized canopy_device_t object (for example,
+//  obtained from canopy_get_self_device()).
+//
 extern canopy_error canopy_device_update_from_remote   (
         canopy_remote_t *remote,
         canopy_device_t *device, 
@@ -808,6 +813,9 @@ extern canopy_error canopy_device_update_from_remote   (
 // Updates a device object's status and properties to the remote server.  Any
 // status or properties with a more recent clock ms value will be updated
 // remotely.
+//
+//  <device> must point to an initialized canopy_device_t object (for example,
+//  obtained from canopy_get_self_device()).
 extern canopy_error canopy_device_update_to_remote (
         canopy_remote_t *remote,
         canopy_device_t *device, 
@@ -820,6 +828,8 @@ extern canopy_error canopy_device_update_to_remote (
 //  canopy_device_update_from_remote(device, remote, NULL);
 //  canopy_device_update_to_remote(device, remote, barrier);
 //
+//  <device> must point to an initialized canopy_device_t object (for example,
+//  obtained from canopy_get_self_device()).
 extern canopy_error canopy_device_sync_with_remote (
         canopy_remote_t *remote,
         canopy_device_t *device, 

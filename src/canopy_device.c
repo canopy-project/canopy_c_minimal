@@ -58,12 +58,39 @@ canopy_error canopy_get_self_device(canopy_remote_t *remote,
         struct canopy_device *device,
         canopy_barrier_t *barrier) {
 
-	COS_ASSERT(remote != NULL);
-	COS_ASSERT(device != NULL);
+    jsmntok_t token[512]; // TODO: large enough?
+    canopy_error err;
+
+    COS_ASSERT(remote != NULL);
+    COS_ASSERT(device != NULL);
+
+    // initialize device
+    initialize_device(device, remote);
+
     // GET /api/device/self
-    // Parse the JSON payload
-    // Processing of the payload (initializing local copy of device)
-	return CANOPY_ERROR_NOT_IMPLEMENTED;
+    err = canopy_remote_http_get(remote, "/api/device/self", NULL, barrier);
+    if (err != CANOPY_SUCCESS) {
+        cos_log(LOG_LEVEL_ERROR, 
+                "Error during GET /api/device/self: %s\n", 
+                canopy_error_string(err));
+        return err;
+    }
+
+    // Parse response and update device object
+    err = c_json_parse_device(device, 
+            remote->rcv_buffer, 
+            remote->rcv_buffer_size,
+            token,
+            sizeof(token)/sizeof(token[0]),
+            true);
+    if (err != CANOPY_SUCCESS) {
+        cos_log(LOG_LEVEL_ERROR, 
+                "Error during parse of /api/device/self response: %s\n", 
+                canopy_error_string(err));
+        return err;
+    }
+
+    return CANOPY_SUCCESS;
 }
 
 
@@ -75,12 +102,36 @@ canopy_error canopy_device_update_from_remote(
         canopy_device_t *device,
         canopy_barrier_t *barrier) {
 
-	COS_ASSERT(remote != NULL);
-	COS_ASSERT(device != NULL);
+    jsmntok_t token[512]; // TODO: large enough?
+    canopy_error err;
+
+    COS_ASSERT(remote != NULL);
+    COS_ASSERT(device != NULL);
+
     // GET /api/device/self
-    // Parse the JSON payload
-    // Processing of the payload (updates local copy of device)
-	return CANOPY_ERROR_NOT_IMPLEMENTED;
+    err = canopy_remote_http_get(remote, "/api/device/self", NULL, barrier);
+    if (err != CANOPY_SUCCESS) {
+        cos_log(LOG_LEVEL_ERROR, 
+                "Error during GET /api/device/self: %s\n", 
+                canopy_error_string(err));
+        return err;
+    }
+
+    // Parse response and update device object
+    err = c_json_parse_device(device, 
+            remote->rcv_buffer, 
+            remote->rcv_buffer_size,
+            token,
+            sizeof(token)/sizeof(token[0]),
+            true);
+    if (err != CANOPY_SUCCESS) {
+        cos_log(LOG_LEVEL_ERROR, 
+                "Error during parse of /api/device/self response: %s\n", 
+                canopy_error_string(err));
+        return err;
+    }
+
+    return CANOPY_SUCCESS;
 }
 
 // Updates a device object's status and properties to the remote server.  Any
@@ -91,9 +142,52 @@ canopy_error canopy_device_update_to_remote(
         canopy_device_t *device,
         canopy_barrier_t *barrier) {
 
-	COS_ASSERT(remote != NULL);
-	COS_ASSERT(device != NULL);
-	return CANOPY_ERROR_NOT_IMPLEMENTED;
+    canopy_error err;
+    int ierr;
+    char request_payload[2048];
+    struct c_json_state state;
+
+    COS_ASSERT(remote != NULL);
+    COS_ASSERT(device != NULL);
+
+    // init buffer for payload
+    c_json_buffer_init(&state, request_payload, sizeof(request_payload));
+
+    // construct payload
+    ierr = c_json_emit_open_object(&state);
+    if (ierr != C_JSON_OK) {
+        return CANOPY_ERROR_NETWORK;
+    }
+
+    err = c_json_emit_vardcl(device, &state, false);
+    if (err != CANOPY_SUCCESS) {
+        return err;
+    }
+
+    err = c_json_emit_vars(device, &state, false);
+    if (err != CANOPY_SUCCESS) {
+        return err;
+    }
+
+    ierr = c_json_emit_close_object(&state);
+    if (ierr != C_JSON_OK) {
+        return CANOPY_ERROR_NETWORK;
+    }
+
+    // send payload
+    err = canopy_remote_http_post(
+            remote, 
+            "/api/device/self", 
+            request_payload, 
+            barrier);
+    if (err != CANOPY_SUCCESS) {
+        cos_log(LOG_LEVEL_ERROR, 
+                "Error during POST /api/device/self: %s\n", 
+                canopy_error_string(err));
+        return err;
+    }
+
+    return CANOPY_SUCCESS;
 }
 
 // Synchronizes a device object with the remote server.
