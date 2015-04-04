@@ -378,7 +378,8 @@ static const char* new_vars = """    \"vars\" : {	"
 		"		\"test_string\" : { "
 		"            \"t\" : 1426803897000000,	"
 		"            \"v\" : \"test string value\",	"
-		"        }	";
+		"        }	"
+		"}";
 
 
 
