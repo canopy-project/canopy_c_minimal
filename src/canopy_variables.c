@@ -164,6 +164,8 @@ static struct canopy_var * create_variable(canopy_device_t *device,
 	 * Setup the variable
 	 */
 	memset(var, 0, sizeof(struct canopy_var));
+	var->next = NULL;
+	var->device = device;
 	strncpy(var->name, name, CANOPY_VAR_NAME_MAX_LENGTH - 2);
 	var->name[CANOPY_VAR_NAME_MAX_LENGTH - 1] = '\0';
 	var->direction = direction;
@@ -520,12 +522,14 @@ canopy_error c_json_emit_vars(struct canopy_device *device,
 	while (var != NULL) {
 		char * name = var->name;
 		canopy_var_datatype type = var->type;
+		memset(buffer, 0, sizeof(buffer));
 
 		switch (type) {
 			break;
 
 		case CANOPY_VAR_DATATYPE_STRING:
-			return CANOPY_ERROR_NOT_IMPLEMENTED;
+			snprintf(buffer, sizeof(buffer), "\"%s\"", var->val.value.val_string);
+			break;
 
 		case CANOPY_VAR_DATATYPE_BOOL:
 			snprintf(buffer, sizeof(buffer), "%s", (var->val.value.val_bool ? "true" : "false"));
@@ -583,7 +587,7 @@ canopy_error c_json_emit_vars(struct canopy_device *device,
 			return CANOPY_ERROR_JSON;
 		}
 		var = var->next;
-	}
+	} /* while (var != NULL) */
 
 	err = c_json_emit_close_object(state);
 	if (err != C_JSON_OK) {
@@ -743,7 +747,13 @@ canopy_error c_json_parse_vars(struct canopy_device *device,
 		COS_ASSERT(token[offset].size == 1);
 		offset++;
 
-		COS_ASSERT(token[offset].type == JSMN_PRIMITIVE);
+		if (token[offset].type == JSMN_PRIMITIVE) {
+
+		} else if (token[offset].type == JSMN_STRING) {
+
+		} else {
+			COS_ASSERT("type wrong in parse vars" == NULL);
+		}
 		COS_ASSERT(token[offset].size == 0);
 		strncpy(primative, &js[token[offset].start], (token[offset].end - token[offset].start));
 		primative[(token[offset].start - token[offset].end)] = '\0';
@@ -768,9 +778,10 @@ canopy_error c_json_parse_vars(struct canopy_device *device,
 			switch (type) {
 				break;
 
-			case CANOPY_VAR_DATATYPE_STRING:
-				return CANOPY_ERROR_NOT_IMPLEMENTED;
-
+			case CANOPY_VAR_DATATYPE_STRING: {
+				strncpy(var->val.value.val_string, primative, sizeof(var->val.value.val_string));
+				break;
+			}
 			case CANOPY_VAR_DATATYPE_BOOL:
 				if (strncmp(primative, "true", sizeof(primative)) == 0) {
 					var->val.value.val_bool = true;
@@ -969,7 +980,14 @@ canopy_error canopy_var_set_float64(struct canopy_var *var, double value) {
 }
 
 canopy_error canopy_var_set_string(struct canopy_var *var, const char *value, size_t len) {
-	return CANOPY_ERROR_NOT_IMPLEMENTED;
+	struct canopy_var_value *var_val = &var->val;
+	if (var->type != CANOPY_VAR_DATATYPE_STRING) {
+		return CANOPY_ERROR_BAD_PARAM;
+	}
+	var_val->type = CANOPY_VAR_DATATYPE_STRING;
+	strncpy(var_val->value.val_string, value, sizeof(var_val->value.val_string));
+	var->set = true;
+	return CANOPY_SUCCESS;
 }
 
 /*****************************************************************************/
@@ -1128,8 +1146,17 @@ canopy_error canopy_var_get_float64(struct canopy_var *var,
 canopy_error canopy_var_get_string(struct canopy_var *var,
         char *buf,
         size_t len,
-        size_t *out_len,
         cos_time_t *last_time) {
-	return CANOPY_ERROR_NOT_IMPLEMENTED;
+
+	if (!var->set) {
+		return CANOPY_ERROR_VAR_NOT_SET;
+	}
+	if (var->type != CANOPY_VAR_DATATYPE_STRING) {
+		return CANOPY_ERROR_BAD_PARAM;
+	}
+	int shorter = LOCAL_MIN(len, sizeof(var->val.value.val_string));
+	strncpy(buf, var->val.value.val_string, shorter);
+	*last_time = var->last;
+	return CANOPY_SUCCESS;
 }
 

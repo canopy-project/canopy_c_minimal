@@ -160,6 +160,23 @@ int c_json_emit_close_array(struct c_json_state *state) {
  * Emits:
  * 		"name" : "value"
  */
+int c_json_emit_name_and_string(struct c_json_state *state, char *name,
+		char *string) {
+	if (check_buffer_length(state) != 0) {
+		cos_log(LOG_LEVEL_DEBUG,
+				"buffer out of space c_json_emit_name_and_value()");
+		return C_JSON_BUFFER_OVERFLOW;
+	}
+	snprintf(&state->buffer[state->offset], state->buffer_len - state->offset,
+			"%s\"%s\" : \"%s\"  \n", indent_spaces[state->indent], name, string);
+	state->offset = strlen(state->buffer);
+	return C_JSON_OK;
+}
+
+/******************************************************************************
+ * Emits:
+ * 		"name" : value
+ */
 int c_json_emit_name_and_value(struct c_json_state *state, char *name,
 		char *value) {
 	if (check_buffer_length(state) != 0) {
@@ -168,7 +185,7 @@ int c_json_emit_name_and_value(struct c_json_state *state, char *name,
 		return C_JSON_BUFFER_OVERFLOW;
 	}
 	snprintf(&state->buffer[state->offset], state->buffer_len - state->offset,
-			"%s\"%s\" : \"%s\"  \n", indent_spaces[state->indent], name, value);
+			"%s\"%s\" : %s  \n", indent_spaces[state->indent], name, value);
 	state->offset = strlen(state->buffer);
 	return C_JSON_OK;
 }

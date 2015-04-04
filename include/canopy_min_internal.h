@@ -134,7 +134,13 @@ int c_json_emit_close_array(struct c_json_state *state);
 
 /***************************************************************************
  * Emits:
- * 		"name" : "value"
+ * 		"name" : "string"
+ */
+int c_json_emit_name_and_string(struct c_json_state *state, char *name, char *sring);
+
+/***************************************************************************
+ * Emits:
+ * 		"name" : value
  */
 int c_json_emit_name_and_value(struct c_json_state *state, char *name, char *value);
 

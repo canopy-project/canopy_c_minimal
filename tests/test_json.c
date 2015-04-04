@@ -349,13 +349,14 @@ int test_vardecl_3_input() {
 
 
 static const char* vars_init = "{"
-"    \"vars\" : {	"
-"        \"temperature\" : 43.0,	"
-"        \"humidity\" : 32.41,	"
-"        \"dimmer_level\" : 4,	"
-"        \"happy\" : true	"
-"    }	"
-"}	";
+		"    \"vars\" : {	"
+		"        \"temperature\" : 43.0,	"
+		"        \"humidity\" : 32.41,	"
+		"        \"dimmer_level\" : 4,	"
+		"        \"happy\" : true	"
+		"        \"test_string\" : \"test string value\"	"
+		"    }	"
+		"}	";
 
 static const char* new_vars = """    \"vars\" : {	"
 		"        \"temperature\" : {	"
@@ -373,6 +374,10 @@ static const char* new_vars = """    \"vars\" : {	"
 		"        \"reboot_now\" : {	"
 		"            \"t\" : 1426803897000000,	"
 		"            \"v\" : false,	"
+		"        }	"
+		"		\"test_string\" : { "
+		"            \"t\" : 1426803897000000,	"
+		"            \"v\" : \"test string value\",	"
 		"        }	";
 
 
@@ -469,8 +474,18 @@ static int process_vars(const char*  js) {
 	       "reboot_now",
 			&out_var);
 	if (err != CANOPY_SUCCESS) {
-		printf("canopy_device_var_declare name: %s returned: %d", "happy", err);
+		printf("canopy_device_var_declare name: %s returned: %d", "reboot_now", err);
 		return -4;
+	}
+
+	err = canopy_device_var_declare(&device,
+			CANOPY_VAR_IN,
+			CANOPY_VAR_DATATYPE_STRING,
+	       "test_string",
+			&out_var);
+	if (err != CANOPY_SUCCESS) {
+		printf("canopy_device_var_declare name: %s returned: %d", "happy", err);
+		return -5;
 	}
 
 
@@ -507,6 +522,29 @@ int test_var_input() {
 	return 0;
 }
 
+
+/*****************************************************************************/
+
+static const char* device_object = "{"
+		"	\"device_id\": \"e43eb410-48da-421a-b07d-1cd751412fd5\","
+		"	\"friendly_name\": \"Mydevice1\","
+		"	\"location_note\": \"mars\","
+		"	\"notifs\": [],"
+		"	\"secret_key\": \"wYI0G+HQN9fj76fpyxwiHKJDQags0dpM\","
+		"	\"status\": {"
+		"		\"last_activity_time\": 1426803897000000,"
+		"		\"ws_connected\": false"
+		"	},"
+		"	\"var_decls\": {"
+		"		\"inout float32 foobar\": {}"
+		"	},"
+		"	\"vars\": {"
+		"		\"foobar\": {"
+        "			\"t\": 1426803897000000,"
+        "			\"v\": 18.5"
+		"		}"
+		"	}"
+		"}";
 
 
 /*******************************************************************************

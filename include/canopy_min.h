@@ -1116,10 +1116,7 @@ inline static canopy_var_datatype datatype_from_string(const char* str, int len)
 struct canopy_var_value {
     canopy_var_datatype type;
     union {
-        struct {
-            char *buf;
-            size_t len;
-        } val_string;
+        char val_string[CANOPY_VAR_VALUE_MAX_LENGTH];
         bool val_bool;
         int8_t val_int8;
         int16_t val_int16;
@@ -1222,9 +1219,7 @@ canopy_error canopy_var_get_float64(struct canopy_var *var,
         double *value,
         cos_time_t *last_time);
 canopy_error canopy_var_get_string(struct canopy_var *var,
-        char *buf, 
-        size_t len,
-        size_t *out_len,
+        char *buf, size_t len,	/* buf is null terminated */
         cos_time_t *last_time);
 
 /*
