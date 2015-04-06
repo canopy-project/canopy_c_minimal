@@ -31,10 +31,8 @@
  *
  *      <len> is the size of payload in bytes.
  */
-static canopy_error _construct_device_sync_payload(
-        canopy_device_t *device, 
-        char *payload, 
-        size_t len) {
+static canopy_error _construct_device_sync_payload(canopy_device_t *device,
+        char *payload, size_t len) {
 
     int ierr;
     canopy_error err;
@@ -60,14 +58,16 @@ static canopy_error _construct_device_sync_payload(
     }
 
     if (device->friendly_name_dirty) {
-        err = c_json_emit_name_and_value(&state, TAG_FRIENDLY_NAMES, device->friendly_name);
+        err = c_json_emit_name_and_value(&state, TAG_FRIENDLY_NAMES,
+                device->friendly_name);
         if (err != CANOPY_SUCCESS) {
             return err;
         }
     }
 
     if (device->location_note_dirty) {
-        err = c_json_emit_name_and_value(&state, TAG_LOCATION_NOTE, device->location_note);
+        err = c_json_emit_name_and_value(&state, TAG_LOCATION_NOTE,
+                device->location_note);
         if (err != CANOPY_SUCCESS) {
             return err;
         }
@@ -100,10 +100,8 @@ static void _clear_dirty_flags(struct canopy_device *device) {
 /*
  *
  */
-canopy_error canopy_device_init(
-        struct canopy_device *device, 
-        struct canopy_remote *remote, 
-        const char *uuid) {
+canopy_error canopy_device_init(struct canopy_device *device,
+        struct canopy_remote *remote, const char *uuid) {
 
     COS_ASSERT(device != NULL);
     memset(device, 0, sizeof(struct canopy_device));
@@ -123,7 +121,6 @@ canopy_error canopy_device_init(
     return CANOPY_SUCCESS;
 }
 
-
 /****************************************************************************/
 /****************************************************************************/
 
@@ -131,8 +128,7 @@ canopy_error canopy_device_init(
  * canopy_get_self_device
  */
 canopy_error canopy_get_self_device(canopy_remote_t *remote,
-        struct canopy_device *device,
-        canopy_barrier_t *barrier) {
+        struct canopy_device *device, canopy_barrier_t *barrier) {
 
     jsmntok_t token[512]; // TODO: large enough?
     canopy_error err;
@@ -151,15 +147,10 @@ canopy_error canopy_get_self_device(canopy_remote_t *remote,
     canopy_device_init(device, remote, remote->params->name);
 
     // GET /api/device/self
-    err = canopy_remote_http_get(
-            remote, 
-            "/api/device/self", 
-            NULL, 
-            &http_status, 
-			barrier);
+    err = canopy_remote_http_get(remote, "/api/device/self",
+    NULL, &http_status, barrier);
     if (err != CANOPY_SUCCESS) {
-        cos_log(LOG_LEVEL_ERROR, 
-                "Error during GET /api/device/self: %s\n", 
+        cos_log(LOG_LEVEL_ERROR, "Error during GET /api/device/self: %s\n",
                 canopy_error_string(err));
         return err;
     }
@@ -170,16 +161,13 @@ canopy_error canopy_get_self_device(canopy_remote_t *remote,
     }
 
     // Parse response and update device object
-    err = c_json_parse_device(device, 
-            remote->rcv_buffer, 
-            remote->rcv_buffer_size,
-            token,
-            sizeof(token)/sizeof(token[0]),
-			&result_code,
+    err = c_json_parse_device(device, remote->rcv_buffer,
+            remote->rcv_buffer_size, token, sizeof(token) / sizeof(token[0]),
+            &result_code,
             true);
     if (err != CANOPY_SUCCESS) {
-        cos_log(LOG_LEVEL_ERROR, 
-                "Error during parse of /api/device/self response: %s\n", 
+        cos_log(LOG_LEVEL_ERROR,
+                "Error during parse of /api/device/self response: %s\n",
                 canopy_error_string(err));
         return err;
     }
@@ -187,14 +175,11 @@ canopy_error canopy_get_self_device(canopy_remote_t *remote,
     return CANOPY_SUCCESS;
 }
 
-
 /*
  * canopy_device_update_from_remote
  */
-canopy_error canopy_device_update_from_remote(
-        canopy_remote_t *remote,
-        canopy_device_t *device,
-        canopy_barrier_t *barrier) {
+canopy_error canopy_device_update_from_remote(canopy_remote_t *remote,
+        canopy_device_t *device, canopy_barrier_t *barrier) {
 
     jsmntok_t token[512]; // TODO: large enough?
     canopy_error err;
@@ -205,15 +190,10 @@ canopy_error canopy_device_update_from_remote(
     COS_ASSERT(device != NULL);
 
     // GET /api/device/self
-    err = canopy_remote_http_get(
-            remote, 
-            "/api/device/self", 
-            NULL, 
-            &http_status,
-            barrier);
+    err = canopy_remote_http_get(remote, "/api/device/self",
+    NULL, &http_status, barrier);
     if (err != CANOPY_SUCCESS) {
-        cos_log(LOG_LEVEL_ERROR, 
-                "Error during GET /api/device/self: %s\n", 
+        cos_log(LOG_LEVEL_ERROR, "Error during GET /api/device/self: %s\n",
                 canopy_error_string(err));
         return err;
     }
@@ -224,16 +204,13 @@ canopy_error canopy_device_update_from_remote(
     }
 
     // Parse response and update device object
-    err = c_json_parse_device(device, 
-            remote->rcv_buffer, 
-            remote->rcv_buffer_size,
-            token,
-            sizeof(token)/sizeof(token[0]),
-			&result_code,
-           true);
+    err = c_json_parse_device(device, remote->rcv_buffer,
+            remote->rcv_buffer_size, token, sizeof(token) / sizeof(token[0]),
+            &result_code,
+            true);
     if (err != CANOPY_SUCCESS) {
-        cos_log(LOG_LEVEL_ERROR, 
-                "Error during parse of /api/device/self response: %s\n", 
+        cos_log(LOG_LEVEL_ERROR,
+                "Error during parse of /api/device/self response: %s\n",
                 canopy_error_string(err));
         return err;
     }
@@ -244,10 +221,8 @@ canopy_error canopy_device_update_from_remote(
 /*
  * canopy_device_update_to_remote
  */
-canopy_error canopy_device_update_to_remote(
-        canopy_remote_t *remote,
-        canopy_device_t *device,
-        canopy_barrier_t *barrier) {
+canopy_error canopy_device_update_to_remote(canopy_remote_t *remote,
+        canopy_device_t *device, canopy_barrier_t *barrier) {
 
     canopy_error err;
     char request_payload[2048];
@@ -257,24 +232,17 @@ canopy_error canopy_device_update_to_remote(
     COS_ASSERT(device != NULL);
 
     // construct payload
-    err = _construct_device_sync_payload(
-            device, 
-            request_payload, 
+    err = _construct_device_sync_payload(device, request_payload,
             sizeof(request_payload));
     if (err != CANOPY_SUCCESS) {
         return err;
     }
 
     // send payload
-    err = canopy_remote_http_post(
-            remote, 
-            "/api/device/self", 
-            request_payload, 
-            &http_status,
-            barrier);
+    err = canopy_remote_http_post(remote, "/api/device/self", request_payload,
+            &http_status, barrier);
     if (err != CANOPY_SUCCESS) {
-        cos_log(LOG_LEVEL_ERROR, 
-                "Error during POST /api/device/self: %s\n", 
+        cos_log(LOG_LEVEL_ERROR, "Error during POST /api/device/self: %s\n",
                 canopy_error_string(err));
         return err;
     }
@@ -295,10 +263,8 @@ canopy_error canopy_device_update_to_remote(
 /*
  * canopy_device_sync_with_remote
  */
-canopy_error canopy_device_sync_with_remote(
-        canopy_remote_t *remote,
-        canopy_device_t *device,
-        canopy_barrier_t *barrier) {
+canopy_error canopy_device_sync_with_remote(canopy_remote_t *remote,
+        canopy_device_t *device, canopy_barrier_t *barrier) {
 
     canopy_error err;
     jsmntok_t token[512]; // TODO: large enough?
@@ -310,24 +276,17 @@ canopy_error canopy_device_sync_with_remote(
     COS_ASSERT(device != NULL);
 
     // construct payload
-    err = _construct_device_sync_payload(
-            device,
-            request_payload, 
+    err = _construct_device_sync_payload(device, request_payload,
             sizeof(request_payload));
     if (err != CANOPY_SUCCESS) {
         return err;
     }
 
     // send payload
-    err = canopy_remote_http_post(
-            remote, 
-            "/api/device/self", 
-            request_payload, 
-            &http_status,
-            barrier);
+    err = canopy_remote_http_post(remote, "/api/device/self", request_payload,
+            &http_status, barrier);
     if (err != CANOPY_SUCCESS) {
-        cos_log(LOG_LEVEL_ERROR, 
-                "Error during POST /api/device/self: %s\n", 
+        cos_log(LOG_LEVEL_ERROR, "Error during POST /api/device/self: %s\n",
                 canopy_error_string(err));
         return err;
     }
@@ -338,16 +297,13 @@ canopy_error canopy_device_sync_with_remote(
     }
 
     // Parse response and update device object
-    err = c_json_parse_device(device, 
-            remote->rcv_buffer, 
-            remote->rcv_buffer_size,
-            token,
-            sizeof(token)/sizeof(token[0]),
-			&result_code,
+    err = c_json_parse_device(device, remote->rcv_buffer,
+            remote->rcv_buffer_size, token, sizeof(token) / sizeof(token[0]),
+            &result_code,
             true);
     if (err != CANOPY_SUCCESS) {
-        cos_log(LOG_LEVEL_ERROR, 
-                "Error during parse of /api/device/self response: %s\n", 
+        cos_log(LOG_LEVEL_ERROR,
+                "Error during parse of /api/device/self response: %s\n",
                 canopy_error_string(err));
         return err;
     }
@@ -360,11 +316,8 @@ canopy_error canopy_device_sync_with_remote(
 /*
  * canopy_device_get_friendly_name
  */
-canopy_error canopy_device_get_friendly_name(
-        canopy_device_t *device, 
-        char *friendly_name, 
-        size_t len)
-{
+canopy_error canopy_device_get_friendly_name(canopy_device_t *device,
+        char *friendly_name, size_t len) {
     COS_ASSERT(device != NULL);
     COS_ASSERT(friendly_name != NULL);
 
@@ -383,11 +336,8 @@ canopy_error canopy_device_get_friendly_name(
 /*
  * canopy_device_get_location_note
  */
-canopy_error canopy_device_get_location_note(
-        canopy_device_t *device, 
-        char *location_note, 
-        size_t len)
-{
+canopy_error canopy_device_get_location_note(canopy_device_t *device,
+        char *location_note, size_t len) {
     COS_ASSERT(device != NULL);
     COS_ASSERT(location_note != NULL);
 
@@ -403,15 +353,13 @@ canopy_error canopy_device_get_location_note(
     return CANOPY_SUCCESS;
 }
 
-canopy_error canopy_device_set_friendly_name(
-        canopy_device_t *device, 
-        const char *friendly_name)
-{
+canopy_error canopy_device_set_friendly_name(canopy_device_t *device,
+        const char *friendly_name) {
     COS_ASSERT(device != NULL);
     COS_ASSERT(friendly_name != NULL);
 
-    if (strnlen(friendly_name, CANOPY_FRIENDLY_NAME_MAX_LENGTH+1) > 
-            CANOPY_FRIENDLY_NAME_MAX_LENGTH) {
+    if (strnlen(friendly_name, CANOPY_FRIENDLY_NAME_MAX_LENGTH + 1) >
+    CANOPY_FRIENDLY_NAME_MAX_LENGTH) {
         return CANOPY_ERROR_BAD_PARAM;
     }
 
@@ -422,15 +370,13 @@ canopy_error canopy_device_set_friendly_name(
     return CANOPY_SUCCESS;
 }
 
-canopy_error canopy_device_set_location_note(
-        canopy_device_t *device, 
-        const char *location_note)
-{
+canopy_error canopy_device_set_location_note(canopy_device_t *device,
+        const char *location_note) {
     COS_ASSERT(device != NULL);
     COS_ASSERT(location_note != NULL);
 
-    if (strnlen(location_note, CANOPY_NOTE_MAX_LENGTH+1) > 
-            CANOPY_NOTE_MAX_LENGTH) {
+    if (strnlen(location_note, CANOPY_NOTE_MAX_LENGTH + 1) >
+    CANOPY_NOTE_MAX_LENGTH) {
         return CANOPY_ERROR_BAD_PARAM;
     }
 
@@ -442,15 +388,14 @@ canopy_error canopy_device_set_location_note(
 }
 
 // Get the active status for a device.
-canopy_error canopy_device_get_active_status(
-        canopy_device_t *device,
+canopy_error canopy_device_get_active_status(canopy_device_t *device,
         canopy_active_status *active_status,
         canopy_ws_connection_status *ws_status) {
 
-	COS_ASSERT(device != NULL);
-	COS_ASSERT(active_status != NULL);
-	COS_ASSERT(ws_status != NULL);
-	return CANOPY_ERROR_NOT_IMPLEMENTED;
+    COS_ASSERT(device != NULL);
+    COS_ASSERT(active_status != NULL);
+    COS_ASSERT(ws_status != NULL);
+    return CANOPY_ERROR_NOT_IMPLEMENTED;
 }
 
 /******************************************************************************/
@@ -465,77 +410,81 @@ canopy_error canopy_device_get_active_status(
  * 	with the device. (in canopy_device.c)
  */
 canopy_error c_json_parse_device(struct canopy_device *device,
-		char* js, int js_len, 			/* the input JSON and total length  */
-		jsmntok_t *token, int tok_len,	/* token array with length */
-		bool *result_code,				/* the value of "result : " */
-		bool check_obj) { /* expect outer-most object */
+        char* js, int js_len, /* the input JSON and total length  */
+        jsmntok_t *token, int tok_len, /* token array with length */
+        bool *result_code, /* the value of "result : " */
+        bool check_obj) { /* expect outer-most object */
 
-	int i;
-	int offset = 0;
-	char name[128];
-	int count;
-	int next_token;
-	canopy_error err = CANOPY_SUCCESS;
+    int i;
+    int offset = 0;
+    char name[128];
+    int count;
+    int next_token;
+    canopy_error err = CANOPY_SUCCESS;
 
-	COS_ASSERT(device != NULL);
-	COS_ASSERT(device->remote != NULL);
+    COS_ASSERT(device != NULL);
+    COS_ASSERT(device->remote != NULL);
 
-	/*
-	 * This is the opening { that must be the first thing
-	 */
-	COS_ASSERT(token[offset].type == JSMN_OBJECT);
-	count = token[offset].size;
+    /*
+     * This is the opening { that must be the first thing
+     */
+    COS_ASSERT(token[offset].type == JSMN_OBJECT);
+    count = token[offset].size;
+    offset++;  /* go to the first token after the object */
 
-	/*
-	 * The parse says that there are 'count' first level tags.
-	 */
-	for (i = 0; i < count; i++) {
-		int len;
+    /*
+     * The parse says that there are 'count' first level tags.
+     */
+    for (i = 0; i < count; i++) {
+        int len;
 
-		COS_ASSERT(token[offset].type == JSMN_STRING);
-		len = (token[offset].end - token[offset].start);
-		strncpy(name, &js[token[offset].start], len);
-		name[len + 1] = '\0';
+        COS_ASSERT(token[offset].type == JSMN_STRING);
+        len = (token[offset].end - token[offset].start);
+        strncpy(name, &js[token[offset].start], len);
+        name[len + 1] = '\0';
 
-		/*
-		 * Find the tag, and process what is found
-		 */
-		if (strncmp(name, TAG_VAR_DECLS, len) == 0) {
-			err = c_json_parse_vardcl(device,
-					(char*)js, js_len, 			/* the input JSON and total length  */
-					token, tok_len,	/* token array with length */
-					offset,						/* token offset for name vardecl */
-					&next_token,
-					false);				/* expect outer-most object */
-			offset = next_token;
+        /*
+         * Find the tag, and process what is found
+         */
+        if (strncmp(name, TAG_VAR_DECLS, len) == 0) {
+            err = c_json_parse_vardcl(device,
+                    (char*)js, js_len, /* the input JSON and total length  */
+                    token, tok_len, /* token array with length */
+                    offset, /* token offset for name vardecl */
+                    &next_token,
+                    false); /* expect outer-most object */
+            offset = next_token;
 
-		} else if (strncmp(name, TAG_VARS, len) == 0) {
-			err = c_json_parse_vars(device,
-					(char*)js, js_len, 			/* the input JSON and total length  */
-					token, tok_len,	/* token array with length */
-					0,				/* token offset for name vardecl */
-					&next_token,				/* the token after the decls */
-					false);				/* expect outer-most object */
-			offset = next_token;
+        } else if (strncmp(name, TAG_VARS, len) == 0) {
+            err = c_json_parse_vars(device,
+                    (char*)js, js_len, /* the input JSON and total length  */
+                    token, tok_len, /* token array with length */
+                    offset, /* token offset for name vardecl */
+                    &next_token, /* the token after the decls */
+                    false); /* expect outer-most object */
+            offset = next_token;
 
-		} else if (strncmp(name, TAG_RESULT, len) == 0) {
-			offset++;
-			int ok = strncmp(&js[token[offset].start], "ok", (token[offset].end - token[offset].start));
-			int error = strncmp(&js[token[offset].start], "error", (token[offset].end - token[offset].start));
-			if (ok == 0 || error == 0) {
-				*result_code = (ok == 0);
-			} else {
-				cos_log(LOG_LEVEL_FATAL, "result isn't 'ok' or 'error'");
-				return CANOPY_ERROR_FATAL;
-			}
-			offset++;
+        } else if (strncmp(name, TAG_RESULT, len) == 0) {
+            offset++;
+            int ok = strncmp(&js[token[offset].start], "ok", (token[offset].end - token[offset].start));
+            int error = strncmp(&js[token[offset].start], "error", (token[offset].end - token[offset].start));
+            if (ok == 0 || error == 0) {
+                *result_code = (ok == 0);
+            } else {
+                cos_log(LOG_LEVEL_FATAL, "result isn't 'ok' or 'error'");
+                return CANOPY_ERROR_FATAL;
+            }
+            offset++;
 
-		} else {
+        } else {
+            /*
+             * The tag's not implemented, we need to look at the size of the
+             *
+             */
 
+        }
 
-		}
+    } /* for (count) */
 
-	} /* for (count) */
-
-	return err;
+    return err;
 }
