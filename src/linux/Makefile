@@ -13,7 +13,7 @@
 # limitations under the License.
 
 
-CFLAGS_INCLUDES		+= -I. -I../../include
+CFLAGS_INCLUDES		+= -I. -I../../include -I../
 
 CFLAGS				+= $(CFLAGS_INCLUDES) -g -c  -fPIC 
 
@@ -24,7 +24,7 @@ SO_TARGET   		:=      libcanopy_os.so
 A_TARGET   			+=		libcanopy_os.a
 
 NEEDED_H_FILES		=		../../include/canopy_os.h	\
-							../../include/canopy_communication.h
+							../canopy_communication.h
 
 
 default: $(SO_TARGET) $(A_TARGET)
