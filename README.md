@@ -11,6 +11,9 @@ TODO
 - Thread safety
 - Barriers
 - Users
+- Device Queries
+- Logging/Error Reporting
+- Improve Documentation
 
 NOTES
 ------------------
