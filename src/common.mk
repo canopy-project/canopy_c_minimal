@@ -15,7 +15,7 @@
 
 CFLAGS_INCLUDES	 += -I. -I../include -Ijsmn
 
-CFLAGS 		= $(CFLAGS_INCLUDES) -Os -Wall -Werror -fPIC
+CFLAGS 		= $(CFLAGS_INCLUDES) -g -Wall -Werror -fPIC
 
 OBJ_FILES := \
  		canopy_filters.o    \
