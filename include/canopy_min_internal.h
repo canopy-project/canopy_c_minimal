@@ -50,7 +50,7 @@ canopy_error canopy_cleanup_remote(struct canopy_remote *remote);
 #define		TAG_FRIENDLY_NAME		"friendly_name"		/* note not plural */
 #define		TAG_DEVICE_ID			"device_id"
 #define		TAG_UUID				"uuid"
-#define		TAG_DEVICE_SECRET_KEY	"device_secret_key"
+#define		TAG_SECRET_KEY	        "secret_key"
 
 
 /*					status object tags */
@@ -80,6 +80,7 @@ struct c_json_state {
 	int		buffer_len;	/* how big is the raw buffer */
 	int		offset;		/* where the \0 is */
 	int		indent;
+	bool	separator_needed; /* when true, a separator may be needed*/
 };
 
 #if 0
@@ -134,12 +135,6 @@ int c_json_emit_close_array(struct c_json_state *state);
 
 /***************************************************************************
  * Emits:
- * 		"name" : "string"
- */
-int c_json_emit_name_and_string(struct c_json_state *state, char *name, char *sring);
-
-/***************************************************************************
- * Emits:
  * 		"name" : value
  */
 int c_json_emit_name_and_value(struct c_json_state *state, char *name, char *value);
@@ -155,42 +150,6 @@ int c_json_emit_name_and_object(struct c_json_state *state, char *name);
  * 		"name" : [
  */
 int c_json_emit_name_and_array(struct c_json_state *state, char *name);
-
-/***************************************************************************
- * emits:
- * 		"name" : [
- */
-int c_json_emit_name_and_boolean(struct c_json_state *state, char *name, bool out);
-
-/***************************************************************************
- * emits:
- * 		"name" : integer based on size
- */
-int c_json_emit_name_and_int(struct c_json_state *state, char *name, int32_t out, int size);
-
-/***************************************************************************
- * emits:
- * 		"name" : unsigned integer based on size
- */
-int c_json_emit_name_and_uint(struct c_json_state *state, char *name, uint32_t out, int size);
-
-/***************************************************************************
- * emits:
- * 		"name" : signed 64 bit integer
- */
-int c_json_emit_name_and_int64(struct c_json_state *state, char *name, int64_t out);
-
-/***************************************************************************
- * emits:
- * 		"name" : float
- */
-int c_json_emit_name_and_float32(struct c_json_state *state, char *name, float out);
-
-/***************************************************************************
- * emits:
- * 		"name" : double
- */
-int c_json_emit_name_and_float64(struct c_json_state *state, char *name, double out);
 
 
 

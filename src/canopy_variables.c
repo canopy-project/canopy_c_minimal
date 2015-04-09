@@ -182,7 +182,7 @@ canopy_error canopy_device_var_declare(canopy_device_t *device,
         canopy_var_direction direction,
         canopy_var_datatype type,
         const char *name,
-        struct canopy_var *out_var) {
+        struct canopy_var **out_var) {
 
     struct canopy_var *var;
 
@@ -213,7 +213,7 @@ canopy_error canopy_device_var_declare(canopy_device_t *device,
     device->vars = var;
 #endif
 
-    memcpy(out_var, var, sizeof(struct canopy_var));
+    *out_var = var;
     return CANOPY_SUCCESS;
 }
 

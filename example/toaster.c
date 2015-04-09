@@ -33,8 +33,8 @@ int main(void) {
     canopy_remote_t remote;
     canopy_remote_params_t params;
     canopy_device_t device;
-    struct canopy_var temp_sensor;
-    struct canopy_var darkness;
+    struct canopy_var *temp_sensor;
+    struct canopy_var *darkness;
     float darkness_val;
     cos_time_t time;
 
@@ -58,6 +58,7 @@ int main(void) {
     params.password = TOASTER_SECRET_KEY;
     params.auth_type = CANOPY_BASIC_AUTH;
     params.remote = REMOTE_ADDR;
+    params.skip_cert_check = true;
     params.use_ws = false;
     params.persistent = false;
     err = canopy_remote_init(&ctx, &params, buffer, buffer_size, &remote);
@@ -83,7 +84,7 @@ int main(void) {
         cos_log(LOG_LEVEL_ERROR, "Error initializing var temp_sensor: %s\n", canopy_error_string(err));
         goto cleanup;
     }
-    err = canopy_var_set_float32(&temp_sensor, 42.0f);
+    err = canopy_var_set_float32(temp_sensor, 42.0f);
     if (err != CANOPY_SUCCESS) {
         cos_log(LOG_LEVEL_ERROR, "Error setting temp_sensor value: %s\n", canopy_error_string(err));
         goto cleanup;
@@ -107,7 +108,7 @@ int main(void) {
     }
 
     // read darkness level
-    err = canopy_var_get_float32(&darkness, &darkness_val, &time);
+    err = canopy_var_get_float32(darkness, &darkness_val, &time);
     if (err == CANOPY_ERROR_VAR_NOT_SET) {
         cos_log(LOG_LEVEL_INFO, "darkness not set\n");
     } else if (err != CANOPY_SUCCESS) {

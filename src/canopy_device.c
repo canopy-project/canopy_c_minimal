@@ -39,7 +39,7 @@ static canopy_error _construct_device_sync_payload(canopy_device_t *device,
     struct c_json_state state;
 
     // init buffer for payload
-    c_json_buffer_init(&state, payload, sizeof(payload));
+    c_json_buffer_init(&state, payload, len);
 
     // construct payload
     ierr = c_json_emit_open_object(&state);
@@ -133,6 +133,7 @@ canopy_error canopy_get_self_device(canopy_remote_t *remote,
     jsmntok_t token[512]; // TODO: large enough?
     canopy_error err;
     int http_status;
+    int active = 0;
     bool result_code;
 
     COS_ASSERT(remote != NULL);
@@ -158,6 +159,19 @@ canopy_error canopy_get_self_device(canopy_remote_t *remote,
     if (http_status != 200) {
         // TODO: Return the appropriate error based on the response
         return CANOPY_ERROR_UNKNOWN;
+    }
+
+    err = c_json_parse_string(
+            (char*)remote->rcv_buffer, 
+            strlen(remote->rcv_buffer), 
+            token, 
+            sizeof(token) / sizeof(token[0]),
+            &active);
+    if (err != CANOPY_SUCCESS) {
+        cos_log(LOG_LEVEL_ERROR,
+                "Error during tokenization of /api/device/self response: %s\n",
+                canopy_error_string(err));
+        return err;
     }
 
     // Parse response and update device object
@@ -521,7 +535,7 @@ canopy_error c_json_parse_device(struct canopy_device *device,
 
             offset++; /* to the next name tag */
 
-        } else if (strncmp(name, TAG_DEVICE_SECRET_KEY, sizeof_name) == 0) {
+        } else if (strncmp(name, TAG_SECRET_KEY, sizeof_name) == 0) {
             memset(&buf, 0, sizeof(buf));
             offset++; /* the device id as a string */
             COS_ASSERT(token[offset].type == JSMN_STRING);

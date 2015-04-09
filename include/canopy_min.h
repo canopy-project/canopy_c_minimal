@@ -1187,8 +1187,8 @@ struct canopy_var {
  * 	<direction>	access direction
  * 	<type>		variable datatype
  * 	<name>		the variables name
- * 	<out_var>	this is a pointer to storage that the library will copy
- * 				the created variable into.
+ * 	<out_var>	this is a pointer to a pointer which will be set to the
+ * 	            system-allocated variable.
  *
  * 	This will return CANOPY_ERROR_VAR_IN_USE if the variable already exists
  *
@@ -1197,7 +1197,7 @@ canopy_error canopy_device_var_declare(canopy_device_t *device,
         canopy_var_direction direction,
         canopy_var_datatype type,
         const char *name,
-		struct canopy_var *out_var);
+		struct canopy_var **out_var);
 
 /****************************************************************************
  * Looks up a variable by looking on the device.  If the variable does not
