@@ -199,6 +199,7 @@ canopy_error canopy_device_update_from_remote(canopy_remote_t *remote,
     canopy_error err;
     int http_status;
     bool result_code;
+    int active = 0;
 
     COS_ASSERT(remote != NULL);
     COS_ASSERT(device != NULL);
@@ -215,6 +216,20 @@ canopy_error canopy_device_update_from_remote(canopy_remote_t *remote,
     if (http_status != 200) {
         // TODO: Return the appropriate error based on the response
         return CANOPY_ERROR_UNKNOWN;
+    }
+
+    // Tokenize response
+    err = c_json_parse_string(
+            (char*)remote->rcv_buffer, 
+            strlen(remote->rcv_buffer), 
+            token, 
+            sizeof(token) / sizeof(token[0]),
+            &active);
+    if (err != CANOPY_SUCCESS) {
+        cos_log(LOG_LEVEL_ERROR,
+                "Error during tokenization of /api/device/self response: %s\n",
+                canopy_error_string(err));
+        return err;
     }
 
     // Parse response and update device object
@@ -285,6 +300,7 @@ canopy_error canopy_device_sync_with_remote(canopy_remote_t *remote,
     char request_payload[2048];
     int http_status;
     bool result_code;
+    int active = 0;
 
     COS_ASSERT(remote != NULL);
     COS_ASSERT(device != NULL);
@@ -309,6 +325,21 @@ canopy_error canopy_device_sync_with_remote(canopy_remote_t *remote,
         // TODO: Return the appropriate error based on the response
         return CANOPY_ERROR_UNKNOWN;
     }
+
+    // Tokenize response
+    err = c_json_parse_string(
+            (char*)remote->rcv_buffer, 
+            strlen(remote->rcv_buffer), 
+            token, 
+            sizeof(token) / sizeof(token[0]),
+            &active);
+    if (err != CANOPY_SUCCESS) {
+        cos_log(LOG_LEVEL_ERROR,
+                "Error during tokenization of /api/device/self response: %s\n",
+                canopy_error_string(err));
+        return err;
+    }
+
 
     // Parse response and update device object
     err = c_json_parse_device(device, remote->rcv_buffer,

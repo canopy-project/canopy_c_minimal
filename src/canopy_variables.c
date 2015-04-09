@@ -197,6 +197,7 @@ canopy_error canopy_device_var_declare(canopy_device_t *device,
         if (tmp->type != type) {
             cos_log(LOG_LEVEL_DEBUG, "type %d doesn't match: %d\n", type, tmp->type);
         }
+        *out_var = tmp;
         return CANOPY_SUCCESS;
     }
 
