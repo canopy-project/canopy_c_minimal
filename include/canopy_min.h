@@ -15,6 +15,10 @@
 #ifndef CANOPY_MIN_INCLUDED
 #define CANOPY_MIN_INCLUDED
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -77,17 +81,17 @@ typedef enum {
     // Requested variable has never been set
     CANOPY_ERROR_VAR_NOT_SET,
 
-	/* we've run out of memory during dynamic memory allocation */
-	CANOPY_ERROR_OUT_OF_MEMORY,
+    /* we've run out of memory during dynamic memory allocation */
+    CANOPY_ERROR_OUT_OF_MEMORY,
 
-	/* The supplied buffer is too small to hold a result. */
-	CANOPY_ERROR_BUFFER_TOO_SMALL,
+    /* The supplied buffer is too small to hold a result. */
+    CANOPY_ERROR_BUFFER_TOO_SMALL,
 
-	/* there's been an error emiting a JSON string */
-	CANOPY_ERROR_JSON,
+    /* there's been an error emiting a JSON string */
+    CANOPY_ERROR_JSON,
 
-	/* Network error, either HTTP of websocket */
-	CANOPY_ERROR_NETWORK,
+    /* Network error, either HTTP of websocket */
+    CANOPY_ERROR_NETWORK,
 } canopy_error;
 
 struct canopy_error_strings {
@@ -100,7 +104,7 @@ const static struct canopy_error_strings canopy_error_strings_table[] = {
         {CANOPY_ERROR_BAD_CREDENTIALS, "bad credentials"},
         {CANOPY_ERROR_FATAL, "fatal error"},
         {CANOPY_ERROR_INCOMPATIBLE_LIBRARY_VERSION,
-        		"incompatible library version"},
+                "incompatible library version"},
         {CANOPY_ERROR_NOT_IMPLEMENTED, "not implemented yet"},
         {CANOPY_ERROR_BAD_PARAM, "bad parameter"},
         {CANOPY_ERROR_WRONG_TYPE, "wrong datatype"},
@@ -138,9 +142,9 @@ typedef struct canopy_context {
     struct canopy_remote *remotes;
 
     /* stuff related to logging */
-    bool				enabled;
-    char*				log_file;
-    int					level;
+    bool enabled;
+    char* log_file;
+    int level;
 } canopy_context_t;
 
 
@@ -153,7 +157,7 @@ typedef struct canopy_context {
  *      state of things from the remotes.
  */
 extern canopy_error canopy_ctx_init(canopy_context_t *ctx,
-		int update_period);
+        int update_period);
 
 // Shutdown context
 // Closes any connections that might still be open.
@@ -210,7 +214,7 @@ typedef enum canopy_credential {
 typedef struct canopy_barrier {
     struct canopy_remote *remote;
     canopy_error (*canopy_barrier_cb)(struct canopy_barrier *barrier,
-    								  void *userdata);
+                                      void *userdata);
     void *userdata;
     enum canopy_credential type;
     union {
@@ -237,7 +241,7 @@ typedef canopy_error (*canopy_barrier_cb)(struct canopy_barrier *barrier,
 // is returned.
 //
 extern canopy_error canopy_barrier_wait_for_complete(canopy_barrier_t *barrier,
-		int timeout_ms);
+        int timeout_ms);
 
 // Cancels the barrier.
 // Any threads blocked in canopy_barrier_wait_for_complete will return with
@@ -473,17 +477,17 @@ typedef struct canopy_remote_params {
  *         of the params.
  */
 typedef struct canopy_remote {
-    struct canopy_remote            *next;        /* pointer to next remote */
+    struct canopy_remote            *next;       /* pointer to next remote */
     struct canopy_context           *ctx;        /* back pointer to the context */
-    struct canopy_remote_params     *params;       /* params for this remote */
+    struct canopy_remote_params     *params;     /* params for this remote */
 
     /* general purpose buffer needs to be supplied by client     */
-    char						    *rcv_buffer;
-    size_t						    rcv_buffer_size;
-    int							    rcv_end;
+    char                            *rcv_buffer;
+    size_t                          rcv_buffer_size;
+    int                             rcv_end;
 
     canopy_ws_connection_status     ws_status;
-    bool                            ws_connected; /* currently connection WS */
+    bool                            ws_connected;/* currently connection WS */
     canopy_active_status            active_status;
     cos_time_t                      last_activity;
 } canopy_remote_t;
@@ -608,26 +612,26 @@ typedef struct canopy_filter_root {
 } canopy_filter_root_t;
 
 extern canopy_error append_term_filter(canopy_filter_root_t *root,
-		canopy_filter_t *ft,
+        canopy_filter_t *ft,
         const char *variable_name,
         const char *value, /*  TBD should we use canopy_var_value_t here? */
         canopy_relation_op relation
         );
 
 extern canopy_error append_unary_filter(canopy_filter_root_t *root,
-		canopy_filter_t *ft,
+        canopy_filter_t *ft,
         enum unary_type type,
         const char *variable_name    /* only used for HAS */
         );
 
 extern canopy_error append_boolean_filter(canopy_filter_root_t *root,
-		canopy_filter_t *ft,
+        canopy_filter_t *ft,
         enum boolean_type type);
 
 extern canopy_error append_open_paren_filter(canopy_filter_root_t *root,
-		canopy_filter_t *ft);
+        canopy_filter_t *ft);
 extern canopy_error append_close_paren_filter(canopy_filter_root_t *root,
-		canopy_filter_t *ft);
+        canopy_filter_t *ft);
 
 
 /************************************************************
@@ -674,23 +678,28 @@ typedef struct canopy_limits {
 
 
 typedef struct canopy_query {
-    canopy_filter_root_t *filter_root;      /* the list used for filtering which devices to report. */
-    canopy_sort_t *sort;        /* defines the sort order.  If null the result list is unordered. */
-    canopy_limits_t *limits;    /* How many to return */
+    /* the list used for filtering which devices to report. */
+    canopy_filter_root_t *filter_root;
+
+    /* defines the sort order.  If null the result list is unordered. */
+    canopy_sort_t *sort;
+
+    /* How many to return */
+    canopy_limits_t *limits;
 } canopy_query_t;
 
 
 /*****************************************************************************/
 
 /*
- * 	A few words about memory usage.
+ *     A few words about memory usage.
  *
- * 	The various calls into the library provide the storage for the various
- * 	data structures.  The exception to this is the way memory is allocated
- * 	for device variables, the library allocates the memory for variables.
- * 	(there are places where the library
- * 	needs to allocate memory for itself, primarily variables that are
- * 	created external to the device.)
+ *     The various calls into the library provide the storage for the various
+ *     data structures.  The exception to this is the way memory is allocated
+ *     for device variables, the library allocates the memory for variables.
+ *     (there are places where the library
+ *     needs to allocate memory for itself, primarily variables that are
+ *     created external to the device.)
  *
  */
 
@@ -699,47 +708,51 @@ typedef struct canopy_query {
 
 /*
  * Initializes a new remote object.  Does not necessarily open a TCP or
- *  websocket connection to the server, but initializes an object with the
- *  parameters to do so when needed.
+ * websocket connection to the server, but initializes an object with the
+ * parameters to do so when needed.
  *
- * 		 <ctx> is the context.
+ *      <ctx> is the context.
  *
- * 		<params> must be populated by the caller.  Sets all of the options for
- * subsequent connections to the server.
+ *      <params> must be populated by the caller.  Sets all of the options for
+ *      subsequent connections to the server.
  *
  *      <rcv_buffer> is a pointer to storage that gets used as temporary data
  *      primarily as the buffer used for payload and response
  *      communication.  (http)
  *
- *      <rcv_buffer_size>	The size of the temporary buffer.
+ *      <rcv_buffer_size> is the size of the temporary buffer.
  *
- * 		<remote> is a remote object that is initialized by this call.
+ *      <remote> is a remote object that is initialized by this call.
  *
  */
 extern canopy_error canopy_remote_init(canopy_context_t *ctx,
         canopy_remote_params_t *params,
-		char *rcv_buffer,
-		size_t rcv_buffer_size,
+        char *rcv_buffer,
+        size_t rcv_buffer_size,
         canopy_remote_t *remote);
 
-// Shutdown a remote object.
-// Closes persistent connection to server, if any.
-// Frees any allocated memory.
+/*
+ * Shutdown a remote object.
+ * Closes persistent connection to server, if any.
+ * Frees any allocated memory.
+ */
 extern canopy_error canopy_remote_shutdown(canopy_remote_t *remote);
 
-// Get the remote's clock in milliseconds.  The returned value has no relation
-// to wall clock time, but is monotonically increasing and is reported
-// consistently by the remote to anyone who asks.
+/* Get the remote's clock in milliseconds.  The returned value has no relation
+ * to wall clock time, but is monotonically increasing and is reported
+ * consistently by the remote to anyone who asks.
+ */
 extern canopy_error canopy_remote_get_time(canopy_remote_t *remote,
         cos_time_t *time,
         canopy_barrier_t *barrier);
 
-// Get our version of the remote's clock in milliseconds.  This is based on the
-// time obtained the last time canopy_remote_get_clock_time was called, plus
-// however much time has elapsed since then.
-//
-// Returns CANOPY_ERROR_AGAIN if canopy_remote_get_time() has never been
-// called for <remote>.
+/* Get our version of the remote's clock in milliseconds.  This is based on the
+ * time obtained the last time canopy_remote_get_clock_time was called, plus
+ * however much time has elapsed since then.
+ *
+ * Returns CANOPY_ERROR_AGAIN if canopy_remote_get_time() has never been
+ * called for <remote>.
+ */
 extern canopy_error canopy_get_local_time(canopy_remote_t *remote,
         cos_time_t *time);
 
@@ -824,111 +837,128 @@ extern canopy_error canopy_get_self_user(canopy_remote_t *remote,
  *
  */
 typedef struct canopy_device {
-    struct canopy_device	*next;        /* hung off of User or remote */
-    char                    uuid[CANOPY_UUID_MAX_LENGTH];        /* the uuid of the device */
-    char                    secret_key[CANOPY_SECRET_KEY_LENGTH];        /* the secret key of the device */
-    char					friendly_name[CANOPY_FRIENDLY_NAME_MAX_LENGTH];
-    bool					friendly_name_dirty;
-    char					location_note[CANOPY_NOTE_MAX_LENGTH];
-    bool					location_note_dirty;
-    bool					ws_connected;
-    canopy_remote_t			*remote;
+    struct canopy_device    *next;        /* hung off of User or remote */
+    char                    uuid[CANOPY_UUID_MAX_LENGTH];
+    char                    secret_key[CANOPY_SECRET_KEY_LENGTH];
+    char                    friendly_name[CANOPY_FRIENDLY_NAME_MAX_LENGTH];
+    bool                    friendly_name_dirty;
+    char                    location_note[CANOPY_NOTE_MAX_LENGTH];
+    bool                    location_note_dirty;
+    bool                    ws_connected;
+    canopy_remote_t         *remote;
 #ifdef HAVE_MEMORY
-    struct canopy_hash_table	var_hash;
+    struct canopy_hash_table var_hash;
 #else
-    struct canopy_var		*vars;        /* list of vars on this device */
+    struct canopy_var       *vars;        /* list of vars on this device */
 #endif
 } canopy_device_t;
 
-// Initializes a new local device object without interacting with the remote.
-// The initialized device starts with no cloud variables and no friendly name.
-//
-//      <device> points to the uninitialized canopy_device_t to initialize.
-//
-//      <remote> configures the remote to use for syncing with the cloud.
-//
-//      <uuid> is the UUID of this device.  If NULL, a random type-4 UUID will
-//          be assigned.
-//
-// Typically canopy_get_self_device() should be used instead, which initializes
-// a new device by pulling from the remote.
+/*
+ * Initializes a new local device object without interacting with the remote.
+ * The initialized device starts with no cloud variables and no friendly name.
+ *
+ *      <device> points to the uninitialized canopy_device_t to initialize.
+ *
+ *      <remote> configures the remote to use for syncing with the cloud.
+ *
+ *      <uuid> is the UUID of this device.  If NULL, a random type-4 UUID will
+ *          be assigned.
+ *
+ * Typically canopy_get_self_device() should be used instead, which initializes
+ * a new device by pulling from the remote.
+ */
 extern canopy_error canopy_device_init(
         canopy_device_t *device, 
         canopy_remote_t *remote,
         const char *uuid);
 
-// Get device's friendly name.  This is a local operation that does not
-// interact with the remote.
-//
-// Copies the friendly_name to buffer pointed to by <friendly_name>.  Copies at
-// most <len> bytes.  Returns the error CANOPY_ERROR_BUFFER_TOO_SMALL if <len>
-// is not large enough to hold the result.
+/*
+ * Get device's friendly name.  This is a local operation that does not
+ * interact with the remote.
+ *
+ * Copies the friendly_name to buffer pointed to by <friendly_name>.  Copies at
+ * most <len> bytes.  Returns the error CANOPY_ERROR_BUFFER_TOO_SMALL if <len>
+ * is not large enough to hold the result.
+ */
 extern canopy_error canopy_device_get_friendly_name(
         canopy_device_t *device, 
         char *friendly_name, 
         size_t len);
 
-// Get device's location note.  This is a local operation that does not
-// interact with the remote.
-//
-// Copies the location_note to buffer pointed to by <email>.  Copies at most <len>
-// bytes.  Returns the error CANOPY_ERROR_BUFFER_TOO_SMALL if <len> is not
-// large enough to hold the result.
+/*
+ * Get device's location note.  This is a local operation that does not
+ * interact with the remote.
+ *
+ * Copies the location_note to buffer pointed to by <email>.  Copies at most
+ * <len> bytes.  Returns the error CANOPY_ERROR_BUFFER_TOO_SMALL if <len> is
+ * not large enough to hold the result.
+ */
 extern canopy_error canopy_device_get_location_note(
         canopy_device_t *device, 
         char *location_note, 
         size_t len);
 
-// Set device's friendly name.  This is a local operation that does not
-// interact with the remote.
+/*
+ * Set device's friendly name.  This is a local operation that does not
+ * interact with the remote.
+ */
 extern canopy_error canopy_device_set_friendly_name(
         canopy_device_t *device, 
         const char *friendly_name);
 
-// Set device's location note.  This is a local operation that does not
-// interact with the remote.
+/*
+ * Set device's location note.  This is a local operation that does not
+ * interact with the remote.
+ */
 extern canopy_error canopy_device_set_location_note(
         canopy_device_t *device, 
         const char *location_note);
 
-// Updates a device object's status and properties from the remote server.  Any
-// status or properties with a more recent clock ms value will be updated
-// locally.
-// 
-//  <device> must point to an initialized canopy_device_t object (for example,
-//  obtained from canopy_get_self_device()).
-//
+/*
+ * Updates a device object's status and properties from the remote server.  Any
+ * status or properties with a more recent clock ms value will be updated
+ * locally.
+ * 
+ *  <device> must point to an initialized canopy_device_t object (for example,
+ *  obtained from canopy_get_self_device()).
+ */
 extern canopy_error canopy_device_update_from_remote   (
         canopy_remote_t *remote,
         canopy_device_t *device, 
         canopy_barrier_t *barrier);
 
-// Updates a device object's status and properties to the remote server.  Any
-// status or properties with a more recent clock ms value will be updated
-// remotely.
-//
-//  <device> must point to an initialized canopy_device_t object (for example,
-//  obtained from canopy_get_self_device()).
+/*
+ * Updates a device object's status and properties to the remote server.  Any
+ * status or properties with a more recent clock ms value will be updated
+ * remotely.
+ *
+ *  <device> must point to an initialized canopy_device_t object (for example,
+ *  obtained from canopy_get_self_device()).
+ */
 extern canopy_error canopy_device_update_to_remote (
         canopy_remote_t *remote,
         canopy_device_t *device, 
         canopy_barrier_t *barrier);
 
-// Synchronizes a device object with the remote server.
-// (Potential revisit).  Server should do merge.  Does it need to be atomic?
-// 
-// Roughly equivalent to:
-//  canopy_device_update_from_remote(device, remote, NULL);
-//  canopy_device_update_to_remote(device, remote, barrier);
-//
-//  <device> must point to an initialized canopy_device_t object (for example,
-//  obtained from canopy_get_self_device()).
+/*
+ * Synchronizes a device object with the remote server.
+ * (Potential revisit).  Server should do merge.  Does it need to be atomic?
+ * 
+ * Roughly equivalent to:
+ *  canopy_device_update_from_remote(device, remote, NULL);
+ *  canopy_device_update_to_remote(device, remote, barrier);
+ *
+ *  <device> must point to an initialized canopy_device_t object (for example,
+ *  obtained from canopy_get_self_device()).
+ */
 extern canopy_error canopy_device_sync_with_remote (
         canopy_remote_t *remote,
         canopy_device_t *device, 
         canopy_barrier_t *barrier);
 
-// Get the active status for a device.
+/*
+ * Get the active status for a device.
+ */
 extern canopy_error canopy_device_get_active_status (
         canopy_device_t *device, 
         canopy_active_status *active_status,
@@ -984,28 +1014,34 @@ extern canopy_error canopy_user_set_password(canopy_user_t *user,
         const char *old_password,
         const char *new_password);
 
-// Updates a user object's properties (excluding devices) from the remote
-// server.  Any properties with a more recent clock ms value will be updated
-// locally.
+/*
+ * Updates a user object's properties (excluding devices) from the remote
+ * server.  Any properties with a more recent clock ms value will be updated
+ * locally.
+ */
 extern canopy_error canopy_user_update_from_remote(
         canopy_remote_t *remote,
         canopy_user_t *user, 
         canopy_barrier_t *barrier);
 
-// Updates a user object's properties (excluding devices) to the remote
-// server.  Any properties with a more recent clock ms value will be updated
-// remotely.
+/*
+ * Updates a user object's properties (excluding devices) to the remote
+ * server.  Any properties with a more recent clock ms value will be updated
+ * remotely.
+ */
 extern canopy_error canopy_user_update_to_remote(
         canopy_remote_t *remote,
         canopy_user_t *user, 
         canopy_barrier_t *barrier);
 
-// Synchronizes a user object with the remote server.
-// (Potential revisit).  Server should do merge.  Does it need to be atomic?
-// 
-// Roughly equivalent to:
-//  canopy_user_update_from_remote(user, remote, NULL);
-//  canopy_user_update_to_remote(user, remote, barrier);
+/*
+ * Synchronizes a user object with the remote server.
+ * (Potential revisit).  Server should do merge.  Does it need to be atomic?
+ * 
+ * Roughly equivalent to:
+ *  canopy_user_update_from_remote(user, remote, NULL);
+ *  canopy_user_update_to_remote(user, remote, barrier);
+ */
 extern canopy_error canopy_user_sync_with_remote(
         canopy_user_t *user, 
         canopy_remote_t *remote,
@@ -1014,36 +1050,44 @@ extern canopy_error canopy_user_sync_with_remote(
 /*****************************************************************************/
 // QUERIES
 
-// Get list of devices based on a query.
-//
-//  The list of devices obtained will only include devices that satisfy these criteria:
-//      1) The credentials provided to the remote can access it.
-//      2) The <device> can access it.
-//      3) It satifsies the query.
-//      
-//      WWW-Authentication: BASIC <remote.name>:<remote.password>
-//      GET /api/device/<device.uuid>/devices?sort=<query.sort>&filter=<query.filter>&limit=<query.limit>
+/*
+ * Get list of devices based on a query.
+ *
+ *  The list of devices obtained will only include devices that satisfy these criteria:
+ *      1) The credentials provided to the remote can access it.
+ *      2) The <device> can access it.
+ *      3) It satifsies the query.
+ *      
+ *      WWW-Authentication: BASIC <remote.name>:<remote.password>
+ *      GET /api/device/<device.uuid>/devices?sort=<query.sort>&filter=<query.filter>&limit=<query.limit>
+ */
 extern canopy_error canopy_device_devices(
         canopy_remote_t *remote, 
         canopy_device_t *device, 
         canopy_query_t *query,
         canopy_barrier_t *barrier);
 
-// Get list of users a device has access to based on a query.
+/*
+ * Get list of users a device has access to based on a query.
+ */
 extern canopy_error canopy_device_users(
         canopy_remote_t *remote, 
         canopy_device_t *device, 
         canopy_query_t *query,
         canopy_barrier_t *barrier);
 
-// Get list of devices a user has access to based on a query.
+/*
+ * Get list of devices a user has access to based on a query.
+ */
 extern canopy_error canopy_user_devices(
         canopy_remote_t *remote, 
         canopy_user_t *user, 
         canopy_query_t *query,
         canopy_barrier_t *barrier);
 
-// Get list of users a user has access to based on a query.
+/*
+ * Get list of users a user has access to based on a query.
+ */
 extern canopy_error canopy_user_users(
         canopy_remote_t *remote, 
         canopy_user_t *user, 
@@ -1052,7 +1096,9 @@ extern canopy_error canopy_user_users(
 
 /*****************************************************************************/
 
-// CLOUD VARIABLES
+/* 
+ * CLOUD VARIABLES
+ */
 typedef enum {
     CANOPY_VAR_DIRECTION_INVALID=0,
     CANOPY_VAR_OUT,
@@ -1061,7 +1107,7 @@ typedef enum {
 } canopy_var_direction;
 
 struct canopy_var_direction_strings {
-	canopy_var_direction dir;
+    canopy_var_direction dir;
     const char *str;
 };
 const static struct canopy_var_direction_strings canopy_var_direction_table[] = {
@@ -1074,15 +1120,15 @@ inline static const char *canopy_var_direction_string(canopy_var_direction dir) 
     return canopy_var_direction_table[dir].str;
 }
 inline static canopy_var_direction direction_from_string(const char* str, int len) {
-	int i;
-	for (i = 0; i < sizeof(canopy_var_direction_table); i++) {
-		int tl = sizeof(canopy_var_direction_table[i].str);
-		int small = LOCAL_MIN(len, tl);
-		if (strncmp(str, canopy_var_direction_table[i].str, small) == 0) {
-			return canopy_var_direction_table[i].dir;
-		}
-	}
-	return CANOPY_VAR_DIRECTION_INVALID;
+    int i;
+    for (i = 0; i < sizeof(canopy_var_direction_table); i++) {
+        int tl = sizeof(canopy_var_direction_table[i].str);
+        int small = LOCAL_MIN(len, tl);
+        if (strncmp(str, canopy_var_direction_table[i].str, small) == 0) {
+            return canopy_var_direction_table[i].dir;
+        }
+    }
+    return CANOPY_VAR_DIRECTION_INVALID;
 }
 
 
@@ -1108,39 +1154,39 @@ typedef enum {
 } canopy_var_datatype;
 
 struct canopy_var_datatype_strings {
-	canopy_var_datatype type;
+    canopy_var_datatype type;
     const char *str;
 };
 const static struct canopy_var_datatype_strings canopy_var_datatype_table[] = {
-		{CANOPY_VAR_DATATYPE_INVALID, "invalid"},
-	    {CANOPY_VAR_DATATYPE_VOID, "void"},
-	    {CANOPY_VAR_DATATYPE_STRING, "string"},
-	    {CANOPY_VAR_DATATYPE_BOOL, "bool"},
-	    {CANOPY_VAR_DATATYPE_INT8, "int8"},
-	    {CANOPY_VAR_DATATYPE_UINT8, "uint8"},
-	    {CANOPY_VAR_DATATYPE_INT16, "int16"},
-	    {CANOPY_VAR_DATATYPE_UINT16, "uint16"},
-	    {CANOPY_VAR_DATATYPE_INT32, "int32"},
-	    {CANOPY_VAR_DATATYPE_UINT32, "uint32"},
-	    {CANOPY_VAR_DATATYPE_FLOAT32, "float32"},
-	    {CANOPY_VAR_DATATYPE_FLOAT64, "float64"},
-	    {CANOPY_VAR_DATATYPE_DATETIME, "datetime"},
-	    {CANOPY_VAR_DATATYPE_STRUCT, "struct"},
-	    {CANOPY_VAR_DATATYPE_ARRAY, "array"},
+        {CANOPY_VAR_DATATYPE_INVALID, "invalid"},
+        {CANOPY_VAR_DATATYPE_VOID, "void"},
+        {CANOPY_VAR_DATATYPE_STRING, "string"},
+        {CANOPY_VAR_DATATYPE_BOOL, "bool"},
+        {CANOPY_VAR_DATATYPE_INT8, "int8"},
+        {CANOPY_VAR_DATATYPE_UINT8, "uint8"},
+        {CANOPY_VAR_DATATYPE_INT16, "int16"},
+        {CANOPY_VAR_DATATYPE_UINT16, "uint16"},
+        {CANOPY_VAR_DATATYPE_INT32, "int32"},
+        {CANOPY_VAR_DATATYPE_UINT32, "uint32"},
+        {CANOPY_VAR_DATATYPE_FLOAT32, "float32"},
+        {CANOPY_VAR_DATATYPE_FLOAT64, "float64"},
+        {CANOPY_VAR_DATATYPE_DATETIME, "datetime"},
+        {CANOPY_VAR_DATATYPE_STRUCT, "struct"},
+        {CANOPY_VAR_DATATYPE_ARRAY, "array"},
 };
 inline static const char *canopy_var_datatype_string(canopy_var_datatype type) {
     return canopy_var_datatype_table[type].str;
 }
 inline static canopy_var_datatype datatype_from_string(const char* str, int len) {
-	int i;
-	for (i = 0; i < sizeof(canopy_var_datatype_table); i++) {
-		int tl = sizeof(canopy_var_datatype_table[i].str);
-		int small = LOCAL_MIN(len, tl);
-		if (strncmp(str, canopy_var_datatype_table[i].str, small) == 0) {
-			return canopy_var_datatype_table[i].type;
-		}
-	}
-	return CANOPY_VAR_DATATYPE_INVALID;
+    int i;
+    for (i = 0; i < sizeof(canopy_var_datatype_table); i++) {
+        int tl = sizeof(canopy_var_datatype_table[i].str);
+        int small = LOCAL_MIN(len, tl);
+        if (strncmp(str, canopy_var_datatype_table[i].str, small) == 0) {
+            return canopy_var_datatype_table[i].type;
+        }
+    }
+    return CANOPY_VAR_DATATYPE_INVALID;
 }
 
 
@@ -1168,14 +1214,14 @@ typedef struct canopy_var_value canopy_var_value_t;
 
 #define CANOPY_VAR_NAME_MAX_LENGTH 128
 struct canopy_var {
-    struct canopy_var 		*next;    /* linked list of variables, hung off device */
-    struct canopy_device 	*device;
-    canopy_var_direction 	direction;
-    canopy_var_datatype 	type;	/* duplicate of type in the value */
+    struct canopy_var         *next;    /* linked list of variables, hung off device */
+    struct canopy_device     *device;
+    canopy_var_direction     direction;
+    canopy_var_datatype     type;    /* duplicate of type in the value */
     char name[CANOPY_VAR_NAME_MAX_LENGTH];
-	bool 					set;	/* This variable has been set */
-	cos_time_t				last;	/* when was it changed with remote */
-    struct canopy_var_value	val;  	/* yes, not a pointer, real storage */
+    bool                     set;    /* This variable has been set */
+    cos_time_t                last;    /* when was it changed with remote */
+    struct canopy_var_value    val;      /* yes, not a pointer, real storage */
 };
 // typedef struct canopy_var canopy_var_t;
 
@@ -1183,33 +1229,33 @@ struct canopy_var {
  *
  * Creates the variable defined and attaches it to the device.
  *
- * 	<device>	the device
- * 	<direction>	access direction
- * 	<type>		variable datatype
- * 	<name>		the variables name
- * 	<out_var>	this is a pointer to a pointer which will be set to the
- * 	            system-allocated variable.
+ *     <device>    the device
+ *     <direction>    access direction
+ *     <type>        variable datatype
+ *     <name>        the variables name
+ *     <out_var>    this is a pointer to a pointer which will be set to the
+ *                 system-allocated variable.
  *
- * 	This will return CANOPY_ERROR_VAR_IN_USE if the variable already exists
+ *     This will return CANOPY_ERROR_VAR_IN_USE if the variable already exists
  *
  */
 canopy_error canopy_device_var_declare(canopy_device_t *device,
         canopy_var_direction direction,
         canopy_var_datatype type,
         const char *name,
-		struct canopy_var **out_var);
+        struct canopy_var **out_var);
 
 /****************************************************************************
  * Looks up a variable by looking on the device.  If the variable does not
  * exist, this call will return CANOPY_ERROR_VAR_NOT_FOUND.
  *
- * <device>		the device
- * <var_name>	the name of the variable to look up
- * <var>		is a pointer to storage that the variable will be copied into
+ * <device>        the device
+ * <var_name>    the name of the variable to look up
+ * <var>        is a pointer to storage that the variable will be copied into
  */
 canopy_error canopy_device_get_var_by_name(canopy_device_t *device, 
         const char *var_name, 
-		struct canopy_var *var);
+        struct canopy_var *var);
 
 canopy_error canopy_var_set_bool(struct canopy_var *var, bool value);
 canopy_error canopy_var_set_int8(struct canopy_var *var, int8_t value);
@@ -1254,104 +1300,14 @@ canopy_error canopy_var_get_float64(struct canopy_var *var,
         double *value,
         cos_time_t *last_time);
 canopy_error canopy_var_get_string(struct canopy_var *var,
-        char *buf, size_t len,	/* buf is null terminated */
+        char *buf, size_t len,    /* buf is null terminated */
         cos_time_t *last_time);
 
-/*
- * 	Javascript example for creating a variable
- *  myVar = device.varInit("out", "float32", "temperature");
- *
- *  device.updateToServer().onDone(
- *      function(error, device) {alert("all done");}
- *  );
- *
- *  
- */
-
-/*
- *  Variable initialization will be ignored if the variable already exists on
- *  the remote.
- *
- *  An attempt to change the datatype will fail silently
- *
- *  POST api/devices/UUID
- *  {
- *      "var_decl" : {
- *          "out int8 coffee_mode" : {},
- *          "out float32 temperature" : {},
- *      }
- *  }
- *
- *  POST api/devices/UUID
- *  {
- *      "var_decl" : {
- *          "out int8 coffee_mode" : {},
- *          "out float32 temperature" : {},
- *          "out string statusmsg" : {},
- *      }
- *      "vars" : {
- *          "coffee_mode" : 4,
- *          "temperature" : 100.34,
- *          "statusmsg" : "hello",
- *      }
- *  }
- *
- *  GET api/devices/UUID
- *  {
- *      "status" : {
- *          "last_seen" : "2015-03-09 10:44:32.245 UTC",
- *          "ws_connected" : true,
- *      }
- *      "var_decl" : {
- *          "out int8 coffee_mode" : {}
- *      }
- *      "vars" : {
- *          "coffee_mode" : {
- *              "t" : "2015-03-09 10:44:32.245 UTC",
- *              "v" : 4
- *          },
- *          "statusmsg" : {
- *              "t" : "2015-03-09 10:44:32.245 UTC",
- *              "v" : "hello"
- *          }
- *      }
- *  }
- */
-
-/*
- * canopy_var_t gpsvar;
- * canopy_device_var_init(dev, OUT, CANOPY_VAR_DATATYPE_STRUCT, "gps", &gpsvar)
- *
- * canopy_var_struct_init_member(
- *      &gpsvar, 
- *      CANOPY_VAR_DATATYPE_FLOAT32, 
- *      "latitude");
- *
- * canopy_var_struct_init_member(
- *      &gpsvar, 
- *      CANOPY_VAR_DATATYPE_FLOAT32, 
- *      "longitude");
- *
- *
- * canopy_var_set_int8(var
- * 
- */
-
-/*
- *  PERMISSIONS
- *      devices_i_can_access()
- *      users_i_can_access()
- *      admin_features_i_can_access()
- *
- *  ACCOUNT (User Account)
- *      devices_i_own()
- *      permissions()
- *  
- *  DEVICE
- *      permissions()
- *      owner()
- *      set_var()
- *      get_var()
- */
-
+#ifdef __cplusplus
+}
 #endif
+
+#endif /* CANOPY_MIN_INCLUDED */
+
+
+
