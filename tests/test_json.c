@@ -209,27 +209,27 @@ int test_vardcl_output() {
  */
 static const char* var_decls1 = "{"
         "    \"var_decls\" : {  "
-        "        \"out bool test_var\" {  "
+        "        \"out bool test_var\" : {  "
         "        }    "
         "    }    "
         "}";
 
 static const char* var_decls2 = "{"
         "    \"var_decls\" : {  "
-        "        \"out bool test_var\" {  "
+        "        \"out bool test_var\" : {  "
         "        }    "
-        "        \"in datetime  test_time\" {  "
+        "        \"in datetime  test_time\" : {  "
         "        }    "
         "    }    "
         "}";
 
 static const char* var_decls3 = "{"
         "    \"var_decls\" : {  "
-        "        \"out bool test_var\" {  "
+        "        \"out bool test_var\" : {  "
         "        }    "
-        "        \"in datetime  test_time\" {  "
+        "        \"in datetime  test_time\" : {  "
         "        }    "
-        "        \"inout uint32  test_32\" {  "
+        "        \"inout uint32  test_32\" : {  "
         "        }    "
         "    }    "
         "}";
@@ -288,7 +288,6 @@ static int proccess_var_decls(const char*  js) {
     }
 
     memset(&tokens, 0, sizeof(jsmntok_t) * tok_len);
-    bool answer;
     int active = 0;
 
     out = c_json_parse_string((char*)js, strlen(js), tokens, tok_len, &active);
@@ -301,7 +300,7 @@ static int proccess_var_decls(const char*  js) {
             &next_token,
             false);                /* expect outer-most object */
 
-    printf("get result key returned %d, answer: %d\n", out, answer);
+    printf("c_json_parse_vardcl returned %d, next_token: %d\n", out, next_token);
     printf("%s\n\n", js);
 
     return 0;

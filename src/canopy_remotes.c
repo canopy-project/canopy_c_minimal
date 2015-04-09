@@ -16,6 +16,7 @@
 #include	<stdint.h>
 #include	<stdbool.h>
 #include	<string.h>
+#include    <stdlib.h>
 
 #include	<canopy_min.h>
 #include	<canopy_min_internal.h>
@@ -172,6 +173,119 @@ canopy_error canopy_get_local_time(canopy_remote_t *remote,
 	}
 
 	return CANOPY_ERROR_NOT_IMPLEMENTED;
+}
+
+/***************************************************************************
+ *  c_json_parse_remote_status(struct canopy_device *device,
+ *      char* js, int js_len,
+ *       jsmntok_t *token, int tok_len,
+ *       int name_offset,
+ *       int *next_token)
+ *
+ *      Parses the JSON status tag from the remote
+ *  (in canopy_remote.c)
+ */
+canopy_error c_json_parse_remote_status(struct canopy_device *device,
+        char* js, int js_len,           /* the input JSON and total length  */
+        jsmntok_t *token, int tok_len,  /* token array with length */
+        int name_offset,                /* token offset for name vardecl */
+        int *next_token) {                /* the token after the decls */
+
+    int i;
+    int offset = name_offset;
+    char name[128];
+    char primative[128];
+    COS_ASSERT(device != NULL);
+    struct canopy_remote *remote = device->remote;
+    COS_ASSERT(remote != NULL);
+
+    /*
+     * Verify the thing starts with "status"
+     */
+    COS_ASSERT(token[offset].type == JSMN_STRING);
+    COS_ASSERT(
+            strncmp((const char*) &js[token[offset].start], TAG_STATUS, (token[offset].end - token[offset].start)) == 0);
+    COS_ASSERT(token[offset].size == 1);
+    offset++;
+
+    /*
+     *   "    \"status\": {"
+     *   "        \"last_activity_time\": 1426803897000000,"
+     *   "        \"ws_connected\": false"
+     *   "        \"active_status\" : \"active\", "
+     *   "    },"
+     *
+     * We should be at the object after the status.  The size of this object indicates
+     * the number of entries in the list
+     *      If the name is last_activity_time, the following thing should be a
+     *      Primitive
+     *
+     *      If the name is ws_connected, we expect a primitive that's a boolean
+     *
+     *      If the name is active_status, it's followed by a string
+     *
+     */
+    COS_ASSERT(token[offset].type == JSMN_OBJECT);
+    int n_vars = token[offset].size;
+    offset++;  /*  points to name */
+    for (i = 0; i < n_vars; i++) {
+        int sizeof_name;
+        memset(&name, 0, sizeof(name));
+        sizeof_name = sizeof(name);
+
+        COS_ASSERT(token[offset].type == JSMN_STRING);
+        strncpy(name, &js[token[offset].start], (token[offset].end - token[offset].start));
+
+        if (strncmp(name, TAG_WS_CONNECTED, sizeof_name) == 0) {
+
+            /*
+             * The next token should be a boolean.
+             */
+            offset++; /* boolean tag, which is a primitive, not a string */
+            COS_ASSERT(token[offset].type == JSMN_PRIMITIVE);
+            COS_ASSERT(token[offset].size == 0);
+            int t = strncmp(&js[token[offset].start], "true", (token[offset].end - token[offset].start));
+            int f = strncmp(&js[token[offset].start], "false", (token[offset].end - token[offset].start));
+            if (t || f) {
+                remote->ws_connected = (t == 1);
+            } else {
+                cos_log(LOG_LEVEL_FATAL, "boolean in status WS_CONNECTED not true or false\n");
+                return CANOPY_ERROR_FATAL;
+            }
+            offset++;  /* up to next name */
+
+        } else if (strncmp(name, TAG_ACTIVE_STATUS, sizeof_name) == 0) {
+
+            /*
+             * The next token should be a string.  It has a defined content.
+             */
+            offset++;
+            COS_ASSERT(token[offset].type == JSMN_STRING);
+            memset(&primative, 0, sizeof(primative));
+            strncpy(primative, &js[token[offset].start], (token[offset].end - token[offset].start));
+            canopy_active_status status = activity_status_from_string(primative, sizeof(primative));
+            remote->active_status = status;
+            offset++;  /* to the next name */
+
+        } else if (strncmp(name, TAG_LAST_ACTIVITY_TIME, sizeof_name) == 0) {
+
+            /*
+             * The next should be a primative that's an unsigned long long
+             */
+            offset++;
+            COS_ASSERT(token[offset].type == JSMN_PRIMITIVE);
+            memset(&primative, 0, sizeof(primative));
+            strncpy(primative, &js[token[offset].start], (token[offset].end - token[offset].start));
+            unsigned long long ull = atoll(primative);
+            remote->last_activity = (cos_time_t)ull;
+            offset++; /* next name */
+        }
+
+    } /* nvars */
+
+    *next_token = offset;
+
+    return CANOPY_SUCCESS;
 }
 
 

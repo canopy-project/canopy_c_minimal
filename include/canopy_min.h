@@ -337,43 +337,6 @@ typedef enum {
     CANOPY_BASIC_AUTH,
 } canopy_auth_type;
 
-/*
- * Parameters to use when talking to a remote.
- */
-typedef struct canopy_remote_params {
-    canopy_credential_type   credential_type;
-    char                     *name;        // user's username or device id
-    char                     *password;    // user's password or device secret
-    uint16_t                 http_port;    // 0 for default
-    uint16_t                 https_port;   // 0 for default
-    bool                     use_http;     // true to use HTTP
-    bool                     skip_cert_check;// true to ignore SSL cert errors
-    canopy_auth_type         auth_type;    // Defaults to BASIC
-    char                     *remote;      // hostname or IP  of remote server
-    bool                     use_ws;       // hint: use websockets if available
-    bool                     persistent;   // hint: keep comm channel open
-} canopy_remote_params_t;
-
-/*
- * canopy_remote:
- *         used to hold information about the remote we're using.
- *         The details of how to connect to the remote is passed in as part
- *         of the params.
- */
-typedef struct canopy_remote {
-    struct canopy_remote         *next;        /* pointer to next remote */
-    struct canopy_context         *ctx;        /* back pointer to the context */
-    struct canopy_remote_params *params;       /* params for this remote */
-
-    /* general purpose buffer needs to be supplied by client     */
-    char						*rcv_buffer;
-    size_t						 rcv_buffer_size;
-    int							 rcv_end;
-
-    bool                         ws_connected; /* currently connection WS */
-} canopy_remote_t;
-
-
 /*****************************************************************************/
 
 // canopy_active_status enum identifies whether or not a device has
@@ -394,7 +357,6 @@ typedef enum {
     CANOPY_ACTIVE,
 } canopy_active_status;
 
-
 /*
  * This stuff provides the text string used for the canopy_active_status as
  * used in the filters.  The idea is that you would use this lookup table when
@@ -412,6 +374,21 @@ const static struct activity_status activity_status_table[] = {
         {CANOPY_INACTIVE, "status_inactive"},
         {CANOPY_ACTIVE, "status_active"},
 };
+inline static const char *activity_status_string(canopy_active_status status) {
+    return activity_status_table[status].str;
+}
+inline static canopy_active_status activity_status_from_string(const char* str, int len) {
+    int i;
+    for (i = 0; i < sizeof(activity_status_table); i++) {
+        int tl = sizeof(activity_status_table[i].str);
+        int small = LOCAL_MIN(len, tl);
+        if (strncmp(str, activity_status_table[i].str, small) == 0) {
+            return activity_status_table[i].status;
+        }
+    }
+    return CANOPY_ACTIVE_STATUS_INVALID;
+}
+
 
 /*****************************************************************************/
 
@@ -448,13 +425,69 @@ struct ws_connection_status {
 const static struct ws_connection_status ws_connection_status_table[] = {
         {CANOPY_WS_CONNECTION_STATUS_INVALID, "ws_connection_status_invalid"},
         {CANOPY_WS_CONNECTION_STATUS_DONT_CARE,
-        					"ws_connection_status_dont_care"},
+                            "ws_connection_status_dont_care"},
         {CANOPY_WS_CONNECTION_STATUS_WS_NOT_USED,
-        					"ws_connection_status_ws_not_used"},
+                            "ws_connection_status_ws_not_used"},
         {CANOPY_WS_NEVER_CONNECTED, "ws_connection_status_never_connected"},
         {CANOPY_WS_DISCONNECTED, "ws_connection_status_disconnected"},
         {CANOPY_WS_CONNECTED, "ws_connection_status_connected"},
 };
+inline static const char *ws_connection_status_string(canopy_ws_connection_status status) {
+    return ws_connection_status_table[status].str;
+}
+inline static canopy_ws_connection_status ws_connection_statum_string(const char* str, int len) {
+    int i;
+    for (i = 0; i < sizeof(ws_connection_status_table); i++) {
+        int tl = sizeof(ws_connection_status_table[i].str);
+        int small = LOCAL_MIN(len, tl);
+        if (strncmp(str, ws_connection_status_table[i].str, small) == 0) {
+            return ws_connection_status_table[i].status;
+        }
+    }
+    return CANOPY_WS_CONNECTION_STATUS_INVALID;
+}
+
+
+
+/*******************************************************************
+ * Parameters to use when talking to a remote.
+ */
+typedef struct canopy_remote_params {
+    canopy_credential_type   credential_type;
+    char                     *name;        // user's username or device id
+    char                     *password;    // user's password or device secret
+    uint16_t                 http_port;    // 0 for default
+    uint16_t                 https_port;   // 0 for default
+    bool                     use_http;     // true to use HTTP
+    bool                     skip_cert_check;// true to ignore SSL cert errors
+    canopy_auth_type         auth_type;    // Defaults to BASIC
+    char                     *remote;      // hostname or IP  of remote server
+    bool                     use_ws;       // hint: use websockets if available
+    bool                     persistent;   // hint: keep comm channel open
+} canopy_remote_params_t;
+
+/*
+ * canopy_remote:
+ *         used to hold information about the remote we're using.
+ *         The details of how to connect to the remote is passed in as part
+ *         of the params.
+ */
+typedef struct canopy_remote {
+    struct canopy_remote            *next;        /* pointer to next remote */
+    struct canopy_context           *ctx;        /* back pointer to the context */
+    struct canopy_remote_params     *params;       /* params for this remote */
+
+    /* general purpose buffer needs to be supplied by client     */
+    char						    *rcv_buffer;
+    size_t						    rcv_buffer_size;
+    int							    rcv_end;
+
+    canopy_ws_connection_status     ws_status;
+    bool                            ws_connected; /* currently connection WS */
+    canopy_active_status            active_status;
+    cos_time_t                      last_activity;
+} canopy_remote_t;
+
 
 
 /*****************************************************************************/
@@ -783,6 +816,7 @@ extern canopy_error canopy_get_self_user(canopy_remote_t *remote,
 #define CANOPY_NOTE_MAX_LENGTH 1024
 #define CANOPY_FRIENDLY_NAME_MAX_LENGTH 128
 #define CANOPY_UUID_MAX_LENGTH 36
+#define CANOPY_SECRET_KEY_LENGTH    128
 
 /*
  * canopy_device:
@@ -791,7 +825,8 @@ extern canopy_error canopy_get_self_user(canopy_remote_t *remote,
  */
 typedef struct canopy_device {
     struct canopy_device	*next;        /* hung off of User or remote */
-    char					uuid[CANOPY_UUID_MAX_LENGTH];        /* the uuid of the device */
+    char                    uuid[CANOPY_UUID_MAX_LENGTH];        /* the uuid of the device */
+    char                    secret_key[CANOPY_SECRET_KEY_LENGTH];        /* the secret key of the device */
     char					friendly_name[CANOPY_FRIENDLY_NAME_MAX_LENGTH];
     bool					friendly_name_dirty;
     char					location_note[CANOPY_NOTE_MAX_LENGTH];

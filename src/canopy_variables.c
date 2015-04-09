@@ -373,7 +373,7 @@ canopy_error c_json_parse_vardcl(struct canopy_device *device,
      * The JSON returned parses to the following structure.
      * 	{type = JSMN_STRING, start = 6, end = 15, size = 1}, 	var_decls
      *	{type = JSMN_OBJECT, start = 19, end = 68, size = 2}, 		{
-     *	{type = JSMN_STRING, start = 31, end = 48, size = 0}, 			 out bool test_var
+     *	{type = JSMN_STRING, start = 31, end = 48, size = 0}, 			 out bool test_var :
      *	{type = JSMN_OBJECT, start = 50, end = 62, size = 0}, 			{
      *
      * or
@@ -414,21 +414,22 @@ canopy_error c_json_parse_vardcl(struct canopy_device *device,
      */
     COS_ASSERT(token[offset].type == JSMN_OBJECT);
     int n_decls = token[offset].size;
-    COS_ASSERT((n_decls % 2) == 0);
+    // COS_ASSERT((n_decls % 2) == 0);
     offset++;
-    for (i = 0; i < (n_decls / 2); i++) {
+    for (i = 0; i < (n_decls); i++) {
         char dir[32];
         char type[32];
         char name[128];
         memset(&dir, 0, sizeof(dir));
         memset(&type, 0, sizeof(type));
         memset(&name, 0, sizeof(name));
+        memset(&buffer, 0, sizeof(buffer));
 
         /*
          * the token at offset should be the string we need to parse,
          */
         COS_ASSERT(token[offset].type == JSMN_STRING);
-        COS_ASSERT(token[offset].size == 0);
+        COS_ASSERT(token[offset].size == 1);
         strncpy(buffer, &js[token[offset].start], (token[offset].end - token[offset].start));
         buffer[(token[offset].start - token[offset].end)] = '\0';
 
@@ -528,7 +529,7 @@ canopy_error c_json_emit_vars(struct canopy_device *device,
     while (var != NULL) {
         char * name = var->name;
         canopy_var_datatype type = var->type;
-        memset(buffer, 0, sizeof(buffer));
+        memset(&buffer, 0, sizeof(buffer));
 
         /*
          * Check to see if the variable has been set.  If it hasn't

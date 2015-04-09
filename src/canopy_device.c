@@ -421,6 +421,7 @@ canopy_error c_json_parse_device(struct canopy_device *device,
     int count;
     int next_token;
     canopy_error err = CANOPY_SUCCESS;
+    char buf[CANOPY_NOTE_MAX_LENGTH];
 
     COS_ASSERT(device != NULL);
     COS_ASSERT(device->remote != NULL);
@@ -436,17 +437,29 @@ canopy_error c_json_parse_device(struct canopy_device *device,
      * The parse says that there are 'count' first level tags.
      */
     for (i = 0; i < count; i++) {
-        int len;
+        int sizeof_name;
+        memset(name, 0, sizeof(name));
+        sizeof_name = sizeof(name);
 
         COS_ASSERT(token[offset].type == JSMN_STRING);
-        len = (token[offset].end - token[offset].start);
-        strncpy(name, &js[token[offset].start], len);
-        name[len + 1] = '\0';
+        strncpy(name, &js[token[offset].start], (token[offset].end - token[offset].start));
+        /*
+         * We don't need to do this because we memset the name to 0s already
+         */
+        //  name[len + 1] = '\0';
 
         /*
          * Find the tag, and process what is found
          */
-        if (strncmp(name, TAG_VAR_DECLS, len) == 0) {
+        if (strncmp(name, TAG_STATUS, sizeof_name) == 0) {
+            err = c_json_parse_remote_status(device,
+                    (char*)js, js_len, /* the input JSON and total length  */
+                    token, tok_len, /* token array with length */
+                    offset, /* token offset for name status */
+                    &next_token);
+            offset = next_token;
+
+        } else if (strncmp(name, TAG_VAR_DECLS, sizeof_name) == 0) {
             err = c_json_parse_vardcl(device,
                     (char*)js, js_len, /* the input JSON and total length  */
                     token, tok_len, /* token array with length */
@@ -455,7 +468,7 @@ canopy_error c_json_parse_device(struct canopy_device *device,
                     false); /* expect outer-most object */
             offset = next_token;
 
-        } else if (strncmp(name, TAG_VARS, len) == 0) {
+        } else if (strncmp(name, TAG_VARS, sizeof_name) == 0) {
             err = c_json_parse_vars(device,
                     (char*)js, js_len, /* the input JSON and total length  */
                     token, tok_len, /* token array with length */
@@ -464,8 +477,8 @@ canopy_error c_json_parse_device(struct canopy_device *device,
                     false); /* expect outer-most object */
             offset = next_token;
 
-        } else if (strncmp(name, TAG_RESULT, len) == 0) {
-            offset++;
+        } else if (strncmp(name, TAG_RESULT, sizeof_name) == 0) {
+            offset++; /* the thing following the name */
             int ok = strncmp(&js[token[offset].start], "ok", (token[offset].end - token[offset].start));
             int error = strncmp(&js[token[offset].start], "error", (token[offset].end - token[offset].start));
             if (ok == 0 || error == 0) {
@@ -476,11 +489,91 @@ canopy_error c_json_parse_device(struct canopy_device *device,
             }
             offset++;
 
+        } else if (strncmp(name, TAG_DEVICE_ID, sizeof_name) == 0) {
+            memset(&buf, 0, sizeof(buf));
+            offset++; /* the device id as a string */
+            COS_ASSERT(token[offset].type == JSMN_STRING);
+            COS_ASSERT(token[offset].size == 0);
+            strncpy(buf, &js[token[offset].start], (token[offset].end - token[offset].start));
+            strncpy(device->uuid, buf, sizeof(device->uuid));
+
+            offset++; /* to the next name tag */
+
+        } else if (strncmp(name, TAG_FRIENDLY_NAME, sizeof_name) == 0) {
+            memset(&buf, 0, sizeof(buf));
+            offset++; /* the device id as a string */
+            COS_ASSERT(token[offset].type == JSMN_STRING);
+            COS_ASSERT(token[offset].size == 0);
+            strncpy(buf, &js[token[offset].start], (token[offset].end - token[offset].start));
+            strncpy(device->friendly_name, buf, sizeof(device->friendly_name));
+            device->friendly_name_dirty = false;
+
+            offset++; /* to the next name tag */
+
+        } else if (strncmp(name, TAG_LOCATION_NOTE, sizeof_name) == 0) {
+            memset(&buf, 0, sizeof(buf));
+            offset++; /* the device id as a string */
+            COS_ASSERT(token[offset].type == JSMN_STRING);
+            COS_ASSERT(token[offset].size == 0);
+            strncpy(buf, &js[token[offset].start], (token[offset].end - token[offset].start));
+            strncpy(device->location_note, buf, sizeof(device->location_note));
+            device->location_note_dirty = false;
+
+            offset++; /* to the next name tag */
+
+        } else if (strncmp(name, TAG_DEVICE_SECRET_KEY, sizeof_name) == 0) {
+            memset(&buf, 0, sizeof(buf));
+            offset++; /* the device id as a string */
+            COS_ASSERT(token[offset].type == JSMN_STRING);
+            COS_ASSERT(token[offset].size == 0);
+            strncpy(buf, &js[token[offset].start], (token[offset].end - token[offset].start));
+            strncpy(device->secret_key, buf, sizeof(device->secret_key));
+
+            offset++; /* to the next name tag */
+
         } else {
+            int j;
+
             /*
              * The tag's not implemented, we need to look at the size of the
+             * tag string, then check the type to handle other objects.
              *
+             * The increment of offset gets us to the token after the name
+             * string.
              */
+            offset++; /* the thing following the name string */
+            if (token[offset].type == JSMN_STRING) {
+                COS_ASSERT(token[offset].size == 0);
+                offset++; /* to the next name */
+
+            } else if (token[offset].type == JSMN_OBJECT) {
+
+                /*
+                 * This isn't right, since OBJECTS an contain other OBJECTS
+                 */
+                for (j = 0; j < token[offset].size; j++) {
+
+
+                    offset++;
+                }
+
+
+            } else if (token[offset].type == JSMN_ARRAY) {
+
+                /*
+                 * HACK:  This code assumes that the array is empty.  This is
+                 * currently true, since the TAG related to this is
+                 * "notifs"
+                 */
+                COS_ASSERT(token[offset].size == 0);
+                offset++;
+
+            } else if (token[offset].type == JSMN_PRIMITIVE) {
+
+                COS_ASSERT(token[offset].size == 0);
+                offset++;
+
+            }
 
         }
 

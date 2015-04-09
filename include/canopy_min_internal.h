@@ -267,9 +267,7 @@ canopy_error c_json_emit_vars(struct canopy_device *device,
 
 
 /***************************************************************************
- * 	c_json_parse_vars(struct canopy_device *device,
- *		char* js, int js_len, jsmntok_t *token, int tok_len,
- *		int current)
+ * 	c_json_parse_vars()
  *
  * 		parses the JSON vardecl tag from the server to register the variables that are registered
  * 	with the device. (in canopy_variables.c)
@@ -283,17 +281,28 @@ canopy_error c_json_parse_vars(struct canopy_device *device,
 
 
 /***************************************************************************
- * 	c_json_parse_device(struct canopy_device *device,
- *		char* js, int js_len, jsmntok_t *token, int tok_len,
- *		int current)
+ *  c_json_parse_device)
  *
- * 		parses the JSON vardecl tag from the server to register the variables that are registered
- * 	with the device. (in canopy_device.c)
+ *      parses the JSON vardecl tag from the server to register the variables that are registered
+ *  with the device. (in canopy_device.c)
  */
 canopy_error c_json_parse_device(struct canopy_device *device,
-		char* js, int js_len, 			/* the input JSON and total length  */
-		jsmntok_t *token, int tok_len,	/* token array with length */
-		bool *result_code,				/* the value of "result : " */
-		bool check_obj);				/* expect outer-most object */
+        char* js, int js_len,           /* the input JSON and total length  */
+        jsmntok_t *token, int tok_len,  /* token array with length */
+        bool *result_code,              /* the value of "result : " */
+        bool check_obj);                /* expect outer-most object */
+
+/***************************************************************************
+ *  c_json_parse_remote_status()
+ *
+ *      parses the JSON vardecl tag from the server to register the variables that are registered
+ *  with the device. (in canopy_remote.c)
+ */
+canopy_error c_json_parse_remote_status(struct canopy_device *device,
+        char* js, int js_len,           /* the input JSON and total length  */
+        jsmntok_t *token, int tok_len,  /* token array with length */
+        int name_offset,                /* token offset for name vardecl */
+        int *next_token);                /* the token after the decls */
+
 
 #endif	/* CANOPY_MIN_INTERNAL_INCLUDED */
