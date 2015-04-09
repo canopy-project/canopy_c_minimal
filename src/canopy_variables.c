@@ -188,9 +188,16 @@ canopy_error canopy_device_var_declare(canopy_device_t *device,
 
     struct canopy_var *tmp = find_name(device, name);
     if (tmp != NULL) {
-        cos_log(LOG_LEVEL_DEBUG,
-                "variable already in use in call to canopy_device_var_declare()");
-        return CANOPY_ERROR_VAR_IN_USE;
+        /*
+         * We found the variable, check to see if something's different
+         */
+        if (tmp->direction != direction) {
+            cos_log(LOG_LEVEL_DEBUG, "dir %d doesn't match: %d\n", direction, tmp->direction);
+        }
+        if (tmp->type != type) {
+            cos_log(LOG_LEVEL_DEBUG, "type %d doesn't match: %d\n", type, tmp->type);
+        }
+        return CANOPY_SUCCESS;
     }
 
     var = create_variable(device, direction, type, name);
