@@ -25,7 +25,9 @@ NEEDED_H_FILES	= \
         ../include/canopy_min.h \
         ../include/canopy_os.h
 
-default: $(PROGRAM_FILES)
+default: all
+
+all: $(PROGRAM_FILES)
 
 toaster: toaster.c $(NEEDED_H_FILES)
 	$(CC) $(CFLAGS) toaster.c -g -o toaster $(LIBS)

@@ -828,7 +828,7 @@ extern canopy_error canopy_get_self_user(canopy_remote_t *remote,
 
 #define CANOPY_NOTE_MAX_LENGTH 1024
 #define CANOPY_FRIENDLY_NAME_MAX_LENGTH 128
-#define CANOPY_UUID_MAX_LENGTH 36
+#define CANOPY_DEVICE_ID_MAX_LENGTH 36
 #define CANOPY_SECRET_KEY_LENGTH    128
 
 /*
@@ -838,7 +838,7 @@ extern canopy_error canopy_get_self_user(canopy_remote_t *remote,
  */
 typedef struct canopy_device {
     struct canopy_device    *next;        /* hung off of User or remote */
-    char                    uuid[CANOPY_UUID_MAX_LENGTH];
+    char                    device_id[CANOPY_DEVICE_ID_MAX_LENGTH];
     char                    secret_key[CANOPY_SECRET_KEY_LENGTH];
     char                    friendly_name[CANOPY_FRIENDLY_NAME_MAX_LENGTH];
     bool                    friendly_name_dirty;
@@ -861,8 +861,8 @@ typedef struct canopy_device {
  *
  *      <remote> configures the remote to use for syncing with the cloud.
  *
- *      <uuid> is the UUID of this device.  If NULL, a random type-4 UUID will
- *          be assigned.
+ *      <device_id> is the ID of this device.  If NULL, a random type-4 UUID
+ *          will be assigned.
  *
  * Typically canopy_get_self_device() should be used instead, which initializes
  * a new device by pulling from the remote.
@@ -870,7 +870,7 @@ typedef struct canopy_device {
 extern canopy_error canopy_device_init(
         canopy_device_t *device, 
         canopy_remote_t *remote,
-        const char *uuid);
+        const char *device_id);
 
 /*
  * Get device's friendly name.  This is a local operation that does not

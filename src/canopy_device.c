@@ -101,7 +101,7 @@ static void _clear_dirty_flags(struct canopy_device *device) {
  *
  */
 canopy_error canopy_device_init(struct canopy_device *device,
-        struct canopy_remote *remote, const char *uuid) {
+        struct canopy_remote *remote, const char *device_id) {
 
     COS_ASSERT(device != NULL);
     memset(device, 0, sizeof(struct canopy_device));
@@ -110,13 +110,6 @@ canopy_error canopy_device_init(struct canopy_device *device,
      * assertion in the variable code that checks for null;
      */
     device->remote = remote;
-
-    if (uuid == NULL) {
-        // TODO: generate type-4 UUID
-        uuid = "17d1f84e-18a7-4c56-90b6-30105f38faf4";
-    }
-    strncpy(device->uuid, uuid, CANOPY_UUID_MAX_LENGTH);
-    device->uuid[CANOPY_UUID_MAX_LENGTH - 1] = '\0';
 
     return CANOPY_SUCCESS;
 }
@@ -540,7 +533,7 @@ canopy_error c_json_parse_device(struct canopy_device *device,
             COS_ASSERT(token[offset].type == JSMN_STRING);
             COS_ASSERT(token[offset].size == 0);
             strncpy(buf, &js[token[offset].start], (token[offset].end - token[offset].start));
-            strncpy(device->uuid, buf, sizeof(device->uuid));
+            strncpy(device->device_id, buf, sizeof(device->device_id));
 
             offset++; /* to the next name tag */
 

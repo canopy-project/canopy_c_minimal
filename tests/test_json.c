@@ -166,7 +166,7 @@ int test_vardcl_output() {
         return -2;
     }
 
-    struct canopy_var out_var;
+    struct canopy_var *out_var;
     err = canopy_device_var_declare(&device,
             CANOPY_VAR_OUT,
             CANOPY_VAR_DATATYPE_BOOL,
@@ -435,7 +435,7 @@ static int process_vars(const char*  js) {
         return -2;
     }
 
-    struct canopy_var out_var;
+    struct canopy_var *out_var;
     err = canopy_device_var_declare(&device,
             CANOPY_VAR_OUT,
             CANOPY_VAR_DATATYPE_FLOAT32,
@@ -599,7 +599,7 @@ static int process_device_object(const char*  js) {
         return -2;
     }
 
-    struct canopy_var out_var;
+    struct canopy_var *out_var;
     err = canopy_device_var_declare(&device,
             CANOPY_VAR_IN,
             CANOPY_VAR_DATATYPE_FLOAT32,
