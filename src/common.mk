@@ -15,7 +15,7 @@
 
 CFLAGS_INCLUDES	 += -I. -I../include -Ijsmn
 
-CFLAGS 		= $(CFLAGS_INCLUDES) -g -Wall -Werror -fPIC
+CFLAGS 		= $(CFLAGS_INCLUDES) -Os -Wall -Werror -fPIC
 
 OBJ_FILES := \
  		canopy_filters.o    \
@@ -37,9 +37,13 @@ NEEDED_H_FILES	=	../include/canopy_min.h    \
                     
 
 default: $(SO_TARGET) $(A_TARGET)
+	$(MAKE) -C linux
+	$(MAKE) -C jsmn
 
 clean:
 	rm -rf *.o *.d *.so *.a
+	$(MAKE) -C linux clean
+	$(MAKE) -C jsmn clean
 
 install:
 	@echo "Copying libraries"

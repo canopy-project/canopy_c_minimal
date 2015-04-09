@@ -14,20 +14,19 @@
 
 
 
-all:
-	$(MAKE) -C src
-	$(MAKE) -C src/linux
-	$(MAKE) -C src/jsmn
+all: linux
+
+linux:
+	$(MAKE) -C src -f Makefile.linux
+
+arm-linux-gnueabi:
+	$(MAKE) -C src -f Makefile.arm-linux-gnueabi
 
 clean:
-	$(MAKE) -C src clean
-	$(MAKE) -C src/linux clean
-	$(MAKE) -C src/jsmn clean
+	$(MAKE) -C src -f common.mk clean
 
 install:
 	$(MAKE) -C src install
-	$(MAKE) -C src/linux install
-	$(MAKE) -C src/jsmn install
     
 
 
