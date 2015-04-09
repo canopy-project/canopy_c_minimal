@@ -116,7 +116,7 @@ int main(void) {
         goto cleanup;
     } else {
         cos_log(LOG_LEVEL_INFO, "darkness is %f\n", darkness_val);
-        cos_log(LOG_LEVEL_INFO, "last updated %d\n", time);
+        cos_log(LOG_LEVEL_INFO, "last updated %llu\n", time);
     }
 
 

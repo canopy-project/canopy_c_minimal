@@ -888,6 +888,7 @@ canopy_error c_json_parse_vars(struct canopy_device *device, char* js,
                 return CANOPY_ERROR_FATAL;
             } /* switch(type) */
 
+            var->set = true;
         } else {
 
             /*
