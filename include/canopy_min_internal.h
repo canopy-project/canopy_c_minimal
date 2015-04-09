@@ -75,12 +75,14 @@ canopy_error canopy_cleanup_remote(struct canopy_remote *remote);
 /******************************************************************************
  * 	JSON stuff.
  */
+#define MAX_JSON_STACK_DEPTH 128
 struct c_json_state {
 	char	*buffer;	/* the buffr being built in */
 	int		buffer_len;	/* how big is the raw buffer */
 	int		offset;		/* where the \0 is */
 	int		indent;
-	bool	separator_needed; /* when true, a separator may be needed*/
+    bool    prepend_separator[MAX_JSON_STACK_DEPTH];
+    int     stack_depth;
 };
 
 #if 0

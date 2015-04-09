@@ -28,6 +28,7 @@ struct c_json_state {
 	int buffer_len; /* how big is the raw buffer */
 	int offset; /* offset where the \0 is relative to the start of the buffer*/
 	int indent;
+    bool separator_needed[MAX_JSON_STACK_DEPTH];
 };
 #endif
 
@@ -62,6 +63,7 @@ int c_json_buffer_init(struct c_json_state *state, char *buffer, int len) {
 	state->buffer_len = len;
 	state->offset = 0;
 	state->indent = 0;
+	state->stack_depth = 0;
 	return C_JSON_OK;
 }
 
@@ -87,6 +89,8 @@ static int check_buffer_length(struct c_json_state *state) {
 /******************************************************************************
  * Emits
  * 		{
+ * or (if state->prepend_separator[state->stack_depth] is true):
+ * 		, {
  */
 int c_json_emit_open_object(struct c_json_state *state) {
 	if (check_buffer_length(state) != 0) {
@@ -95,10 +99,14 @@ int c_json_emit_open_object(struct c_json_state *state) {
 		return C_JSON_BUFFER_OVERFLOW;
 	}
 	snprintf(&state->buffer[state->offset], state->buffer_len - state->offset,
-			"%s{\n", indent_spaces[state->indent]);
-	// snprintf(&state->buffer[state->offset], state->buffer_len - state->offset, "\n    {\n");
+			"%s%s{\n", indent_spaces[state->indent],
+            (state->prepend_separator[state->stack_depth] ? ", " : ""));
 	state->indent++;
 	state->offset = strlen(state->buffer);
+
+	state->stack_depth++;
+    COS_ASSERT(state->stack_depth < MAX_JSON_STACK_DEPTH);
+    state->prepend_separator[state->stack_depth] = false;
 	return C_JSON_OK;
 }
 
@@ -115,14 +123,18 @@ int c_json_emit_close_object(struct c_json_state *state) {
 	state->indent--;
 	snprintf(&state->buffer[state->offset], state->buffer_len - state->offset,
 			"%s}\n", indent_spaces[state->indent]);
-	// snprintf(&state->buffer[state->offset], state->buffer_len - state->offset, "\n    }\n");
 	state->offset = strlen(state->buffer);
+
+    COS_ASSERT(state->stack_depth > 0);
+    state->stack_depth--;
+    state->prepend_separator[state->stack_depth] = true;
 	return C_JSON_OK;
 }
 
 /******************************************************************************
  * Emits
  * 		[
+ * 	(TBD how should commas be generated?)
  */
 int c_json_emit_open_array(struct c_json_state *state) {
 	if (check_buffer_length(state) != 0) {
@@ -132,9 +144,9 @@ int c_json_emit_open_array(struct c_json_state *state) {
 	}
 	snprintf(&state->buffer[state->offset], state->buffer_len - state->offset,
 			"%s[\n", indent_spaces[state->indent]);
-	// snprintf(&state->buffer[state->offset], state->buffer_len - state->offset, "\n    [\n");
 	state->indent++;
 	state->offset = strlen(state->buffer);
+
 	return C_JSON_OK;
 }
 
@@ -153,12 +165,15 @@ int c_json_emit_close_array(struct c_json_state *state) {
 			"%s]\n", indent_spaces[state->indent]);
 	// snprintf(&state->buffer[state->offset], state->buffer_len - state->offset, "\n    ]\n");
 	state->offset = strlen(state->buffer);
+    state->prepend_separator[state->stack_depth] = true;
 	return C_JSON_OK;
 }
 
 /******************************************************************************
  * Emits:
  * 		"name" : value
+ * or (if state->prepend_separator[state->stack_depth] is true):
+ * 		, "name" : value
  */
 int c_json_emit_name_and_value(struct c_json_state *state, char *name,
 		char *value) {
@@ -168,14 +183,19 @@ int c_json_emit_name_and_value(struct c_json_state *state, char *name,
 		return C_JSON_BUFFER_OVERFLOW;
 	}
 	snprintf(&state->buffer[state->offset], state->buffer_len - state->offset,
-			"%s\"%s\" : %s  \n", indent_spaces[state->indent], name, value);
+			"%s%s\"%s\" : %s  \n", indent_spaces[state->indent], 
+            (state->prepend_separator[state->stack_depth] ? ", " : ""),
+            name, value);
 	state->offset = strlen(state->buffer);
+    state->prepend_separator[state->stack_depth] = true;
 	return C_JSON_OK;
 }
 
 /******************************************************************************
- * emits:
+ * Emits:
  * 		"name" : {
+ * or (if state->prepend_separator[state->stack_depth] is true):
+ * 		, "name" : {
  */
 int c_json_emit_name_and_object(struct c_json_state *state, char *name) {
 	if (check_buffer_length(state) != 0) {
@@ -184,15 +204,23 @@ int c_json_emit_name_and_object(struct c_json_state *state, char *name) {
 		return C_JSON_BUFFER_OVERFLOW;
 	}
 	snprintf(&state->buffer[state->offset], state->buffer_len - state->offset,
-			"%s\"%s\" : {  \n", indent_spaces[state->indent], name);
+			"%s%s\"%s\" : {  \n", indent_spaces[state->indent],
+            (state->prepend_separator[state->stack_depth] ? ", " : ""),
+            name);
 	state->indent++;
 	state->offset = strlen(state->buffer);
+
+	state->stack_depth++;
+    COS_ASSERT(state->stack_depth < MAX_JSON_STACK_DEPTH);
+    state->prepend_separator[state->stack_depth] = false;
 	return C_JSON_OK;
 }
 
 /******************************************************************************
- * emits:
+ * Emits:
  * 		"name" : [
+ * or (if state->prepend_separator[state->stack_depth] is true):
+ * 		, "name" : [
  */
 int c_json_emit_name_and_array(struct c_json_state *state, char *name) {
 	if (check_buffer_length(state) != 0) {
@@ -201,7 +229,9 @@ int c_json_emit_name_and_array(struct c_json_state *state, char *name) {
 		return C_JSON_BUFFER_OVERFLOW;
 	}
 	snprintf(&state->buffer[state->offset], state->buffer_len - state->offset,
-			"%s\"%s\" : [  \n", indent_spaces[state->indent], name);
+			"%s%s\"%s\" : [  \n", indent_spaces[state->indent], 
+            (state->prepend_separator[state->stack_depth] ? ", " : ""),
+            name);
 	state->indent++;
 	state->offset = strlen(state->buffer);
 	return C_JSON_OK;

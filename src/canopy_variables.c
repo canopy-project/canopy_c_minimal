@@ -306,6 +306,20 @@ canopy_error c_json_emit_vardcl(struct canopy_device *device,
         cos_log(LOG_LEVEL_DEBUG, "unable to emit var_decls err: %d\n", err);
         return CANOPY_ERROR_JSON;
     }
+    /*
+     *
+     *  {
+     *      "var_decls" : {
+     *          "out float32 foobar" : {
+     *          },
+     *          "out float32 foobar" : {
+     *          }
+     *      },
+     *      "key2" : {
+     *      }
+     *  }
+     *
+     */
 
     var = device->vars;
     while (var != NULL) {
