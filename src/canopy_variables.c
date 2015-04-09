@@ -168,6 +168,7 @@ static struct canopy_var * create_variable(canopy_device_t *device,
     var->name[CANOPY_VAR_NAME_MAX_LENGTH - 1] = '\0';
     var->direction = direction;
     var->type = type;
+    var->dirty = false;
     var->set = false;
     var->val.type = type;
 
@@ -176,7 +177,7 @@ static struct canopy_var * create_variable(canopy_device_t *device,
 
 
 /*****************************************************
- * canopy_device_var_init()
+ * canopy_device_var_declare()
  */
 canopy_error canopy_device_var_declare(canopy_device_t *device,
         canopy_var_direction direction,
@@ -529,7 +530,8 @@ canopy_error c_json_parse_vardcl(struct canopy_device *device,
  */
 canopy_error c_json_emit_vars(struct canopy_device *device,
         struct c_json_state *state,
-        bool emit_obj) {
+        bool emit_obj,
+        bool clear_dirty) {
 
     int err = CANOPY_SUCCESS;
     struct canopy_var *var;
@@ -560,6 +562,19 @@ canopy_error c_json_emit_vars(struct canopy_device *device,
         if (!var->set) {
             var = var->next;
             continue;
+        }
+
+        /*
+         * Only send variables that have changed since last sync (i.e. "dirty"
+         * variables).
+         */
+        if (!var->dirty) {
+            var = var->next;
+            continue;
+        }
+
+        if (clear_dirty) {
+            var->dirty = false;
         }
 
         switch (type) {
@@ -915,6 +930,7 @@ canopy_error canopy_var_set_bool(struct canopy_var *var, bool value) {
     var_val->type = CANOPY_VAR_DATATYPE_BOOL;
     var_val->value.val_bool = value;
     var->set = true;
+    var->dirty = true;
     return CANOPY_SUCCESS;
 }
 
@@ -926,6 +942,7 @@ canopy_error canopy_var_set_int8(struct canopy_var *var, int8_t value) {
     var_val->type = CANOPY_VAR_DATATYPE_INT8;
     var_val->value.val_int8 = value;
     var->set = true;
+    var->dirty = true;
     return CANOPY_SUCCESS;
 }
 
@@ -937,6 +954,7 @@ canopy_error canopy_var_set_int16(struct canopy_var *var, int16_t value) {
     var_val->type = CANOPY_VAR_DATATYPE_INT16;
     var_val->value.val_int16 = value;
     var->set = true;
+    var->dirty = true;
     return CANOPY_SUCCESS;
 }
 
@@ -948,6 +966,7 @@ canopy_error canopy_var_set_int32(struct canopy_var *var, int32_t value) {
     var_val->type = CANOPY_VAR_DATATYPE_INT32;
     var_val->value.val_int32 = value;
     var->set = true;
+    var->dirty = true;
     return CANOPY_SUCCESS;
 }
 
@@ -959,7 +978,7 @@ canopy_error canopy_var_set_uint8(struct canopy_var *var, uint8_t value) {
     var_val->type = CANOPY_VAR_DATATYPE_BOOL;
     var_val->value.val_uint8 = value;
     var->set = true;
-    cos_get_time(&var->last);
+    var->dirty = true;
     return CANOPY_SUCCESS;
 }
 
@@ -971,6 +990,7 @@ canopy_error canopy_var_set_uint16(struct canopy_var *var, uint16_t value) {
     var_val->type = CANOPY_VAR_DATATYPE_UINT16;
     var_val->value.val_uint16 = value;
     var->set = true;
+    var->dirty = true;
     return CANOPY_SUCCESS;
 }
 
@@ -982,6 +1002,7 @@ canopy_error canopy_var_set_uint32(struct canopy_var *var, uint32_t value) {
     var_val->type = CANOPY_VAR_DATATYPE_UINT32;
     var_val->value.val_bool = value;
     var->set = true;
+    var->dirty = true;
     return CANOPY_SUCCESS;
 }
 
@@ -993,6 +1014,7 @@ canopy_error canopy_var_set_datetime(struct canopy_var *var, cos_time_t value) {
     var_val->type = CANOPY_VAR_DATATYPE_DATETIME;
     var_val->value.val_time = value;
     var->set = true;
+    var->dirty = true;
     return CANOPY_SUCCESS;
 }
 
@@ -1004,6 +1026,7 @@ canopy_error canopy_var_set_float32(struct canopy_var *var, float value) {
     var_val->type = CANOPY_VAR_DATATYPE_FLOAT32;
     var_val->value.val_float = value;
     var->set = true;
+    var->dirty = true;
     return CANOPY_SUCCESS;
 }
 
@@ -1015,6 +1038,7 @@ canopy_error canopy_var_set_float64(struct canopy_var *var, double value) {
     var_val->type = CANOPY_VAR_DATATYPE_FLOAT64;
     var_val->value.val_double = value;
     var->set = true;
+    var->dirty = true;
     return CANOPY_SUCCESS;
 }
 
@@ -1028,6 +1052,7 @@ canopy_error canopy_var_set_string(struct canopy_var *var, const char *value,
     strncpy(var_val->value.val_string, value,
             sizeof(var_val->value.val_string));
     var->set = true;
+    var->dirty = true;
     return CANOPY_SUCCESS;
 }
 

@@ -1214,14 +1214,15 @@ typedef struct canopy_var_value canopy_var_value_t;
 
 #define CANOPY_VAR_NAME_MAX_LENGTH 128
 struct canopy_var {
-    struct canopy_var         *next;    /* linked list of variables, hung off device */
-    struct canopy_device     *device;
-    canopy_var_direction     direction;
-    canopy_var_datatype     type;    /* duplicate of type in the value */
+    struct canopy_var       *next;    /* linked list of variables, hung off device */
+    struct canopy_device    *device;
+    canopy_var_direction    direction;
+    canopy_var_datatype     type;     /* duplicate of type in the value */
     char name[CANOPY_VAR_NAME_MAX_LENGTH];
-    bool                     set;    /* This variable has been set */
-    cos_time_t                last;    /* when was it changed with remote */
-    struct canopy_var_value    val;      /* yes, not a pointer, real storage */
+    bool                    set;      /* This variable has been set */
+    bool                    dirty;    /* Variable needs to be sent to remote */
+    cos_time_t              last;     /* when was it changed with remote */
+    struct canopy_var_value val;      /* yes, not a pointer, real storage */
 };
 // typedef struct canopy_var canopy_var_t;
 

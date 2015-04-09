@@ -219,12 +219,16 @@ canopy_error c_json_parse_vardcl(struct canopy_device *device,
 /***************************************************************************
  * 	c_json_emit_vars(struct canopy_device *device, struct c_json_state *state)
  *
- * 		creates the JSON  request to register the variables that are registered
+ * 	Creates the JSON  request to register the variables that are registered
  * 	with the device. (in canopy_variables.c)
+ *
+ * 	If <clear_dirty> is true, then the dirty flags are cleared for all emitted
+ * 	variables.
  */
 canopy_error c_json_emit_vars(struct canopy_device *device,
 		struct c_json_state *state,
-		bool emit_obj);
+		bool emit_obj,
+        bool clear_dirty);
 
 
 /***************************************************************************

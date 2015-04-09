@@ -52,7 +52,7 @@ static canopy_error _construct_device_sync_payload(canopy_device_t *device,
         return err;
     }
 
-    err = c_json_emit_vars(device, &state, false);
+    err = c_json_emit_vars(device, &state, false, true);
     if (err != CANOPY_SUCCESS) {
         return err;
     }
