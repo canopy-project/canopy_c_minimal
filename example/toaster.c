@@ -35,6 +35,7 @@ int main(void) {
     canopy_device_t device;
     struct canopy_var *temp_sensor;
     struct canopy_var *darkness;
+    struct canopy_var *reboot;
     float darkness_val;
     cos_time_t time;
 
@@ -100,6 +101,22 @@ int main(void) {
         goto cleanup;
     }
 
+    err = canopy_device_var_declare(&device,
+            CANOPY_VAR_IN,
+            CANOPY_VAR_DATATYPE_BOOL,
+            "reboot",
+            &reboot);
+    if (err != CANOPY_SUCCESS) {
+        cos_log(LOG_LEVEL_ERROR, "Error initializing var reboot: %s\n", canopy_error_string(err));
+        goto cleanup;
+    }
+
+    err = canopy_var_set_bool(reboot, true);
+    if (err != CANOPY_SUCCESS) {
+        cos_log(LOG_LEVEL_ERROR, "Error setting reboot to true: %s\n", canopy_error_string(err));
+        goto cleanup;
+    }
+
     // sync with remote (blocking)
     err = canopy_device_sync_with_remote(&remote, &device, NULL);
     if (err != CANOPY_SUCCESS) {
@@ -116,6 +133,19 @@ int main(void) {
         goto cleanup;
     } else {
         cos_log(LOG_LEVEL_INFO, "darkness is %f\n", darkness_val);
+        cos_log(LOG_LEVEL_INFO, "last updated %llu\n", time);
+    }
+
+    // read reboot
+    bool bool_val;
+    err = canopy_var_get_bool(reboot, &bool_val, &time);
+    if (err == CANOPY_ERROR_VAR_NOT_SET) {
+        cos_log(LOG_LEVEL_INFO, "reboot not set\n");
+    } else if (err != CANOPY_SUCCESS) {
+        cos_log(LOG_LEVEL_ERROR, "Error reading reboot\n", canopy_error_string(err));
+        goto cleanup;
+    } else {
+        cos_log(LOG_LEVEL_INFO, "reboot is %d\n", darkness_val);
         cos_log(LOG_LEVEL_INFO, "last updated %llu\n", time);
     }
 

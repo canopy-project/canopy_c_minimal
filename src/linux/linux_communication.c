@@ -146,6 +146,9 @@ canopy_error canopy_http_perform(
         goto cleanup;
     }
 
+    cos_log(LOG_LEVEL_DEBUG, "Returned from: %s%s:\n%s\n\n", remote_name, api, rcv_buffer);
+
+
     *rcv_end = private.offset;
     if (status_code != NULL) {
         long status_code_long;
