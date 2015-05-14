@@ -769,6 +769,17 @@ canopy_error c_json_parse_vars(struct canopy_device *device, char* js,
      */
     COS_ASSERT(token[offset].type == JSMN_OBJECT);
     int n_vars = token[offset].size;
+    if (n_vars == 0) {
+        /*
+         * If there's no declarations, update the offset and return
+         */
+        cos_log(LOG_LEVEL_DEBUG, "number of variables is 0\n");
+        offset++;
+        *next_token = offset;
+        return CANOPY_SUCCESS;
+    }
+
+
     offset++;
     for (i = 0; i < n_vars; i++) {
         cos_time_t remote_time;
