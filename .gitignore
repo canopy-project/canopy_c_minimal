@@ -19,7 +19,10 @@
 *.d
 *.so
 *.a
+
 src/mrvl
+src/Makefile.mrvl
+
 
 *~
 *.tws
