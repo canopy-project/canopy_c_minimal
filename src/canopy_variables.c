@@ -429,7 +429,7 @@ canopy_error c_json_parse_vardcl(struct canopy_device *device,
 
     /*
      * We should be at the object after the decls.  The size of this object indicates
-     * the number of entries in the list times 2.
+     * the number of entries in the list.
      * 		The first thing should be a string that has the specification in it.  Its size should be 0.
      * 		The next token is the object, which also should have a size of 0.
      *
@@ -437,7 +437,16 @@ canopy_error c_json_parse_vardcl(struct canopy_device *device,
      */
     COS_ASSERT(token[offset].type == JSMN_OBJECT);
     int n_decls = token[offset].size;
-    // COS_ASSERT((n_decls % 2) == 0);
+
+    if (n_decls == 0) {
+        /*
+         * If there's no declarations, update the offset and return
+         */
+        cos_log(LOG_LEVEL_DEBUG, "number of declarations is 0\n");
+        offset++;
+        *next_token = offset;
+        return err;
+    }
     offset++;
     for (i = 0; i < (n_decls); i++) {
         char dir[32];
