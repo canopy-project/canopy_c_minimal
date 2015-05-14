@@ -179,5 +179,64 @@ canopy_error canopy_barrier_is_complete(canopy_barrier_t *barrier) {
 	return CANOPY_ERROR_NOT_IMPLEMENTED;
 }
 
+
+/*
+ * canopy_init_device_client
+ */
+#define DEFAULT_REMOTE_BUFFER_SIZE 16384
+canopy_error canopy_init_device_client(canopy_context_t *ctx,
+        struct canopy_remote_params *params,
+        canopy_remote_t *remote,
+        canopy_device_t *device,
+        canopy_barrier_t *barrier) {
+
+    canopy_error err;
+    char *rcv_buffer = NULL;
+    bool ctx_initialized = false;
+    bool remote_initialized = false;
+
+    // Initialize context
+    err = canopy_ctx_init(ctx, -1);
+    if (err) {
+        return err;
+    }
+    ctx_initialized = true;
+
+    // Configure remote
+    rcv_buffer = cos_alloc(DEFAULT_REMOTE_BUFFER_SIZE);
+    if (!rcv_buffer) {
+        err = CANOPY_ERROR_OUT_OF_MEMORY;
+        goto fail;
+    }
+    err = canopy_remote_init(
+            ctx,
+            params, 
+            rcv_buffer, 
+            DEFAULT_REMOTE_BUFFER_SIZE, 
+            remote);
+    if (err) {
+        goto fail;
+    }
+    remote_initialized = true;
+
+    // Fetch authenticated device
+    err = canopy_get_self_device(remote, device, barrier);
+    if (err) {
+        goto fail;
+    }
+
+    return CANOPY_SUCCESS;
+fail:
+    if (rcv_buffer != NULL) {
+        cos_free(rcv_buffer);
+    }
+    if (remote_initialized) {
+        canopy_remote_shutdown(remote);
+    }
+    if (ctx_initialized) {
+        canopy_ctx_shutdown(ctx);
+    }
+    return err;
+}
 /******************************************************************************/
 

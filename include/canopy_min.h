@@ -1304,6 +1304,24 @@ canopy_error canopy_var_get_string(struct canopy_var *var,
         char *buf, size_t len,    /* buf is null terminated */
         cos_time_t *last_time);
 
+/****************************************************************************
+ * UTILITY FUNCTIONS
+ */
+
+/*
+ * Helper routine that initializizes the library when you plan to make API
+ * requests on behalf of a Device.  This routine:
+ *
+ *  - Initializes a Context
+ *  - Configures a Remote
+ *  - Fetches the authenticated Device
+ */
+extern canopy_error canopy_init_device_client(canopy_context_t *ctx,
+        struct canopy_remote_params *params,
+        canopy_remote_t *remote,
+        canopy_device_t *device,
+        canopy_barrier_t *barrier);
+
 #ifdef __cplusplus
 }
 #endif
