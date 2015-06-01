@@ -103,7 +103,8 @@ static void _clear_dirty_flags(struct canopy_device *device) {
 canopy_error canopy_device_init(struct canopy_device *device,
         struct canopy_remote *remote, const char *device_id) {
 
-    COS_ASSERT(device != NULL);
+    C_COND_FATAL_RETURN(device != NULL, CANOPY_ERROR_USAGE);
+
     memset(device, 0, sizeof(struct canopy_device));
     /*
      * It's OK that the remote is null....  Well not really, the'res an

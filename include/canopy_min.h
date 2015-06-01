@@ -90,6 +90,9 @@ typedef enum {
     /* there's been an error emiting a JSON string */
     CANOPY_ERROR_JSON,
 
+    /* caller made a mistake */
+    CANOPY_ERROR_USAGE,
+
     /* Network error, either HTTP of websocket */
     CANOPY_ERROR_NETWORK,
 } canopy_error;

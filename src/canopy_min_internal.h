@@ -31,6 +31,37 @@ canopy_error canopy_cleanup_remote(struct canopy_remote *remote);
 
 /******************************************************************************/
 
+#define C_COND_LOG_RETURN(cond, loglevel, msg, rval) \
+    do { \
+        if (cond) { \
+            cos_log(loglevel, msg); \
+            return rval; \
+        } \
+    } while (0)
+
+#define C_COND_FATAL_RETURN(cond, rval) \
+    do { \
+        if (cond) { \
+            cos_log(LOG_LEVEL_FATAL, #cond); \
+            return rval; \
+        } \
+    } while (0)
+
+#define C_COND_ERROR_RETURN(cond, rval) \
+    do { \
+        if (cond) { \
+            cos_log(LOG_LEVEL_ERROR, #cond); \
+            return rval; \
+        } \
+    } while (0)
+
+#define C_COND_WARN_RETURN(cond, rval) \
+    do { \
+        if (cond) { \
+            cos_log(LOG_LEVEL_WARN, #cond); \
+            return rval; \
+        } \
+    } while (0)
 
 /******************************************************************************
  * JSON 'tags'
