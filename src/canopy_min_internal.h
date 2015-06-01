@@ -29,11 +29,12 @@
 canopy_error canopy_cleanup_remote(struct canopy_remote *remote);
 
 
-/******************************************************************************/
-
+/******************************************************************************
+ * Macros for error logging and returns.
+ */
 #define C_COND_LOG_RETURN(cond, loglevel, msg, rval) \
     do { \
-        if (cond) { \
+        if (!(cond)) { \
             cos_log(loglevel, msg); \
             return rval; \
         } \
@@ -41,24 +42,24 @@ canopy_error canopy_cleanup_remote(struct canopy_remote *remote);
 
 #define C_COND_FATAL_RETURN(cond, rval) \
     do { \
-        if (cond) { \
-            cos_log(LOG_LEVEL_FATAL, #cond); \
+        if (!(cond)) { \
+            cos_log(LOG_LEVEL_FATAL, #cond "\n"); \
             return rval; \
         } \
     } while (0)
 
 #define C_COND_ERROR_RETURN(cond, rval) \
     do { \
-        if (cond) { \
-            cos_log(LOG_LEVEL_ERROR, #cond); \
+        if (!(cond)) { \
+            cos_log(LOG_LEVEL_ERROR, #cond "\n"); \
             return rval; \
         } \
     } while (0)
 
 #define C_COND_WARN_RETURN(cond, rval) \
     do { \
-        if (cond) { \
-            cos_log(LOG_LEVEL_WARN, #cond); \
+        if (!(cond)) { \
+            cos_log(LOG_LEVEL_WARN, #cond "\n"); \
             return rval; \
         } \
     } while (0)

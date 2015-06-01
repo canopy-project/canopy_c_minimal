@@ -40,7 +40,7 @@ int main(void) {
     cos_time_t time;
 
     // Initialize canopy ctx
-    err = canopy_ctx_init(&ctx, 0);
+    err = canopy_ctx_init(&ctx);
     if (err != CANOPY_SUCCESS) {
         cos_log(LOG_LEVEL_ERROR, "Error initializing ctx: %s\n", canopy_error_string(err));
         exit(-1);

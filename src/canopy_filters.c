@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#ifdef GENERAL_PURPOSE_LIBRARY
+
 #include	<stdint.h>
 #include	<stdbool.h>
 
@@ -187,4 +189,4 @@ static void append(canopy_filter_root_t *root, canopy_filter_t *ft) {
 
 }
 
-
+#endif

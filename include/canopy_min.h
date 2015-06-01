@@ -138,10 +138,6 @@ inline static const char *canopy_error_string(canopy_error err) {
  * details may change in the future.
  */
 typedef struct canopy_context {
-
-    /* used with the status reporting stuff */
-    int update_period;
-
     /* List of remotes known to the library.  This may not be needed. */
     struct canopy_remote *remotes;
 
@@ -156,47 +152,13 @@ typedef struct canopy_context {
  * Returns CANOPY_ERROR_INCOMPATIBLE_LIBRARY_VERSION if the version of the
  * library you have linked with is incompatible with the header file you are
  * using.
- *
- *      <update_period> is the rate in seconds at which the library updates the
- *      state of things from the remotes.
  */
-extern canopy_error canopy_ctx_init(canopy_context_t *ctx,
-        int update_period);
+extern canopy_error canopy_ctx_init(canopy_context_t *ctx);
 
 // Shutdown context
 // Closes any connections that might still be open.
 // Frees any allocated memory
 extern canopy_error canopy_ctx_shutdown(canopy_context_t *ctx);
-
-// Set logging options for a context.
-//
-// <enabled> enables/disables logging.  Defaults to false.
-//
-// <logfile> specifies the name of the file to log to.  Pass in NULL to
-// use stderr or the system's default logging destination.  Defaults to
-// NULL.
-//
-// <level> defines the logging level.  See canopy_os.h for level definitions.
-extern canopy_error canopy_ctx_set_logging(canopy_context_t *ctx,
-        bool enabled,
-        const char *logfile,
-        int level);
-
-// Get the logging options for a context.
-//
-// <enabled> is a pointer to a bool, or NULL to not read this option.
-//
-// <logfile> is a pointer to a buffer at least <logfile_len> bytes long, or
-// NULL to not read this option.  This call will set the string to an empty
-// string if the default log destination is in use.
-//
-// <level> is a pointer to an int, or NULL to not read this option.
-extern canopy_error canopy_ctx_get_logging(canopy_context_t *ctx,
-        bool *enabled,
-        char **logfile,
-        size_t *logfile_len,
-        int *level);
-
 
 /*****************************************************************************/
 // BARRIERS
@@ -230,6 +192,9 @@ typedef struct canopy_barrier {
 typedef canopy_error (*canopy_barrier_cb)(struct canopy_barrier *barrier,
         void *userdata);
 
+// WARNING! WARNING!
+// Barriers are not implemented in this version of the library.
+//
 // WARNING! WARNING!
 // Stack-scoped barriers can be used, but you must call either
 // canopy_barrier_wait_for_complete() or canopy_barrier_cancel() before
@@ -299,7 +264,7 @@ extern canopy_error canopy_barrier_get_user(canopy_barrier_t *barrier,
 
 
 /*****************************************************************************/
-// PERMISSIONS
+// PERMISSIONS (TBD)
 //
 //  Results returned from the server are the "intersection" of objects that
 //  meet three criteria:
@@ -330,10 +295,10 @@ extern canopy_error canopy_barrier_get_user(canopy_barrier_t *barrier,
 //  curl -u "TOASTER:SECRET" https://dev02.canopy.link/api/device/self/devices
 //
 
-
-typedef struct canopy_permissions {
-    // TBD
-} canopy_permissions_t;
+/* typedef struct canopy_permissions {
+ *    // TBD
+ * } canopy_permissions_t;
+ */
 
 /*****************************************************************************/
 
@@ -516,6 +481,8 @@ typedef struct canopy_remote {
  *      (temperature > 40 && temperature < 80.5) || system.ws_connected == false
  */
 
+#ifdef GENERAL_PURPOSE_LIBRARY
+
 /******************************************************
  *  TERM FILTERS
  */
@@ -692,6 +659,7 @@ typedef struct canopy_query {
     canopy_limits_t *limits;
 } canopy_query_t;
 
+#endif // GENERAL_PURPOSE_LIBRARY
 
 /*****************************************************************************/
 
@@ -742,7 +710,9 @@ extern canopy_error canopy_remote_init(canopy_context_t *ctx,
  */
 extern canopy_error canopy_remote_shutdown(canopy_remote_t *remote);
 
-/* Get the remote's clock in milliseconds.  The returned value has no relation
+/* NOT YET IMPLEMENTED
+ *
+ * Get the remote's clock in milliseconds.  The returned value has no relation
  * to wall clock time, but is monotonically increasing and is reported
  * consistently by the remote to anyone who asks.
  */
@@ -750,16 +720,7 @@ extern canopy_error canopy_remote_get_time(canopy_remote_t *remote,
         cos_time_t *time,
         canopy_barrier_t *barrier);
 
-/* Get our version of the remote's clock in milliseconds.  This is based on the
- * time obtained the last time canopy_remote_get_clock_time was called, plus
- * however much time has elapsed since then.
- *
- * Returns CANOPY_ERROR_AGAIN if canopy_remote_get_time() has never been
- * called for <remote>.
- */
-extern canopy_error canopy_get_local_time(canopy_remote_t *remote,
-        cos_time_t *time);
-
+#ifdef GENERAL_PURPOSE_LIBRARY
 /*
  *
  * Get a list of devices from the server based on the filters in a device query
@@ -787,6 +748,7 @@ extern canopy_error canopy_remote_get_devices(canopy_remote_t *remote,
         size_t max_count, 
         struct canopy_device **devices,
         struct canopy_barrier *barrier);
+#endif // GENERAL_PURPOSE_LIBRARY
 
 /******************************************************************************
  * Get the device based on the authentication information provided to
@@ -823,9 +785,11 @@ extern canopy_error canopy_get_self_device(canopy_remote_t *remote,
  *  <barrier> will store a new barrier object that can be used to obtain the
  *  result when it is ready.
  */
+#ifdef GENERAL_PURPOSE_LIBRARY
 extern canopy_error canopy_get_self_user(canopy_remote_t *remote,
         struct canopy_user *user,
         canopy_barrier_t *barrier);
+#endif // GENERAL_PURPOSE_LIBRARY
 
 /*****************************************************************************/
 // DEVICE
@@ -976,6 +940,8 @@ extern canopy_error canopy_device_get_active_status (
  * list.
  */
 
+
+#ifdef GENERAL_PURPOSE_LIBRARY
 typedef struct canopy_user {
     struct canopy_user *next;
     canopy_remote_t *remote;
@@ -1051,9 +1017,11 @@ extern canopy_error canopy_user_sync_with_remote(
         canopy_remote_t *remote,
         canopy_barrier_t *barrier);
 
+#endif // GENERAL_PURPOSE_LIBRARY
 /*****************************************************************************/
 // QUERIES
 
+#ifdef GENERAL_PURPOSE_LIBRARY
 /*
  * Get list of devices based on a query.
  *
@@ -1098,6 +1066,7 @@ extern canopy_error canopy_user_users(
         canopy_query_t *query,
         canopy_barrier_t *barrier);
 
+#endif // GENERAL_PURPOSE_LIBRARY
 /*****************************************************************************/
 
 /* 
@@ -1197,7 +1166,7 @@ inline static canopy_var_datatype datatype_from_string(const char* str, int len)
 /*
  * Canopy var value
  */
-#define CANOPY_VAR_VALUE_MAX_LENGTH 128
+#define CANOPY_VAR_VALUE_MAX_LENGTH 2048
 struct canopy_var_value {
     canopy_var_datatype type;
     union {
