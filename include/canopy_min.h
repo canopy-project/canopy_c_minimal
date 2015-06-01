@@ -119,6 +119,7 @@ const static struct canopy_error_strings canopy_error_strings_table[] = {
         {CANOPY_ERROR_OUT_OF_MEMORY, "out of memory"},
         {CANOPY_ERROR_BUFFER_TOO_SMALL, "buffer too small"},
         {CANOPY_ERROR_JSON, "could not emit a JSON string"},
+        {CANOPY_ERROR_USAGE, "improper use by calling code"},
         {CANOPY_ERROR_NETWORK, "network error"},
 };
 
