@@ -255,17 +255,17 @@ canopy_error canopy_device_get_var_by_name(canopy_device_t *device,
     if (device == NULL) {
         cos_log(LOG_LEVEL_FATAL,
                 "device is null in call to canopy_device_get_var_by_name()");
-        return CANOPY_ERROR_BAD_PARAM;
+        return CANOPY_ERROR_USAGE;
     }
     if (var_name == NULL) {
         cos_log(LOG_LEVEL_FATAL,
                 "var_name is null in call to canopy_device_get_var_by_name()");
-        return CANOPY_ERROR_BAD_PARAM;
+        return CANOPY_ERROR_USAGE;
     }
     if (var == NULL) {
         cos_log(LOG_LEVEL_FATAL,
                 "var is null in call to canopy_device_get_var_by_name()");
-        return CANOPY_ERROR_BAD_PARAM;
+        return CANOPY_ERROR_USAGE;
     }
 
     struct canopy_var *dev_var;
@@ -389,8 +389,8 @@ canopy_error c_json_parse_vardcl(struct canopy_device *device,
     int err = CANOPY_SUCCESS;
     int i;
 
-    COS_ASSERT(device != NULL);
-    COS_ASSERT(device->remote != NULL);
+    ASSERTION_CHECK(device != NULL, CANOPY_ERROR_USAGE);
+    ASSERTION_CHECK(device->remote != NULL, CANOPY_ERROR_USAGE);
 
     /*
      * The JSON returned parses to the following structure.
@@ -421,10 +421,9 @@ canopy_error c_json_parse_vardcl(struct canopy_device *device,
      *
      */
 
-    COS_ASSERT(token[offset].type == JSMN_STRING);
-    COS_ASSERT( strncmp((const char*) &js[token[offset].start], TAG_VAR_DECLS, \
-                            (token[offset].end - token[offset].start)) == 0);
-    COS_ASSERT(token[offset].size == 1);
+    ASSERTION_CHECK(token[offset].type == JSMN_STRING, CANOPY_ERROR_PROTOCOL);
+    ASSERTION_CHECK(strncmp((const char*) &js[token[offset].start], TAG_VAR_DECLS, (token[offset].end - token[offset].start)) == 0, CANOPY_ERROR_PROTOCOL);
+    ASSERTION_CHECK(token[offset].size == 1, CANOPY_ERROR_PROTOCOL);
     offset++;
 
     /*
@@ -435,7 +434,7 @@ canopy_error c_json_parse_vardcl(struct canopy_device *device,
      *
      * repeat as necessary.........
      */
-    COS_ASSERT(token[offset].type == JSMN_OBJECT);
+    ASSERTION_CHECK(token[offset].type == JSMN_OBJECT, CANOPY_ERROR_PROTOCOL);
     int n_decls = token[offset].size;
 
     if (n_decls == 0) {
@@ -460,8 +459,8 @@ canopy_error c_json_parse_vardcl(struct canopy_device *device,
         /*
          * the token at offset should be the string we need to parse,
          */
-        COS_ASSERT(token[offset].type == JSMN_STRING);
-        COS_ASSERT(token[offset].size == 1);
+        ASSERTION_CHECK(token[offset].type == JSMN_STRING, CANOPY_ERROR_PROTOCOL);
+        ASSERTION_CHECK(token[offset].size == 1, CANOPY_ERROR_PROTOCOL);
         strncpy(buffer, &js[token[offset].start], (token[offset].end - token[offset].start));
         buffer[(token[offset].start - token[offset].end)] = '\0';
 
@@ -521,8 +520,8 @@ canopy_error c_json_parse_vardcl(struct canopy_device *device,
         /*
          * Now there should be an empty object...
          */
-        COS_ASSERT(token[offset].type == JSMN_OBJECT);
-        COS_ASSERT(token[offset].size == 0);
+        ASSERTION_CHECK(token[offset].type == JSMN_OBJECT, CANOPY_ERROR_PROTOCOL);
+        ASSERTION_CHECK(token[offset].size == 0, CANOPY_ERROR_PROTOCOL);
         offset++;
     } /* decl loop */
 
@@ -688,8 +687,8 @@ canopy_error c_json_parse_vars(struct canopy_device *device, char* js,
     char primative[128];
     char time[128];
 
-    COS_ASSERT(device != NULL);
-    COS_ASSERT(device->remote != NULL);
+    ASSERTION_CHECK(device != NULL, CANOPY_ERROR_USAGE);
+    ASSERTION_CHECK(device->remote != NULL, CANOPY_ERROR_USAGE);
 
     /*
      * 		JSON.  This is how
@@ -749,10 +748,10 @@ canopy_error c_json_parse_vars(struct canopy_device *device, char* js,
     /*
      * Verify the thing starts with "vars"
      */
-    COS_ASSERT(token[offset].type == JSMN_STRING);
-    COS_ASSERT(
-            strncmp((const char*) &js[token[offset].start], TAG_VARS, (token[offset].end - token[offset].start)) == 0);
-    COS_ASSERT(token[offset].size == 1);
+    ASSERTION_CHECK(token[offset].type == JSMN_STRING, CANOPY_ERROR_PROTOCOL);
+    ASSERTION_CHECK(
+            strncmp((const char*) &js[token[offset].start], TAG_VARS, (token[offset].end - token[offset].start)) == 0, CANOPY_ERROR_PROTOCOL);
+    ASSERTION_CHECK(token[offset].size == 1, CANOPY_ERROR_PROTOCOL);
     offset++;
 
     /*
@@ -767,7 +766,7 @@ canopy_error c_json_parse_vars(struct canopy_device *device, char* js,
      *
      * repeat as necessary.........
      */
-    COS_ASSERT(token[offset].type == JSMN_OBJECT);
+    ASSERTION_CHECK(token[offset].type == JSMN_OBJECT, CANOPY_ERROR_PROTOCOL);
     int n_vars = token[offset].size;
     if (n_vars == 0) {
         /*
@@ -790,35 +789,35 @@ canopy_error c_json_parse_vars(struct canopy_device *device, char* js,
         /*
          * the token at offset should be the string we need to parse,
          */
-        COS_ASSERT(token[offset].type == JSMN_STRING);
-        COS_ASSERT(token[offset].size == 1);
+        ASSERTION_CHECK(token[offset].type == JSMN_STRING, CANOPY_ERROR_PROTOCOL);
+        ASSERTION_CHECK(token[offset].size == 1, CANOPY_ERROR_PROTOCOL);
         strncpy(name, &js[token[offset].start],
                 (token[offset].end - token[offset].start));
         name[(token[offset].start - token[offset].end)] = '\0';
         offset++;
 
-        COS_ASSERT(token[offset].type == JSMN_OBJECT);
-        COS_ASSERT(token[offset].size == 2);
+        ASSERTION_CHECK(token[offset].type == JSMN_OBJECT, CANOPY_ERROR_PROTOCOL);
+        ASSERTION_CHECK(token[offset].size == 2, CANOPY_ERROR_PROTOCOL);
         offset++;
 
-        COS_ASSERT(token[offset].type == JSMN_STRING);
-        COS_ASSERT(
-                strncmp((const char*) &js[token[offset].start], TAG_T, (token[offset].end - token[offset].start)) == 0);
-        COS_ASSERT(token[offset].size == 1);
+        ASSERTION_CHECK(token[offset].type == JSMN_STRING, CANOPY_ERROR_PROTOCOL);
+        ASSERTION_CHECK(
+                strncmp((const char*) &js[token[offset].start], TAG_T, (token[offset].end - token[offset].start)) == 0, CANOPY_ERROR_PROTOCOL);
+        ASSERTION_CHECK(token[offset].size == 1, CANOPY_ERROR_PROTOCOL);
         offset++;
 
-        COS_ASSERT(token[offset].type == JSMN_PRIMITIVE);
-        COS_ASSERT(token[offset].size == 0);
+        ASSERTION_CHECK(token[offset].type == JSMN_PRIMITIVE, CANOPY_ERROR_PROTOCOL);
+        ASSERTION_CHECK(token[offset].size == 0, CANOPY_ERROR_PROTOCOL);
         strncpy(time, &js[token[offset].start],
                 (token[offset].end - token[offset].start));
         time[(token[offset].start - token[offset].end)] = '\0';
         remote_time = atoll(time);
         offset++;
 
-        COS_ASSERT(token[offset].type == JSMN_STRING);
-        COS_ASSERT(
-                strncmp((const char*) &js[token[offset].start], TAG_V, (token[offset].end - token[offset].start)) == 0);
-        COS_ASSERT(token[offset].size == 1);
+        ASSERTION_CHECK(token[offset].type == JSMN_STRING, CANOPY_ERROR_PROTOCOL);
+        ASSERTION_CHECK(
+                strncmp((const char*) &js[token[offset].start], TAG_V, (token[offset].end - token[offset].start)) == 0, CANOPY_ERROR_PROTOCOL);
+        ASSERTION_CHECK(token[offset].size == 1, CANOPY_ERROR_PROTOCOL);
         offset++;
 
         if (token[offset].type == JSMN_PRIMITIVE) {
@@ -826,9 +825,9 @@ canopy_error c_json_parse_vars(struct canopy_device *device, char* js,
         } else if (token[offset].type == JSMN_STRING) {
 
         } else {
-            COS_ASSERT("type wrong in parse vars" == NULL);
+            ASSERTION_CHECK("type wrong in parse vars" == NULL, CANOPY_ERROR_PROTOCOL);
         }
-        COS_ASSERT(token[offset].size == 0);
+        ASSERTION_CHECK(token[offset].size == 0, CANOPY_ERROR_PROTOCOL);
         strncpy(primative, &js[token[offset].start],
                 (token[offset].end - token[offset].start));
         primative[(token[offset].start - token[offset].end)] = '\0';
@@ -945,7 +944,7 @@ canopy_error c_json_parse_vars(struct canopy_device *device, char* js,
 canopy_error canopy_var_set_bool(struct canopy_var *var, bool value) {
     struct canopy_var_value *var_val = &var->val;
     if (var->type != CANOPY_VAR_DATATYPE_BOOL) {
-        return CANOPY_ERROR_BAD_PARAM;
+        return CANOPY_ERROR_USAGE;
     }
     var_val->type = CANOPY_VAR_DATATYPE_BOOL;
     var_val->value.val_bool = value;
@@ -957,7 +956,7 @@ canopy_error canopy_var_set_bool(struct canopy_var *var, bool value) {
 canopy_error canopy_var_set_int8(struct canopy_var *var, int8_t value) {
     struct canopy_var_value *var_val = &var->val;
     if (var->type != CANOPY_VAR_DATATYPE_INT8) {
-        return CANOPY_ERROR_BAD_PARAM;
+        return CANOPY_ERROR_USAGE;
     }
     var_val->type = CANOPY_VAR_DATATYPE_INT8;
     var_val->value.val_int8 = value;
@@ -969,7 +968,7 @@ canopy_error canopy_var_set_int8(struct canopy_var *var, int8_t value) {
 canopy_error canopy_var_set_int16(struct canopy_var *var, int16_t value) {
     struct canopy_var_value *var_val = &var->val;
     if (var->type != CANOPY_VAR_DATATYPE_INT16) {
-        return CANOPY_ERROR_BAD_PARAM;
+        return CANOPY_ERROR_USAGE;
     }
     var_val->type = CANOPY_VAR_DATATYPE_INT16;
     var_val->value.val_int16 = value;
@@ -981,7 +980,7 @@ canopy_error canopy_var_set_int16(struct canopy_var *var, int16_t value) {
 canopy_error canopy_var_set_int32(struct canopy_var *var, int32_t value) {
     struct canopy_var_value *var_val = &var->val;
     if (var->type != CANOPY_VAR_DATATYPE_INT32) {
-        return CANOPY_ERROR_BAD_PARAM;
+        return CANOPY_ERROR_USAGE;
     }
     var_val->type = CANOPY_VAR_DATATYPE_INT32;
     var_val->value.val_int32 = value;
@@ -993,7 +992,7 @@ canopy_error canopy_var_set_int32(struct canopy_var *var, int32_t value) {
 canopy_error canopy_var_set_uint8(struct canopy_var *var, uint8_t value) {
     struct canopy_var_value *var_val = &var->val;
     if (var->type != CANOPY_VAR_DATATYPE_UINT8) {
-        return CANOPY_ERROR_BAD_PARAM;
+        return CANOPY_ERROR_USAGE;
     }
     var_val->type = CANOPY_VAR_DATATYPE_BOOL;
     var_val->value.val_uint8 = value;
@@ -1005,7 +1004,7 @@ canopy_error canopy_var_set_uint8(struct canopy_var *var, uint8_t value) {
 canopy_error canopy_var_set_uint16(struct canopy_var *var, uint16_t value) {
     struct canopy_var_value *var_val = &var->val;
     if (var->type != CANOPY_VAR_DATATYPE_UINT16) {
-        return CANOPY_ERROR_BAD_PARAM;
+        return CANOPY_ERROR_USAGE;
     }
     var_val->type = CANOPY_VAR_DATATYPE_UINT16;
     var_val->value.val_uint16 = value;
@@ -1017,7 +1016,7 @@ canopy_error canopy_var_set_uint16(struct canopy_var *var, uint16_t value) {
 canopy_error canopy_var_set_uint32(struct canopy_var *var, uint32_t value) {
     struct canopy_var_value *var_val = &var->val;
     if (var->type != CANOPY_VAR_DATATYPE_UINT32) {
-        return CANOPY_ERROR_BAD_PARAM;
+        return CANOPY_ERROR_USAGE;
     }
     var_val->type = CANOPY_VAR_DATATYPE_UINT32;
     var_val->value.val_bool = value;
@@ -1029,7 +1028,7 @@ canopy_error canopy_var_set_uint32(struct canopy_var *var, uint32_t value) {
 canopy_error canopy_var_set_datetime(struct canopy_var *var, cos_time_t value) {
     struct canopy_var_value *var_val = &var->val;
     if (var->type != CANOPY_VAR_DATATYPE_DATETIME) {
-        return CANOPY_ERROR_BAD_PARAM;
+        return CANOPY_ERROR_USAGE;
     }
     var_val->type = CANOPY_VAR_DATATYPE_DATETIME;
     var_val->value.val_time = value;
@@ -1041,7 +1040,7 @@ canopy_error canopy_var_set_datetime(struct canopy_var *var, cos_time_t value) {
 canopy_error canopy_var_set_float32(struct canopy_var *var, float value) {
     struct canopy_var_value *var_val = &var->val;
     if (var->type != CANOPY_VAR_DATATYPE_FLOAT32) {
-        return CANOPY_ERROR_BAD_PARAM;
+        return CANOPY_ERROR_USAGE;
     }
     var_val->type = CANOPY_VAR_DATATYPE_FLOAT32;
     var_val->value.val_float = value;
@@ -1053,7 +1052,7 @@ canopy_error canopy_var_set_float32(struct canopy_var *var, float value) {
 canopy_error canopy_var_set_float64(struct canopy_var *var, double value) {
     struct canopy_var_value *var_val = &var->val;
     if (var->type != CANOPY_VAR_DATATYPE_FLOAT64) {
-        return CANOPY_ERROR_BAD_PARAM;
+        return CANOPY_ERROR_USAGE;
     }
     var_val->type = CANOPY_VAR_DATATYPE_FLOAT64;
     var_val->value.val_double = value;
@@ -1066,7 +1065,7 @@ canopy_error canopy_var_set_string(struct canopy_var *var, const char *value,
         size_t len) {
     struct canopy_var_value *var_val = &var->val;
     if (var->type != CANOPY_VAR_DATATYPE_STRING) {
-        return CANOPY_ERROR_BAD_PARAM;
+        return CANOPY_ERROR_USAGE;
     }
     var_val->type = CANOPY_VAR_DATATYPE_STRING;
     strncpy(var_val->value.val_string, value,
@@ -1085,7 +1084,7 @@ bool *value, cos_time_t *last_time) {
         return CANOPY_ERROR_VAR_NOT_SET;
     }
     if (var->type != CANOPY_VAR_DATATYPE_BOOL) {
-        return CANOPY_ERROR_BAD_PARAM;
+        return CANOPY_ERROR_USAGE;
     }
     *value = var->val.value.val_bool;
     *last_time = var->last;
@@ -1099,7 +1098,7 @@ canopy_error canopy_var_get_int8(struct canopy_var *var, int8_t *value,
         return CANOPY_ERROR_VAR_NOT_SET;
     }
     if (var->type != CANOPY_VAR_DATATYPE_INT8) {
-        return CANOPY_ERROR_BAD_PARAM;
+        return CANOPY_ERROR_USAGE;
     }
     *value = var->val.value.val_int8;
     *last_time = var->last;
@@ -1113,7 +1112,7 @@ canopy_error canopy_var_get_int16(struct canopy_var *var, int16_t *value,
         return CANOPY_ERROR_VAR_NOT_SET;
     }
     if (var->type != CANOPY_VAR_DATATYPE_INT16) {
-        return CANOPY_ERROR_BAD_PARAM;
+        return CANOPY_ERROR_USAGE;
     }
     *value = var->val.value.val_int16;
     *last_time = var->last;
@@ -1127,7 +1126,7 @@ canopy_error canopy_var_get_int32(struct canopy_var *var, uint32_t *value,
         return CANOPY_ERROR_VAR_NOT_SET;
     }
     if (var->type != CANOPY_VAR_DATATYPE_INT32) {
-        return CANOPY_ERROR_BAD_PARAM;
+        return CANOPY_ERROR_USAGE;
     }
     *value = var->val.value.val_int32;
     *last_time = var->last;
@@ -1141,7 +1140,7 @@ canopy_error canopy_var_get_uint8(struct canopy_var *var, uint8_t *value,
         return CANOPY_ERROR_VAR_NOT_SET;
     }
     if (var->type != CANOPY_VAR_DATATYPE_UINT8) {
-        return CANOPY_ERROR_BAD_PARAM;
+        return CANOPY_ERROR_USAGE;
     }
     *value = var->val.value.val_uint8;
     *last_time = var->last;
@@ -1155,7 +1154,7 @@ canopy_error canopy_var_get_uint16(struct canopy_var *var, uint16_t *value,
         return CANOPY_ERROR_VAR_NOT_SET;
     }
     if (var->type != CANOPY_VAR_DATATYPE_UINT16) {
-        return CANOPY_ERROR_BAD_PARAM;
+        return CANOPY_ERROR_USAGE;
     }
     *value = var->val.value.val_uint16;
     *last_time = var->last;
@@ -1169,7 +1168,7 @@ canopy_error canopy_var_get_uint32(struct canopy_var *var, uint32_t *value,
         return CANOPY_ERROR_VAR_NOT_SET;
     }
     if (var->type != CANOPY_VAR_DATATYPE_UINT32) {
-        return CANOPY_ERROR_BAD_PARAM;
+        return CANOPY_ERROR_USAGE;
     }
     *value = var->val.value.val_uint32;
     *last_time = var->last;
@@ -1183,7 +1182,7 @@ canopy_error canopy_var_get_datetime(struct canopy_var *var, cos_time_t *value,
         return CANOPY_ERROR_VAR_NOT_SET;
     }
     if (var->type != CANOPY_VAR_DATATYPE_DATETIME) {
-        return CANOPY_ERROR_BAD_PARAM;
+        return CANOPY_ERROR_USAGE;
     }
     *value = var->val.value.val_time;
     *last_time = var->last;
@@ -1197,7 +1196,7 @@ canopy_error canopy_var_get_float32(struct canopy_var *var, float *value,
         return CANOPY_ERROR_VAR_NOT_SET;
     }
     if (var->type != CANOPY_VAR_DATATYPE_FLOAT32) {
-        return CANOPY_ERROR_BAD_PARAM;
+        return CANOPY_ERROR_USAGE;
     }
     *value = var->val.value.val_float;
     *last_time = var->last;
@@ -1211,7 +1210,7 @@ canopy_error canopy_var_get_float64(struct canopy_var *var, double *value,
         return CANOPY_ERROR_VAR_NOT_SET;
     }
     if (var->type != CANOPY_VAR_DATATYPE_FLOAT64) {
-        return CANOPY_ERROR_BAD_PARAM;
+        return CANOPY_ERROR_USAGE;
     }
     *value = var->val.value.val_double;
     *last_time = var->last;
@@ -1225,7 +1224,7 @@ canopy_error canopy_var_get_string(struct canopy_var *var, char *buf,
         return CANOPY_ERROR_VAR_NOT_SET;
     }
     if (var->type != CANOPY_VAR_DATATYPE_STRING) {
-        return CANOPY_ERROR_BAD_PARAM;
+        return CANOPY_ERROR_USAGE;
     }
     int shorter = LOCAL_MIN(len, sizeof(var->val.value.val_string));
     strncpy(buf, var->val.value.val_string, shorter);

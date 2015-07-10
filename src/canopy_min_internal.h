@@ -40,6 +40,14 @@ canopy_error canopy_cleanup_remote(struct canopy_remote *remote);
         } \
     } while (0)
 
+#define ASSERTION_CHECK(cond, rval) \
+    do { \
+        if (!(cond)) { \
+            cos_log(LOG_LEVEL_FATAL, #cond "\n"); \
+            return rval; \
+        } \
+    } while (0)
+
 #define C_COND_FATAL_RETURN(cond, rval) \
     do { \
         if (!(cond)) { \

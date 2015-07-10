@@ -60,9 +60,6 @@ typedef enum {
     // platform.
     CANOPY_ERROR_NOT_IMPLEMENTED,
 
-    // A bad parameter value was provided.
-    CANOPY_ERROR_BAD_PARAM,
-
     // An operation was requested on the wrong data type.
     CANOPY_ERROR_WRONG_TYPE,
 
@@ -95,6 +92,9 @@ typedef enum {
 
     /* Network error, either HTTP of websocket */
     CANOPY_ERROR_NETWORK,
+
+    /* protocol error from server.  This is fatal. */
+    CANOPY_ERROR_PROTOCOL,
 } canopy_error;
 
 struct canopy_error_strings {
@@ -109,7 +109,6 @@ const static struct canopy_error_strings canopy_error_strings_table[] = {
         {CANOPY_ERROR_INCOMPATIBLE_LIBRARY_VERSION,
                 "incompatible library version"},
         {CANOPY_ERROR_NOT_IMPLEMENTED, "not implemented yet"},
-        {CANOPY_ERROR_BAD_PARAM, "bad parameter"},
         {CANOPY_ERROR_WRONG_TYPE, "wrong datatype"},
         {CANOPY_ERROR_AGAIN, "try again"},
         {CANOPY_ERROR_CANCELLED, "operation was cancelled"},
@@ -121,6 +120,7 @@ const static struct canopy_error_strings canopy_error_strings_table[] = {
         {CANOPY_ERROR_JSON, "could not emit a JSON string"},
         {CANOPY_ERROR_USAGE, "improper use by calling code"},
         {CANOPY_ERROR_NETWORK, "network error"},
+        {CANOPY_ERROR_PROTOCOL, "server protocol error, fatal"},
 };
 
 inline static const char *canopy_error_string(canopy_error err) {

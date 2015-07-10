@@ -130,7 +130,7 @@ int test_vardcl_output() {
     canopy_remote_t remote;
 
 
-    canopy_error err = canopy_ctx_init(&ctx, 0);
+    canopy_error err = canopy_ctx_init(&ctx);
     if (err != CANOPY_SUCCESS) {
         cos_log(LOG_LEVEL_ERROR, "Error initializing ctx: %s\n", canopy_error_string(err));
         exit(-1);
@@ -254,7 +254,7 @@ static int proccess_var_decls(const char*  js) {
     canopy_device_t device;
 
     // Initialize canopy ctx
-    canopy_error err = canopy_ctx_init(&ctx, 0);
+    canopy_error err = canopy_ctx_init(&ctx);
     if (err != CANOPY_SUCCESS) {
         cos_log(LOG_LEVEL_ERROR, "Error initializing ctx: %s\n", canopy_error_string(err));
         exit(-1);
@@ -402,7 +402,7 @@ static int process_vars(const char*  js) {
     canopy_device_t device;
 
     // Initialize canopy ctx
-    canopy_error err = canopy_ctx_init(&ctx, 0);
+    canopy_error err = canopy_ctx_init(&ctx);
     if (err != CANOPY_SUCCESS) {
         cos_log(LOG_LEVEL_ERROR, "Error initializing ctx: %s\n", canopy_error_string(err));
         exit(-1);
@@ -566,7 +566,7 @@ static int process_device_object(const char*  js) {
     canopy_device_t device;
 
     // Initialize canopy ctx
-    canopy_error err = canopy_ctx_init(&ctx, 0);
+    canopy_error err = canopy_ctx_init(&ctx);
     if (err != CANOPY_SUCCESS) {
         cos_log(LOG_LEVEL_ERROR, "Error initializing ctx: %s\n", canopy_error_string(err));
         exit(-1);

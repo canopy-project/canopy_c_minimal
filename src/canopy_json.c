@@ -105,7 +105,7 @@ int c_json_emit_open_object(struct c_json_state *state) {
 	state->offset = strlen(state->buffer);
 
 	state->stack_depth++;
-    COS_ASSERT(state->stack_depth < MAX_JSON_STACK_DEPTH);
+	ASSERTION_CHECK(state->stack_depth < MAX_JSON_STACK_DEPTH, CANOPY_ERROR_USAGE);
     state->prepend_separator[state->stack_depth] = false;
 	return C_JSON_OK;
 }
@@ -125,7 +125,7 @@ int c_json_emit_close_object(struct c_json_state *state) {
 			"%s}\n", indent_spaces[state->indent]);
 	state->offset = strlen(state->buffer);
 
-    COS_ASSERT(state->stack_depth > 0);
+    ASSERTION_CHECK(state->stack_depth > 0, CANOPY_ERROR_USAGE);
     state->stack_depth--;
     state->prepend_separator[state->stack_depth] = true;
 	return C_JSON_OK;
@@ -211,7 +211,7 @@ int c_json_emit_name_and_object(struct c_json_state *state, char *name) {
 	state->offset = strlen(state->buffer);
 
 	state->stack_depth++;
-    COS_ASSERT(state->stack_depth < MAX_JSON_STACK_DEPTH);
+    ASSERTION_CHECK(state->stack_depth < MAX_JSON_STACK_DEPTH, CANOPY_ERROR_USAGE);
     state->prepend_separator[state->stack_depth] = false;
 	return C_JSON_OK;
 }

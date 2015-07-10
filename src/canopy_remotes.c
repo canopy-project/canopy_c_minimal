@@ -32,7 +32,7 @@
 canopy_error canopy_cleanup_remote(canopy_remote_t *remote) {
     if (remote == NULL) {
         cos_log(LOG_LEVEL_FATAL, "remote is null in call to canopy_cleanup_remote()");
-        return CANOPY_ERROR_BAD_PARAM;
+        return CANOPY_ERROR_USAGE;
     }
 
     return CANOPY_ERROR_NOT_IMPLEMENTED;
@@ -76,27 +76,27 @@ extern canopy_error canopy_remote_init(canopy_context_t *ctx,
 
     if (ctx == NULL) {
         cos_log(LOG_LEVEL_FATAL, "ctx is null in call to canopy_remote_init()");
-        return CANOPY_ERROR_BAD_PARAM;
+        return CANOPY_ERROR_USAGE;
     }
     if (rcv_buffer == NULL) {
         cos_log(LOG_LEVEL_FATAL, "rcv_buffer is null in call to canopy_remote_init()");
-        return CANOPY_ERROR_BAD_PARAM;
+        return CANOPY_ERROR_USAGE;
     }
     if (remote == NULL) {
         cos_log(LOG_LEVEL_FATAL, "remote is null in call to canopy_remote_init()");
-        return CANOPY_ERROR_BAD_PARAM;
+        return CANOPY_ERROR_USAGE;
     }
     if (params == NULL) {
         cos_log(LOG_LEVEL_FATAL, "params is null in call to canopy_remote_init()");
-        return CANOPY_ERROR_BAD_PARAM;
+        return CANOPY_ERROR_USAGE;
     }
     if (params->name == NULL || params->password == NULL) {
         cos_log(LOG_LEVEL_FATAL, "name/password is null in call to canopy_remote_init()");
-        return CANOPY_ERROR_BAD_PARAM;
+        return CANOPY_ERROR_USAGE;
     }
     if (params->remote == NULL) {
         cos_log(LOG_LEVEL_FATAL, "remote is null in call to canopy_remote_init()");
-        return CANOPY_ERROR_BAD_PARAM;
+        return CANOPY_ERROR_USAGE;
     }
 
     /*
@@ -139,7 +139,7 @@ extern canopy_error canopy_remote_init(canopy_context_t *ctx,
 canopy_error canopy_remote_shutdown(canopy_remote_t *remote) {
     if (remote == NULL) {
         cos_log(LOG_LEVEL_FATAL, "remote is null in call to canopy_remote_shutdown()");
-        return CANOPY_ERROR_BAD_PARAM;
+        return CANOPY_ERROR_USAGE;
     }
 
     return CANOPY_ERROR_NOT_IMPLEMENTED;
@@ -153,7 +153,7 @@ canopy_error canopy_remote_get_time(canopy_remote_t *remote,
         canopy_barrier_t *barrier) {
     if (remote == NULL) {
         cos_log(LOG_LEVEL_FATAL, "remote is null in call to canopy_remote_get_time()");
-        return CANOPY_ERROR_BAD_PARAM;
+        return CANOPY_ERROR_USAGE;
     }
 
     return CANOPY_ERROR_NOT_IMPLEMENTED;
@@ -169,7 +169,7 @@ canopy_error canopy_get_local_time(canopy_remote_t *remote,
         cos_time_t *time) {
     if (remote == NULL) {
         cos_log(LOG_LEVEL_FATAL, "remote is null in call to canopy_get_local_time()");
-        return CANOPY_ERROR_BAD_PARAM;
+        return CANOPY_ERROR_USAGE;
     }
 
     return CANOPY_ERROR_NOT_IMPLEMENTED;
@@ -195,17 +195,16 @@ canopy_error c_json_parse_remote_status(struct canopy_device *device,
     int offset = name_offset;
     char name[128];
     char primative[128];
-    COS_ASSERT(device != NULL);
+    ASSERTION_CHECK(device != NULL, CANOPY_ERROR_USAGE);
     struct canopy_remote *remote = device->remote;
-    COS_ASSERT(remote != NULL);
+    ASSERTION_CHECK(remote != NULL, CANOPY_ERROR_USAGE);
 
     /*
      * Verify the thing starts with "status"
      */
-    COS_ASSERT(token[offset].type == JSMN_STRING);
-    COS_ASSERT(
-            strncmp((const char*) &js[token[offset].start], TAG_STATUS, (token[offset].end - token[offset].start)) == 0);
-    COS_ASSERT(token[offset].size == 1);
+    ASSERTION_CHECK(token[offset].type == JSMN_STRING, CANOPY_ERROR_PROTOCOL);
+    ASSERTION_CHECK(strncmp((const char*) &js[token[offset].start], TAG_STATUS, (token[offset].end - token[offset].start)) == 0, CANOPY_ERROR_PROTOCOL);
+    ASSERTION_CHECK(token[offset].size == 1, CANOPY_ERROR_PROTOCOL);
     offset++;
 
     /*
@@ -225,7 +224,7 @@ canopy_error c_json_parse_remote_status(struct canopy_device *device,
      *      If the name is active_status, it's followed by a string
      *
      */
-    COS_ASSERT(token[offset].type == JSMN_OBJECT);
+    ASSERTION_CHECK(token[offset].type == JSMN_OBJECT, CANOPY_ERROR_PROTOCOL);
     int n_vars = token[offset].size;
     offset++;  /*  points to name */
     for (i = 0; i < n_vars; i++) {
@@ -233,7 +232,7 @@ canopy_error c_json_parse_remote_status(struct canopy_device *device,
         memset(&name, 0, sizeof(name));
         sizeof_name = sizeof(name);
 
-        COS_ASSERT(token[offset].type == JSMN_STRING);
+        ASSERTION_CHECK(token[offset].type == JSMN_STRING, CANOPY_ERROR_PROTOCOL);
         strncpy(name, &js[token[offset].start], (token[offset].end - token[offset].start));
 
         if (strncmp(name, TAG_WS_CONNECTED, sizeof_name) == 0) {
@@ -242,8 +241,8 @@ canopy_error c_json_parse_remote_status(struct canopy_device *device,
              * The next token should be a boolean.
              */
             offset++; /* boolean tag, which is a primitive, not a string */
-            COS_ASSERT(token[offset].type == JSMN_PRIMITIVE);
-            COS_ASSERT(token[offset].size == 0);
+            ASSERTION_CHECK(token[offset].type == JSMN_PRIMITIVE, CANOPY_ERROR_PROTOCOL);
+            ASSERTION_CHECK(token[offset].size == 0, CANOPY_ERROR_PROTOCOL);
             int t = strncmp(&js[token[offset].start], "true", (token[offset].end - token[offset].start));
             int f = strncmp(&js[token[offset].start], "false", (token[offset].end - token[offset].start));
             if (t || f) {
@@ -260,7 +259,7 @@ canopy_error c_json_parse_remote_status(struct canopy_device *device,
              * The next token should be a string.  It has a defined content.
              */
             offset++;
-            COS_ASSERT(token[offset].type == JSMN_STRING);
+            ASSERTION_CHECK(token[offset].type == JSMN_STRING, CANOPY_ERROR_PROTOCOL);
             memset(&primative, 0, sizeof(primative));
             strncpy(primative, &js[token[offset].start], (token[offset].end - token[offset].start));
             canopy_active_status status = activity_status_from_string(primative, sizeof(primative));
@@ -273,7 +272,7 @@ canopy_error c_json_parse_remote_status(struct canopy_device *device,
              * The next should be a primative that's an unsigned long long
              */
             offset++;
-            COS_ASSERT(token[offset].type == JSMN_PRIMITIVE);
+            ASSERTION_CHECK(token[offset].type == JSMN_PRIMITIVE, CANOPY_ERROR_PROTOCOL);
             memset(&primative, 0, sizeof(primative));
             strncpy(primative, &js[token[offset].start], (token[offset].end - token[offset].start));
             unsigned long long ull = atoll(primative);

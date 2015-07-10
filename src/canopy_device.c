@@ -12,14 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include	<stdint.h>
-#include	<stdbool.h>
-#include	<string.h>
+#include <string.h>
 
-#include	<canopy_min.h>
-#include	<canopy_min_internal.h>
-#include	<canopy_communication.h>
-#include	<canopy_os.h>
+#include "../../../../incl/libc/stdbool.h"
+#include "../../../../incl/libc/stddef.h"
+#include "../include/canopy_min.h"
+#include "../include/canopy_os.h"
+#include "canopy_communication.h"
+#include "canopy_min_internal.h"
+#include "jsmn/jsmn.h"
 
 /*
  * _construct_device_sync_payload
@@ -44,16 +45,22 @@ static canopy_error _construct_device_sync_payload(canopy_device_t *device,
     // construct payload
     ierr = c_json_emit_open_object(&state);
     if (ierr != C_JSON_OK) {
+        cos_log(LOG_LEVEL_ERROR, "_construct_device_sync_payload() call to "
+                                 "c_json_emit_open_object() call failed.\n");
         return CANOPY_ERROR_NETWORK;
     }
 
     err = c_json_emit_vardcl(device, &state, false);
     if (err != CANOPY_SUCCESS) {
+        cos_log(LOG_LEVEL_ERROR, "_construct_device_sync_payload() call to "
+                                 "c_json_emit_vardcl() call failed.\n");
         return err;
     }
 
     err = c_json_emit_vars(device, &state, false, true);
     if (err != CANOPY_SUCCESS) {
+        cos_log(LOG_LEVEL_ERROR, "_construct_device_sync_payload() call to "
+                                 "c_json_emit_vars() call failed.\n");
         return err;
     }
 
@@ -61,6 +68,8 @@ static canopy_error _construct_device_sync_payload(canopy_device_t *device,
         err = c_json_emit_name_and_value(&state, TAG_FRIENDLY_NAMES,
                 device->friendly_name);
         if (err != CANOPY_SUCCESS) {
+            cos_log(LOG_LEVEL_ERROR, "_construct_device_sync_payload() call to "
+                                     "c_json_emit_name_and_value() call failed.\n");
             return err;
         }
     }
@@ -69,12 +78,16 @@ static canopy_error _construct_device_sync_payload(canopy_device_t *device,
         err = c_json_emit_name_and_value(&state, TAG_LOCATION_NOTE,
                 device->location_note);
         if (err != CANOPY_SUCCESS) {
+            cos_log(LOG_LEVEL_ERROR, "_construct_device_sync_payload() call to "
+                                     "c_json_emit_name_and_value() call failed.\n");
             return err;
         }
     }
 
     ierr = c_json_emit_close_object(&state);
     if (ierr != C_JSON_OK) {
+        cos_log(LOG_LEVEL_ERROR, "_construct_device_sync_payload() call to "
+                                 "c_json_emit_close_object() call failed.\n");
         return CANOPY_ERROR_NETWORK;
     }
 
@@ -103,7 +116,7 @@ static void _clear_dirty_flags(struct canopy_device *device) {
 canopy_error canopy_device_init(struct canopy_device *device,
         struct canopy_remote *remote, const char *device_id) {
 
-    C_COND_FATAL_RETURN(device != NULL, CANOPY_ERROR_USAGE);
+    ASSERTION_CHECK(device != NULL, CANOPY_ERROR_USAGE);
 
     memset(device, 0, sizeof(struct canopy_device));
     /*
@@ -130,8 +143,8 @@ canopy_error canopy_get_self_device(canopy_remote_t *remote,
     int active = 0;
     bool result_code;
 
-    COS_ASSERT(remote != NULL);
-    COS_ASSERT(device != NULL);
+    ASSERTION_CHECK(remote != NULL, CANOPY_ERROR_USAGE);
+    ASSERTION_CHECK(device != NULL, CANOPY_ERROR_USAGE);
 
     // verify that device credentials are in use
     if (remote->params->credential_type != CANOPY_DEVICE_CREDENTIALS) {
@@ -142,8 +155,7 @@ canopy_error canopy_get_self_device(canopy_remote_t *remote,
     canopy_device_init(device, remote, remote->params->name);
 
     // GET /api/device/self
-    err = canopy_remote_http_get(remote, "/api/device/self",
-    NULL, &http_status, barrier);
+    err = canopy_remote_http_get(remote, "/api/device/self", NULL, &http_status, barrier);
     if (err != CANOPY_SUCCESS) {
         cos_log(LOG_LEVEL_ERROR, "Error during GET /api/device/self: %s\n",
                 canopy_error_string(err));
@@ -152,6 +164,8 @@ canopy_error canopy_get_self_device(canopy_remote_t *remote,
 
     if (http_status != 200) {
         // TODO: Return the appropriate error based on the response
+        cos_log(LOG_LEVEL_ERROR,
+                "http status of /api/device/self response not 200: %d\n", http_status);
         return CANOPY_ERROR_UNKNOWN;
     }
 
@@ -195,12 +209,12 @@ canopy_error canopy_device_update_from_remote(canopy_remote_t *remote,
     bool result_code;
     int active = 0;
 
-    COS_ASSERT(remote != NULL);
-    COS_ASSERT(device != NULL);
+    ASSERTION_CHECK(remote != NULL, CANOPY_ERROR_USAGE);
+    ASSERTION_CHECK(device != NULL, CANOPY_ERROR_USAGE);
 
     // GET /api/device/self
     err = canopy_remote_http_get(remote, "/api/device/self",
-    NULL, &http_status, barrier);
+                                 NULL, &http_status, barrier);
     if (err != CANOPY_SUCCESS) {
         cos_log(LOG_LEVEL_ERROR, "Error during GET /api/device/self: %s\n",
                 canopy_error_string(err));
@@ -209,6 +223,8 @@ canopy_error canopy_device_update_from_remote(canopy_remote_t *remote,
 
     if (http_status != 200) {
         // TODO: Return the appropriate error based on the response
+        cos_log(LOG_LEVEL_ERROR,
+                "http status of /api/device/self response not 200: %d\n", http_status);
         return CANOPY_ERROR_UNKNOWN;
     }
 
@@ -251,8 +267,8 @@ canopy_error canopy_device_update_to_remote(canopy_remote_t *remote,
     char request_payload[2048];
     int http_status;
 
-    COS_ASSERT(remote != NULL);
-    COS_ASSERT(device != NULL);
+    ASSERTION_CHECK(remote != NULL, CANOPY_ERROR_USAGE);
+    ASSERTION_CHECK(device != NULL, CANOPY_ERROR_USAGE);
 
     // construct payload
     err = _construct_device_sync_payload(device, request_payload,
@@ -272,6 +288,8 @@ canopy_error canopy_device_update_to_remote(canopy_remote_t *remote,
 
     if (http_status != 200) {
         // TODO: Return the appropriate error based on the response
+        cos_log(LOG_LEVEL_ERROR,
+                "http status of /api/device/self response not 200: %d\n", http_status);
         return CANOPY_ERROR_UNKNOWN;
     }
 
@@ -296,8 +314,8 @@ canopy_error canopy_device_sync_with_remote(canopy_remote_t *remote,
     bool result_code;
     int active = 0;
 
-    COS_ASSERT(remote != NULL);
-    COS_ASSERT(device != NULL);
+    ASSERTION_CHECK(remote != NULL, CANOPY_ERROR_USAGE);
+    ASSERTION_CHECK(device != NULL, CANOPY_ERROR_USAGE);
 
     // construct payload
     err = _construct_device_sync_payload(device, request_payload,
@@ -317,6 +335,8 @@ canopy_error canopy_device_sync_with_remote(canopy_remote_t *remote,
 
     if (http_status != 200) {
         // TODO: Return the appropriate error based on the response
+        cos_log(LOG_LEVEL_ERROR,
+                "http status of /api/device/self response not 200: %d\n", http_status);
         return CANOPY_ERROR_UNKNOWN;
     }
 
@@ -357,8 +377,8 @@ canopy_error canopy_device_sync_with_remote(canopy_remote_t *remote,
  */
 canopy_error canopy_device_get_friendly_name(canopy_device_t *device,
         char *friendly_name, size_t len) {
-    COS_ASSERT(device != NULL);
-    COS_ASSERT(friendly_name != NULL);
+    ASSERTION_CHECK(device != NULL, CANOPY_ERROR_USAGE);
+    ASSERTION_CHECK(friendly_name != NULL, CANOPY_ERROR_USAGE);
 
     if (strnlen(device->friendly_name, CANOPY_FRIENDLY_NAME_MAX_LENGTH) > len) {
         return CANOPY_ERROR_BUFFER_TOO_SMALL;
@@ -377,8 +397,8 @@ canopy_error canopy_device_get_friendly_name(canopy_device_t *device,
  */
 canopy_error canopy_device_get_location_note(canopy_device_t *device,
         char *location_note, size_t len) {
-    COS_ASSERT(device != NULL);
-    COS_ASSERT(location_note != NULL);
+    ASSERTION_CHECK(device != NULL, CANOPY_ERROR_USAGE);
+    ASSERTION_CHECK(location_note != NULL, CANOPY_ERROR_USAGE);
 
     if (strnlen(device->location_note, CANOPY_NOTE_MAX_LENGTH) > len) {
         return CANOPY_ERROR_BUFFER_TOO_SMALL;
@@ -394,12 +414,12 @@ canopy_error canopy_device_get_location_note(canopy_device_t *device,
 
 canopy_error canopy_device_set_friendly_name(canopy_device_t *device,
         const char *friendly_name) {
-    COS_ASSERT(device != NULL);
-    COS_ASSERT(friendly_name != NULL);
+    ASSERTION_CHECK(device != NULL, CANOPY_ERROR_USAGE);
+    ASSERTION_CHECK(friendly_name != NULL, CANOPY_ERROR_USAGE);
 
     if (strnlen(friendly_name, CANOPY_FRIENDLY_NAME_MAX_LENGTH + 1) >
-    CANOPY_FRIENDLY_NAME_MAX_LENGTH) {
-        return CANOPY_ERROR_BAD_PARAM;
+                CANOPY_FRIENDLY_NAME_MAX_LENGTH) {
+        return CANOPY_ERROR_BUFFER_TOO_SMALL;
     }
 
     // TODO: other input validation
@@ -411,12 +431,12 @@ canopy_error canopy_device_set_friendly_name(canopy_device_t *device,
 
 canopy_error canopy_device_set_location_note(canopy_device_t *device,
         const char *location_note) {
-    COS_ASSERT(device != NULL);
-    COS_ASSERT(location_note != NULL);
+    ASSERTION_CHECK(device != NULL, CANOPY_ERROR_USAGE);
+    ASSERTION_CHECK(location_note != NULL, CANOPY_ERROR_USAGE);
 
     if (strnlen(location_note, CANOPY_NOTE_MAX_LENGTH + 1) >
-    CANOPY_NOTE_MAX_LENGTH) {
-        return CANOPY_ERROR_BAD_PARAM;
+                CANOPY_NOTE_MAX_LENGTH) {
+        return CANOPY_ERROR_BUFFER_TOO_SMALL;
     }
 
     // TODO: other input validation
@@ -431,9 +451,9 @@ canopy_error canopy_device_get_active_status(canopy_device_t *device,
         canopy_active_status *active_status,
         canopy_ws_connection_status *ws_status) {
 
-    COS_ASSERT(device != NULL);
-    COS_ASSERT(active_status != NULL);
-    COS_ASSERT(ws_status != NULL);
+    ASSERTION_CHECK(device != NULL, CANOPY_ERROR_USAGE);
+    ASSERTION_CHECK(active_status != NULL, CANOPY_ERROR_USAGE);
+    ASSERTION_CHECK(ws_status != NULL, CANOPY_ERROR_USAGE);
     return CANOPY_ERROR_NOT_IMPLEMENTED;
 }
 
@@ -462,13 +482,13 @@ canopy_error c_json_parse_device(struct canopy_device *device,
     canopy_error err = CANOPY_SUCCESS;
     char buf[CANOPY_NOTE_MAX_LENGTH];
 
-    COS_ASSERT(device != NULL);
-    COS_ASSERT(device->remote != NULL);
+    ASSERTION_CHECK(device != NULL, CANOPY_ERROR_USAGE);
+    ASSERTION_CHECK(device->remote != NULL, CANOPY_ERROR_USAGE);
 
     /*
      * This is the opening { that must be the first thing
      */
-    COS_ASSERT(token[offset].type == JSMN_OBJECT);
+    ASSERTION_CHECK(token[offset].type == JSMN_OBJECT, CANOPY_ERROR_PROTOCOL);
     count = token[offset].size;
     offset++;  /* go to the first token after the object */
 
@@ -480,7 +500,7 @@ canopy_error c_json_parse_device(struct canopy_device *device,
         memset(name, 0, sizeof(name));
         sizeof_name = sizeof(name);
 
-        COS_ASSERT(token[offset].type == JSMN_STRING);
+        ASSERTION_CHECK(token[offset].type == JSMN_STRING, CANOPY_ERROR_PROTOCOL);
         strncpy(name, &js[token[offset].start], (token[offset].end - token[offset].start));
         /*
          * We don't need to do this because we memset the name to 0s already
@@ -531,8 +551,8 @@ canopy_error c_json_parse_device(struct canopy_device *device,
         } else if (strncmp(name, TAG_DEVICE_ID, sizeof_name) == 0) {
             memset(&buf, 0, sizeof(buf));
             offset++; /* the device id as a string */
-            COS_ASSERT(token[offset].type == JSMN_STRING);
-            COS_ASSERT(token[offset].size == 0);
+            ASSERTION_CHECK(token[offset].type == JSMN_STRING, CANOPY_ERROR_PROTOCOL);
+            ASSERTION_CHECK(token[offset].size == 0, CANOPY_ERROR_PROTOCOL);
             strncpy(buf, &js[token[offset].start], (token[offset].end - token[offset].start));
             strncpy(device->device_id, buf, sizeof(device->device_id));
 
@@ -541,8 +561,8 @@ canopy_error c_json_parse_device(struct canopy_device *device,
         } else if (strncmp(name, TAG_FRIENDLY_NAME, sizeof_name) == 0) {
             memset(&buf, 0, sizeof(buf));
             offset++; /* the device id as a string */
-            COS_ASSERT(token[offset].type == JSMN_STRING);
-            COS_ASSERT(token[offset].size == 0);
+            ASSERTION_CHECK(token[offset].type == JSMN_STRING, CANOPY_ERROR_PROTOCOL);
+            ASSERTION_CHECK(token[offset].size == 0, CANOPY_ERROR_PROTOCOL);
             strncpy(buf, &js[token[offset].start], (token[offset].end - token[offset].start));
             strncpy(device->friendly_name, buf, sizeof(device->friendly_name));
             device->friendly_name_dirty = false;
@@ -552,8 +572,8 @@ canopy_error c_json_parse_device(struct canopy_device *device,
         } else if (strncmp(name, TAG_LOCATION_NOTE, sizeof_name) == 0) {
             memset(&buf, 0, sizeof(buf));
             offset++; /* the device id as a string */
-            COS_ASSERT(token[offset].type == JSMN_STRING);
-            COS_ASSERT(token[offset].size == 0);
+            ASSERTION_CHECK(token[offset].type == JSMN_STRING, CANOPY_ERROR_PROTOCOL);
+            ASSERTION_CHECK(token[offset].size == 0, CANOPY_ERROR_PROTOCOL);
             strncpy(buf, &js[token[offset].start], (token[offset].end - token[offset].start));
             strncpy(device->location_note, buf, sizeof(device->location_note));
             device->location_note_dirty = false;
@@ -563,8 +583,8 @@ canopy_error c_json_parse_device(struct canopy_device *device,
         } else if (strncmp(name, TAG_SECRET_KEY, sizeof_name) == 0) {
             memset(&buf, 0, sizeof(buf));
             offset++; /* the device id as a string */
-            COS_ASSERT(token[offset].type == JSMN_STRING);
-            COS_ASSERT(token[offset].size == 0);
+            ASSERTION_CHECK(token[offset].type == JSMN_STRING, CANOPY_ERROR_PROTOCOL);
+            ASSERTION_CHECK(token[offset].size == 0, CANOPY_ERROR_PROTOCOL);
             strncpy(buf, &js[token[offset].start], (token[offset].end - token[offset].start));
             strncpy(device->secret_key, buf, sizeof(device->secret_key));
 
@@ -582,7 +602,7 @@ canopy_error c_json_parse_device(struct canopy_device *device,
              */
             offset++; /* the thing following the name string */
             if (token[offset].type == JSMN_STRING) {
-                COS_ASSERT(token[offset].size == 0);
+                ASSERTION_CHECK(token[offset].size == 0, CANOPY_ERROR_PROTOCOL);
                 offset++; /* to the next name */
 
             } else if (token[offset].type == JSMN_OBJECT) {
@@ -591,11 +611,8 @@ canopy_error c_json_parse_device(struct canopy_device *device,
                  * This isn't right, since OBJECTS an contain other OBJECTS
                  */
                 for (j = 0; j < token[offset].size; j++) {
-
-
                     offset++;
                 }
-
 
             } else if (token[offset].type == JSMN_ARRAY) {
 
@@ -604,18 +621,15 @@ canopy_error c_json_parse_device(struct canopy_device *device,
                  * currently true, since the TAG related to this is
                  * "notifs"
                  */
-                COS_ASSERT(token[offset].size == 0);
+                ASSERTION_CHECK(token[offset].size == 0, CANOPY_ERROR_PROTOCOL);
                 offset++;
 
             } else if (token[offset].type == JSMN_PRIMITIVE) {
 
-                COS_ASSERT(token[offset].size == 0);
+                ASSERTION_CHECK(token[offset].size == 0, CANOPY_ERROR_PROTOCOL);
                 offset++;
-
             }
-
         }
-
     } /* for (count) */
 
     return err;

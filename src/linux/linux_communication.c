@@ -52,6 +52,10 @@ static size_t _curl_write_handler(void *ptr, size_t size, size_t nmemb,
     memcpy((void*)&http->buffer[http->offset], ptr, len);
     http->offset += len;
 
+    /*
+     * This COS_ASSRERT is used to verify that there's enough room in our array
+     * for this piece.  A return with error doesn't do the right thing here...
+     */
     COS_ASSERT(http->buffer_len >= http->offset);
     if (http->buffer_len > http->offset) {
         // There's more room in our buffer.  We're good.
@@ -123,6 +127,10 @@ canopy_error canopy_http_perform(
             curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "DELETE");
             break;
         default:
+            /*
+             * This is an internal program bug.  Correct software won't get
+             * here.....
+             */
             COS_ASSERT(!"Unsupported HTTP method");
     }
     if (skip_cert_check) {

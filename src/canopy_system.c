@@ -32,7 +32,7 @@
  */
 canopy_error canopy_ctx_init(canopy_context_t *ctx) {
     if (ctx == NULL) {
-        return CANOPY_ERROR_BAD_PARAM;
+        return CANOPY_ERROR_USAGE;
     }
 
     memset(ctx, 0, sizeof(canopy_context_t));
@@ -46,7 +46,7 @@ canopy_error canopy_ctx_init(canopy_context_t *ctx) {
  */
 canopy_error canopy_ctx_shutdown(canopy_context_t *ctx) {
     if (ctx == NULL) {
-        return CANOPY_ERROR_BAD_PARAM;
+        return CANOPY_ERROR_USAGE;
     }
 
     canopy_error error = CANOPY_SUCCESS;
@@ -80,7 +80,7 @@ canopy_error canopy_ctx_shutdown(canopy_context_t *ctx) {
 canopy_error canopy_barrier_wait_for_complete(canopy_barrier_t *barrier,
         int timeout_ms) {
     if (barrier == NULL) {
-        return CANOPY_ERROR_BAD_PARAM;
+        return CANOPY_ERROR_USAGE;
     }
     return CANOPY_ERROR_NOT_IMPLEMENTED;
 }
@@ -92,7 +92,7 @@ canopy_error canopy_barrier_wait_for_complete(canopy_barrier_t *barrier,
 // After calling this it is safe to deallocate the barrier.
 canopy_error canopy_barrier_cancel(canopy_barrier_t *barrier) {
     if (barrier == NULL) {
-        return CANOPY_ERROR_BAD_PARAM;
+        return CANOPY_ERROR_USAGE;
     }
     return CANOPY_ERROR_NOT_IMPLEMENTED;
 }
@@ -110,7 +110,7 @@ canopy_error canopy_barrier_setup_callback(canopy_barrier_t *barrier,
         canopy_barrier_cb cb,
         void *userdata) {
     if (barrier == NULL) {
-        return CANOPY_ERROR_BAD_PARAM;
+        return CANOPY_ERROR_USAGE;
     }
     return CANOPY_ERROR_NOT_IMPLEMENTED;
 }
@@ -123,7 +123,7 @@ canopy_error canopy_barrier_setup_callback(canopy_barrier_t *barrier,
 // Returns CANOPY_ERROR_AGAIN if the operation has not yet finished.
 canopy_error canopy_barrier_is_complete(canopy_barrier_t *barrier) {
     if (barrier == NULL) {
-        return CANOPY_ERROR_BAD_PARAM;
+        return CANOPY_ERROR_USAGE;
     }
     return CANOPY_ERROR_NOT_IMPLEMENTED;
 }
